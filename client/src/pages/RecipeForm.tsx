@@ -537,6 +537,10 @@ export default function RecipeForm() {
       laborCost: "0",
       batchYield: 1,
       procedures: "",
+      standardYieldPieces: undefined,
+      standardYieldWeightPerPiece: undefined,
+      standardPanSize: "",
+      standardNumTrays: undefined,
     },
   });
 
@@ -565,6 +569,10 @@ export default function RecipeForm() {
         laborCost: recipe.laborCost || "0",
         batchYield: recipe.batchYield || 1,
         procedures: recipe.procedures || "",
+        standardYieldPieces: recipe.standardYieldPieces || undefined,
+        standardYieldWeightPerPiece: recipe.standardYieldWeightPerPiece || undefined,
+        standardPanSize: recipe.standardPanSize || "",
+        standardNumTrays: recipe.standardNumTrays || undefined,
       });
       setSelectedIngredients(
         recipe.ingredients?.map((i) => ({

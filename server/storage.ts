@@ -240,6 +240,7 @@ export class DbStorage implements IStorage {
       ingredientId: recipeIngredients.ingredientId,
       quantity: recipeIngredients.quantity,
       componentName: recipeIngredients.componentName,
+      unit: recipeIngredients.unit,
       ingredient: ingredients,
     })
     .from(recipeIngredients)
