@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Check, Shield } from "lucide-react";
+import { useLocation } from "wouter";
 
 const benefits = [
   "Start with a 14-day free trial—no credit card required",
@@ -9,6 +10,8 @@ const benefits = [
 ];
 
 export default function CTASection() {
+  const [, setLocation] = useLocation();
+  
   return (
     <section className="py-20 px-6 bg-background">
       <div className="max-w-2xl mx-auto text-center">
@@ -38,7 +41,7 @@ export default function CTASection() {
           size="lg"
           className="text-base px-10 py-6 h-auto mb-6"
           data-testid="button-cta-start-trial"
-          onClick={() => console.log('Start Free Trial clicked')}
+          onClick={() => setLocation('/signup')}
         >
           Start Your Free Trial Today
         </Button>

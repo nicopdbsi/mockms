@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Play, Users } from "lucide-react";
+import { useLocation } from "wouter";
 import heroImage from "@assets/generated_images/hero_image_professional_entrepreneur.png";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import testimonial1 from "@assets/generated_images/testimonial_customer_photo_one.png";
@@ -7,6 +8,7 @@ import testimonial2 from "@assets/generated_images/testimonial_customer_photo_tw
 import testimonial3 from "@assets/generated_images/testimonial_customer_photo_three.png";
 
 export default function HeroSection() {
+  const [, setLocation] = useLocation();
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       <div
@@ -34,7 +36,7 @@ export default function HeroSection() {
             size="lg"
             className="text-base px-8 py-6 h-auto"
             data-testid="button-start-trial"
-            onClick={() => console.log('Start Free Trial clicked')}
+            onClick={() => setLocation('/signup')}
           >
             Start Free Trial
           </Button>
