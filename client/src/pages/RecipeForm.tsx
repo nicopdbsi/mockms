@@ -827,8 +827,10 @@ export default function RecipeForm() {
       return;
     }
 
+    const roundedFlourWeight = Math.round(scalingRequiredFlour);
     const scaled: ScaledIngredient[] = bakerPercentages.map((item) => {
-      const newWeight = item.originalWeight * scalingFlourFactor;
+      const isFlourIngredient = dominantIngredient && item.ingredientId === dominantIngredient.id;
+      const newWeight = isFlourIngredient ? roundedFlourWeight : item.originalWeight * scalingFlourFactor;
       return {
         ingredientId: item.ingredientId,
         name: item.name,
@@ -1861,7 +1863,7 @@ export default function RecipeForm() {
                               Required Amount of Flour
                             </div>
                             <div className="text-lg font-bold" data-testid="text-scaling-required-flour">
-                              {scalingRequiredFlour.toFixed(1)} g
+                              {Math.round(scalingRequiredFlour)} g
                             </div>
                           </div>
                         </div>
