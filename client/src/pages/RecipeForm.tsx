@@ -814,9 +814,8 @@ export default function RecipeForm() {
   }, [bakerPercentages]);
 
   const scalingRequiredFlour = useMemo(() => {
-    if (!dominantIngredient) return 0;
-    return dominantIngredient.quantity * scalingFlourFactor;
-  }, [dominantIngredient, scalingFlourFactor]);
+    return scalingFlourFactor * scalingDesiredTotalWeight;
+  }, [scalingFlourFactor, scalingDesiredTotalWeight]);
 
   const handleScaleRecipe = () => {
     if (!ingredients || scalingFlourFactor <= 0) {
