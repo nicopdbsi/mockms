@@ -659,6 +659,10 @@ export default function RecipeForm() {
   const watchedFoodCost = form.watch("targetFoodCost");
   const watchedLaborCost = form.watch("laborCost");
   const watchedBatchYield = form.watch("batchYield");
+  const watchedStandardYieldPieces = form.watch("standardYieldPieces");
+  const watchedStandardYieldWeight = form.watch("standardYieldWeightPerPiece");
+  const watchedStandardPanSize = form.watch("standardPanSize");
+  const watchedStandardNumTrays = form.watch("standardNumTrays");
 
   const getQuantityInGrams = (item: { ingredientId: string; quantity: string; unit?: string }, ingredient: Ingredient | undefined) => {
     if (!ingredient) return 0;
@@ -1947,8 +1951,19 @@ export default function RecipeForm() {
                     <div className="space-y-3 flex-1">
                       <h4 className="font-semibold text-sm">Standard Yield</h4>
                       <div className="text-sm space-y-1">
-                        <div>{batchYieldValue} pcs • {(originalTotalDoughWeight / (batchYieldValue || 1)).toFixed(0)} g each</div>
-                        <div className="text-muted-foreground">Pan: {panSetup}</div>
+                        {watchedStandardYieldPieces && watchedStandardYieldWeight ? (
+                          <>
+                            <div data-testid="text-standard-yield-summary">{watchedStandardYieldPieces} pcs • {watchedStandardYieldWeight} g each</div>
+                            {watchedStandardPanSize && (
+                              <div className="text-muted-foreground">Pan: {watchedStandardPanSize}</div>
+                            )}
+                            {watchedStandardNumTrays && (
+                              <div className="text-muted-foreground">Trays: {watchedStandardNumTrays}</div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-muted-foreground">No standard yield configured. Add values in the Overview tab.</div>
+                        )}
                       </div>
                       <button
                         type="button"
