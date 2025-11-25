@@ -872,7 +872,7 @@ export default function Ingredients() {
               data-testid="button-upload-receipt"
             >
               <Upload className="h-4 w-4 mr-2" />
-              Import from Receipt
+              Import
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
