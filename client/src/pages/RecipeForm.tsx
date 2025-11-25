@@ -44,7 +44,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRecipeSchema, type Ingredient, type Material } from "@shared/schema";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, ChefHat, Package, ClipboardList, Scale, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, ChefHat, Package, ClipboardList, Scale, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -987,6 +987,30 @@ export default function RecipeForm() {
     setProcedureSteps(updated);
   };
 
+  const moveIngredient = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= selectedIngredients.length) return;
+    const updated = [...selectedIngredients];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    setSelectedIngredients(updated);
+  };
+
+  const moveMaterial = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= selectedMaterials.length) return;
+    const updated = [...selectedMaterials];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    setSelectedMaterials(updated);
+  };
+
+  const moveProcedure = (index: number, direction: "up" | "down") => {
+    const newIndex = direction === "up" ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= procedureSteps.length) return;
+    const updated = [...procedureSteps];
+    [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
+    setProcedureSteps(updated);
+  };
+
   if (ingredientsLoading || materialsLoading || (recipeId && recipeLoading)) {
     return (
       <div className="space-y-6">
@@ -1172,8 +1196,30 @@ export default function RecipeForm() {
                           ? parseFloat(item.quantity) * parseFloat(selectedIng.pricePerGram)
                           : 0;
                         return (
-                          <div key={index} className="flex gap-3 items-start" data-testid={`ingredient-row-${index}`}>
-                            <div className="w-40">
+                          <div key={index} className="flex gap-2 items-start" data-testid={`ingredient-row-${index}`}>
+                            <div className="flex flex-col">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveIngredient(index, "up")}
+                                disabled={index === 0}
+                                data-testid={`button-move-ingredient-up-${index}`}
+                              >
+                                <ChevronUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveIngredient(index, "down")}
+                                disabled={index === selectedIngredients.length - 1}
+                                data-testid={`button-move-ingredient-down-${index}`}
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <div className="w-36">
                               <Input
                                 placeholder="Component"
                                 value={item.componentName || ""}
@@ -1215,7 +1261,7 @@ export default function RecipeForm() {
                                 data-testid={`input-quantity-${index}`}
                               />
                             </div>
-                            <div className="w-24 text-right text-sm text-muted-foreground pt-2">
+                            <div className="w-20 text-right text-sm text-muted-foreground pt-2">
                               ${isNaN(itemCost) ? "0.00" : itemCost.toFixed(2)}
                             </div>
                             <Button
@@ -1275,7 +1321,29 @@ export default function RecipeForm() {
                           ? parseFloat(item.quantity) * parseFloat(selectedMat.pricePerUnit)
                           : 0;
                         return (
-                          <div key={index} className="flex gap-3 items-center" data-testid={`material-row-${index}`}>
+                          <div key={index} className="flex gap-2 items-center" data-testid={`material-row-${index}`}>
+                            <div className="flex flex-col">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveMaterial(index, "up")}
+                                disabled={index === 0}
+                                data-testid={`button-move-material-up-${index}`}
+                              >
+                                <ChevronUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveMaterial(index, "down")}
+                                disabled={index === selectedMaterials.length - 1}
+                                data-testid={`button-move-material-down-${index}`}
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </div>
                             <div className="flex-1">
                               <Select
                                 value={item.materialId}
@@ -1310,7 +1378,7 @@ export default function RecipeForm() {
                                 data-testid={`input-material-quantity-${index}`}
                               />
                             </div>
-                            <div className="w-24 text-right text-sm text-muted-foreground">
+                            <div className="w-20 text-right text-sm text-muted-foreground">
                               ${isNaN(itemCost) ? "0.00" : itemCost.toFixed(2)}
                             </div>
                             <Button
@@ -1365,8 +1433,30 @@ export default function RecipeForm() {
                   ) : (
                     <div className="space-y-4">
                       {procedureSteps.map((step, index) => (
-                        <div key={index} className="flex gap-3 items-start" data-testid={`procedure-row-${index}`}>
-                          <div className="w-40">
+                        <div key={index} className="flex gap-2 items-start" data-testid={`procedure-row-${index}`}>
+                          <div className="flex flex-col">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => moveProcedure(index, "up")}
+                              disabled={index === 0}
+                              data-testid={`button-move-procedure-up-${index}`}
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => moveProcedure(index, "down")}
+                              disabled={index === procedureSteps.length - 1}
+                              data-testid={`button-move-procedure-down-${index}`}
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="w-36">
                             <Input
                               placeholder="Component"
                               value={step.componentName}
@@ -1561,9 +1651,6 @@ export default function RecipeForm() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <Label>Profit Margin: {pricingMarginSlider}%</Label>
-                      <div className="text-2xl font-bold text-primary" data-testid="text-slider-price">
-                        ${sliderPrice.toFixed(2)}
-                      </div>
                     </div>
                     <Slider
                       value={[pricingMarginSlider]}
@@ -1577,6 +1664,21 @@ export default function RecipeForm() {
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>0% margin (break-even)</span>
                       <span>90% margin</span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                    <div className="text-center">
+                      <div className="text-sm text-muted-foreground font-medium">Suggested Retail Price (per unit)</div>
+                      <div className="text-3xl font-bold text-primary" data-testid="text-srp-per-unit">
+                        ${sliderPrice.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-sm text-muted-foreground font-medium">Batch SRP ({batchYieldValue} units)</div>
+                      <div className="text-3xl font-bold text-primary" data-testid="text-srp-batch">
+                        ${(sliderPrice * batchYieldValue).toFixed(2)}
+                      </div>
                     </div>
                   </div>
 
