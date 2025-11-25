@@ -133,3 +133,14 @@ Preferred communication style: Simple, everyday language.
 - Static image assets stored in `attached_assets/generated_images/`
 - Images for hero, features, testimonials, and analytics dashboards
 - Vite alias `@assets` for clean import paths
+
+**Receipt OCR / Import**:
+- Uses Replit AI Integrations (OpenAI-compatible) for receipt parsing
+- Supports multiple file formats:
+  - Images (PNG, JPG): Sent to OpenAI Vision API for OCR
+  - PDF files: Text extracted using pdf-parse library, then sent to OpenAI
+  - CSV files: Parsed using OpenAI text model
+- Auto-detects items as "ingredient" or "material" type
+- Extracts supplier info, item names, quantities, prices, and categories
+- Normalizes numeric values for database storage
+- Located in: `server/receipt-parser.ts`, `client/src/components/ReceiptUpload.tsx`

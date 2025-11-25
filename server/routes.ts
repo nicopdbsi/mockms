@@ -6,7 +6,7 @@ import passport from "passport";
 import multer from "multer";
 import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
-import { parseReceiptImage, parseReceiptCSV } from "./receipt-parser";
+import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -538,9 +538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const base64 = file.buffer.toString("base64");
         result = await parseReceiptImage(base64, file.mimetype);
       } else if (file.mimetype === "application/pdf") {
-        return res.status(400).json({ 
-          message: "PDF parsing is not yet supported. Please convert to an image or use CSV format." 
-        });
+        result = await parseReceiptPDF(file.buffer);
       } else {
         return res.status(400).json({ message: "Unsupported file type" });
       }

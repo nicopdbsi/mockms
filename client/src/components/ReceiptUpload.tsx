@@ -17,9 +17,9 @@ import { Badge } from "@/components/ui/badge";
 
 interface ParsedReceiptItem {
   name: string;
-  quantity: string;
+  quantity: number;
   unit: string;
-  price: string;
+  price: number;
   category?: string;
   type: "ingredient" | "material";
 }
@@ -31,7 +31,7 @@ interface ParsedReceipt {
     email?: string;
   };
   items: ParsedReceiptItem[];
-  totalAmount?: string;
+  totalAmount?: number;
   date?: string;
 }
 
@@ -104,38 +104,48 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
       const itemsToImport = parsedData.items.filter((_, i) => selectedItems.has(i));
 
       for (const item of itemsToImport) {
+        const quantity = typeof item.quantity === 'number' ? item.quantity : parseFloat(String(item.quantity)) || 1;
+        const price = typeof item.price === 'number' ? item.price : parseFloat(String(item.price)) || 0;
+        
         if (item.type === "ingredient") {
-          const pricePerGram = parseFloat(item.price) / parseFloat(item.quantity) || 0;
-          await fetch("/api/ingredients", {
+          const pricePerGram = quantity > 0 ? (price / quantity) : 0;
+          const response = await fetch("/api/ingredients", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               name: item.name,
-              quantity: item.quantity,
-              unit: item.unit,
-              purchaseAmount: item.price,
+              quantity: quantity.toString(),
+              unit: item.unit || "pcs",
+              purchaseAmount: price.toFixed(2),
               pricePerGram: pricePerGram.toFixed(4),
               category: item.category || null,
               supplierId,
             }),
             credentials: "include",
           });
+          if (!response.ok) {
+            console.error("Failed to import ingredient:", item.name, await response.text());
+          }
         } else {
-          await fetch("/api/materials", {
+          const pricePerUnit = quantity > 0 ? (price / quantity) : 0;
+          const response = await fetch("/api/materials", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               name: item.name,
-              quantity: item.quantity,
-              unit: item.unit,
-              pricePerUnit: (parseFloat(item.price) / parseFloat(item.quantity) || 0).toFixed(2),
-              purchaseAmount: item.price,
+              quantity: quantity.toString(),
+              unit: item.unit || "pcs",
+              pricePerUnit: pricePerUnit.toFixed(2),
+              purchaseAmount: price.toFixed(2),
               category: item.category || null,
               supplierId,
               notes: null,
             }),
             credentials: "include",
           });
+          if (!response.ok) {
+            console.error("Failed to import material:", item.name, await response.text());
+          }
         }
       }
     },
@@ -203,7 +213,7 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
         <DialogHeader>
           <DialogTitle>Import from Receipt</DialogTitle>
           <DialogDescription>
-            Upload a receipt image (.png, .jpg) or CSV file to auto-populate your inventory.
+            Upload a receipt image (.png, .jpg), PDF, or CSV file to auto-populate your inventory.
           </DialogDescription>
         </DialogHeader>
 
@@ -224,7 +234,7 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
                   <Upload className="h-12 w-12 text-muted-foreground" />
                   <p className="font-medium">Click to upload a receipt</p>
                   <p className="text-sm text-muted-foreground">
-                    Supported formats: PNG, JPG, CSV
+                    Supported formats: PNG, JPG, PDF, CSV
                   </p>
                 </div>
               )}
@@ -232,7 +242,7 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
             <input
               ref={fileInputRef}
               type="file"
-              accept=".png,.jpg,.jpeg,.csv"
+              accept=".png,.jpg,.jpeg,.pdf,.csv"
               className="hidden"
               onChange={handleFileSelect}
               data-testid="input-receipt-file"
@@ -322,7 +332,7 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {item.quantity} {item.unit} - ${item.price}
+                      {item.quantity} {item.unit} - ${item.price.toFixed(2)}
                       {item.category && ` - ${item.category}`}
                     </div>
                   </div>
@@ -335,10 +345,10 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
               ))}
             </div>
 
-            {parsedData.totalAmount && (
+            {parsedData.totalAmount !== undefined && (
               <div className="flex justify-between items-center pt-2 border-t">
                 <span className="font-medium">Total Amount</span>
-                <span className="text-lg font-semibold">${parsedData.totalAmount}</span>
+                <span className="text-lg font-semibold">${parsedData.totalAmount.toFixed(2)}</span>
               </div>
             )}
 

@@ -1,4 +1,7 @@
 import OpenAI from "openai";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
 const openai = new OpenAI({
@@ -8,9 +11,9 @@ const openai = new OpenAI({
 
 export interface ParsedReceiptItem {
   name: string;
-  quantity: string;
+  quantity: number;
   unit: string;
-  price: string;
+  price: number;
   category?: string;
   type: "ingredient" | "material";
 }
@@ -22,27 +25,20 @@ export interface ParsedReceipt {
     email?: string;
   };
   items: ParsedReceiptItem[];
-  totalAmount?: string;
+  totalAmount?: number;
   date?: string;
 }
 
-export async function parseReceiptImage(base64Image: string, mimeType: string): Promise<ParsedReceipt> {
-  // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    messages: [
-      {
-        role: "system",
-        content: `You are a receipt/invoice parser for a kitchen management system. Analyze the image and extract structured data.
+const systemPrompt = `You are a receipt/invoice parser for a kitchen management system. Analyze the input and extract structured data.
 
 For each item, determine if it's an "ingredient" (food items used in recipes) or "material" (packaging, equipment, supplies).
 
 Common ingredient categories: Produce, Meat & Poultry, Seafood, Dairy, Grains & Flour, Spices & Seasonings, Oils & Fats, Sweeteners, Baking, Canned Goods, Frozen, Other
 Common material categories: Packaging, Equipment, Utensils, Containers, Labels, Cleaning Supplies, Other
 
-Return a JSON object with this structure:
+IMPORTANT: Return ONLY numeric values for quantity, price, and totalAmount. Do NOT include currency symbols or text.
+
+Return a JSON object with this exact structure:
 {
   "supplier": {
     "name": "store/vendor name if visible",
@@ -51,19 +47,35 @@ Return a JSON object with this structure:
   },
   "items": [
     {
-      "name": "item name",
-      "quantity": "numeric quantity",
-      "unit": "unit of measure (g, kg, ml, L, pcs, box, etc.)",
-      "price": "price paid for this item",
-      "category": "suggested category",
-      "type": "ingredient or material"
+      "name": "item name (clean, without quantity/price info)",
+      "quantity": 1,
+      "unit": "g, kg, ml, L, pcs, box, pack, etc.",
+      "price": 10.50,
+      "category": "suggested category from the lists above",
+      "type": "ingredient"
     }
   ],
-  "totalAmount": "total receipt amount if visible",
-  "date": "receipt date if visible"
+  "totalAmount": 100.50,
+  "date": "receipt date if visible in YYYY-MM-DD format"
 }
 
-If information is not clear, make reasonable estimates. Prefer extracting as much useful data as possible.`
+Rules:
+- quantity must be a NUMBER (e.g., 1, 2.5, 1000), not a string
+- price must be a NUMBER (e.g., 10.50), without currency symbols
+- totalAmount must be a NUMBER, without currency symbols
+- If quantity is unclear, default to 1
+- If unit is unclear, default to "pcs" for materials and "g" for ingredients
+- Always try to extract useful data even from unclear receipts`;
+
+export async function parseReceiptImage(base64Image: string, mimeType: string): Promise<ParsedReceipt> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    max_completion_tokens: 4096,
+    messages: [
+      {
+        role: "system",
+        content: systemPrompt
       },
       {
         role: "user",
@@ -76,7 +88,7 @@ If information is not clear, make reasonable estimates. Prefer extracting as muc
           },
           {
             type: "text",
-            text: "Parse this receipt/invoice and extract all items with their prices, quantities, and categories."
+            text: "Parse this receipt/invoice image and extract all items with their prices, quantities, and categories. Return numeric values for quantity and price fields."
           }
         ]
       }
@@ -89,52 +101,63 @@ If information is not clear, make reasonable estimates. Prefer extracting as muc
   }
 
   try {
-    return JSON.parse(content) as ParsedReceipt;
+    const parsed = JSON.parse(content);
+    return normalizeReceiptData(parsed);
   } catch {
     throw new Error("Failed to parse receipt - invalid JSON response");
   }
 }
 
-export async function parseReceiptCSV(csvContent: string): Promise<ParsedReceipt> {
-  // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+export async function parseReceiptPDF(pdfBuffer: Buffer): Promise<ParsedReceipt> {
+  const data = await pdfParse(pdfBuffer);
+  const textContent = data.text;
+
+  if (!textContent || textContent.trim().length === 0) {
+    throw new Error("Could not extract text from PDF. The PDF may be image-based - please convert to an image format.");
+  }
+
   const response = await openai.chat.completions.create({
-    model: "gpt-5",
+    model: "gpt-4o",
     response_format: { type: "json_object" },
     max_completion_tokens: 4096,
     messages: [
       {
         role: "system",
-        content: `You are a CSV data parser for a kitchen management system. Analyze the CSV data and extract structured item data.
-
-For each item, determine if it's an "ingredient" (food items used in recipes) or "material" (packaging, equipment, supplies).
-
-Common ingredient categories: Produce, Meat & Poultry, Seafood, Dairy, Grains & Flour, Spices & Seasonings, Oils & Fats, Sweeteners, Baking, Canned Goods, Frozen, Other
-Common material categories: Packaging, Equipment, Utensils, Containers, Labels, Cleaning Supplies, Other
-
-Return a JSON object with this structure:
-{
-  "supplier": {
-    "name": "vendor name if present in data"
-  },
-  "items": [
-    {
-      "name": "item name",
-      "quantity": "numeric quantity",
-      "unit": "unit of measure (g, kg, ml, L, pcs, box, etc.)",
-      "price": "price paid for this item",
-      "category": "suggested category",
-      "type": "ingredient or material"
-    }
-  ],
-  "totalAmount": "total if present",
-  "date": "date if present"
-}
-
-Parse the CSV intelligently - it may have headers or not. Extract as much useful data as possible.`
+        content: systemPrompt
       },
       {
         role: "user",
-        content: `Parse this CSV data and extract all items:\n\n${csvContent}`
+        content: `Parse this receipt/invoice text extracted from a PDF and extract all items with their prices, quantities, and categories. Return numeric values for quantity and price fields.\n\n${textContent}`
+      }
+    ]
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) {
+    throw new Error("Failed to parse PDF receipt - no response from AI");
+  }
+
+  try {
+    const parsed = JSON.parse(content);
+    return normalizeReceiptData(parsed);
+  } catch {
+    throw new Error("Failed to parse PDF receipt - invalid JSON response");
+  }
+}
+
+export async function parseReceiptCSV(csvContent: string): Promise<ParsedReceipt> {
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o",
+    response_format: { type: "json_object" },
+    max_completion_tokens: 4096,
+    messages: [
+      {
+        role: "system",
+        content: systemPrompt
+      },
+      {
+        role: "user",
+        content: `Parse this CSV data and extract all items. Return numeric values for quantity and price fields.\n\n${csvContent}`
       }
     ]
   });
@@ -145,8 +168,56 @@ Parse the CSV intelligently - it may have headers or not. Extract as much useful
   }
 
   try {
-    return JSON.parse(content) as ParsedReceipt;
+    const parsed = JSON.parse(content);
+    return normalizeReceiptData(parsed);
   } catch {
     throw new Error("Failed to parse CSV - invalid JSON response");
   }
+}
+
+function normalizeReceiptData(data: any): ParsedReceipt {
+  const result: ParsedReceipt = {
+    items: [],
+  };
+
+  if (data.supplier && data.supplier.name) {
+    result.supplier = {
+      name: String(data.supplier.name).trim(),
+      phone: data.supplier.phone ? String(data.supplier.phone).trim() : undefined,
+      email: data.supplier.email ? String(data.supplier.email).trim() : undefined,
+    };
+  }
+
+  if (data.totalAmount !== undefined && data.totalAmount !== null) {
+    result.totalAmount = parseNumericValue(data.totalAmount);
+  }
+
+  if (data.date) {
+    result.date = String(data.date);
+  }
+
+  if (Array.isArray(data.items)) {
+    result.items = data.items.map((item: any) => ({
+      name: String(item.name || "Unknown Item").trim(),
+      quantity: parseNumericValue(item.quantity) || 1,
+      unit: String(item.unit || "pcs").trim(),
+      price: parseNumericValue(item.price) || 0,
+      category: item.category ? String(item.category).trim() : undefined,
+      type: item.type === "material" ? "material" : "ingredient",
+    }));
+  }
+
+  return result;
+}
+
+function parseNumericValue(value: any): number {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[^0-9.-]/g, "");
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
