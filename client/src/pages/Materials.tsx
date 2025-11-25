@@ -1033,6 +1033,8 @@ export default function Materials() {
         onItemsImported={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
         }}
+        existingIngredients={[]}
+        existingMaterials={materials || []}
       />
     </AppLayout>
   );

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, FileText, Loader2, Check, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Upload, FileText, Loader2, Check, X, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { Ingredient, Material } from "@shared/schema";
 
 interface ParsedReceiptItem {
   name: string;
@@ -39,15 +41,59 @@ interface ReceiptUploadProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onItemsImported: () => void;
+  existingIngredients?: Ingredient[];
+  existingMaterials?: Material[];
 }
 
-export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUploadProps) {
+export function ReceiptUpload({ open, onOpenChange, onItemsImported, existingIngredients = [], existingMaterials = [] }: ReceiptUploadProps) {
   const [parsedData, setParsedData] = useState<ParsedReceipt | null>(null);
   const [selectedItems, setSelectedItems] = useState<Set<number>>(new Set());
   const [createSupplier, setCreateSupplier] = useState(true);
   const [showSupplier, setShowSupplier] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const existingIngredientNames = useMemo(() => {
+    return new Set(existingIngredients.map(i => i.name.trim().toLowerCase()));
+  }, [existingIngredients]);
+
+  const existingMaterialNames = useMemo(() => {
+    return new Set(existingMaterials.map(m => m.name.trim().toLowerCase()));
+  }, [existingMaterials]);
+
+  const duplicateIndices = useMemo(() => {
+    if (!parsedData) return new Set<number>();
+    const dupes = new Set<number>();
+    parsedData.items.forEach((item, index) => {
+      const normalizedName = item.name.trim().toLowerCase();
+      if (item.type === "ingredient" && existingIngredientNames.has(normalizedName)) {
+        dupes.add(index);
+      } else if (item.type === "material" && existingMaterialNames.has(normalizedName)) {
+        dupes.add(index);
+      }
+    });
+    return dupes;
+  }, [parsedData, existingIngredientNames, existingMaterialNames]);
+
+  const duplicateCount = duplicateIndices.size;
+
+  useEffect(() => {
+    if (parsedData && duplicateIndices.size > 0) {
+      setSelectedItems(prev => {
+        const newSet = new Set(prev);
+        duplicateIndices.forEach(idx => newSet.delete(idx));
+        return newSet;
+      });
+    }
+  }, [parsedData, duplicateIndices]);
+
+  const skipDuplicates = () => {
+    setSelectedItems(prev => {
+      const newSet = new Set(prev);
+      duplicateIndices.forEach(idx => newSet.delete(idx));
+      return newSet;
+    });
+  };
 
   const parseMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -101,7 +147,7 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
         }
       }
 
-      const itemsToImport = parsedData.items.filter((_, i) => selectedItems.has(i));
+      const itemsToImport = parsedData.items.filter((_, i) => selectedItems.has(i) && !duplicateIndices.has(i));
 
       for (const item of itemsToImport) {
         const quantity = typeof item.quantity === 'number' ? item.quantity : parseFloat(String(item.quantity)) || 1;
@@ -211,7 +257,7 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Import from Receipt</DialogTitle>
+          <DialogTitle>Import Items</DialogTitle>
           <DialogDescription>
             Upload a receipt image (.png, .jpg), PDF, or CSV file to auto-populate your inventory.
           </DialogDescription>
@@ -293,11 +339,34 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
               <p className="text-sm text-muted-foreground">Receipt date: {parsedData.date}</p>
             )}
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            {duplicateCount > 0 && (
+              <Alert variant="destructive" data-testid="alert-duplicates">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span>
+                    {duplicateCount} {duplicateCount === 1 ? "item already exists" : "items already exist"} in your inventory and {duplicateCount === 1 ? "has" : "have"} been deselected.
+                  </span>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={skipDuplicates}
+                    className="ml-2 shrink-0"
+                    data-testid="button-skip-duplicates"
+                  >
+                    Skip Duplicates
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium">{parsedData.items.length} items found</span>
                 <Badge variant="outline">{ingredientCount} ingredients</Badge>
                 <Badge variant="outline">{materialCount} materials</Badge>
+                {duplicateCount > 0 && (
+                  <Badge variant="destructive">{duplicateCount} duplicates</Badge>
+                )}
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={selectAll}>
@@ -310,39 +379,50 @@ export function ReceiptUpload({ open, onOpenChange, onItemsImported }: ReceiptUp
             </div>
 
             <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
-              {parsedData.items.map((item, index) => (
-                <div
-                  key={index}
-                  className={`p-3 flex items-center gap-3 cursor-pointer hover:bg-muted/50 ${
-                    selectedItems.has(index) ? "bg-muted/30" : ""
-                  }`}
-                  onClick={() => toggleItem(index)}
-                  data-testid={`receipt-item-${index}`}
-                >
-                  <Checkbox
-                    checked={selectedItems.has(index)}
-                    onCheckedChange={() => toggleItem(index)}
-                    data-testid={`checkbox-item-${index}`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">{item.name}</span>
-                      <Badge variant={item.type === "ingredient" ? "default" : "secondary"} className="shrink-0">
-                        {item.type}
-                      </Badge>
+              {parsedData.items.map((item, index) => {
+                const isDuplicate = duplicateIndices.has(index);
+                return (
+                  <div
+                    key={index}
+                    className={`p-3 flex items-center gap-3 ${
+                      isDuplicate ? "opacity-60" : "cursor-pointer hover:bg-muted/50"
+                    } ${
+                      selectedItems.has(index) && !isDuplicate ? "bg-muted/30" : ""
+                    } ${isDuplicate ? "bg-destructive/10" : ""}`}
+                    onClick={() => !isDuplicate && toggleItem(index)}
+                    data-testid={`receipt-item-${index}`}
+                  >
+                    <Checkbox
+                      checked={selectedItems.has(index) && !isDuplicate}
+                      onCheckedChange={() => !isDuplicate && toggleItem(index)}
+                      disabled={isDuplicate}
+                      data-testid={`checkbox-item-${index}`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-medium truncate ${isDuplicate ? "text-destructive" : ""}`}>{item.name}</span>
+                        <Badge variant={item.type === "ingredient" ? "default" : "secondary"} className="shrink-0">
+                          {item.type}
+                        </Badge>
+                        {isDuplicate && (
+                          <Badge variant="destructive" className="shrink-0" data-testid={`badge-duplicate-${index}`}>
+                            Exists
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {item.quantity} {item.unit} - ${item.price.toFixed(2)}
+                        {item.category && ` - ${item.category}`}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {item.quantity} {item.unit} - ${item.price.toFixed(2)}
-                      {item.category && ` - ${item.category}`}
-                    </div>
+                    {selectedItems.has(index) ? (
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                    ) : (
+                      <X className="h-4 w-4 text-muted-foreground shrink-0" />
+                    )}
                   </div>
-                  {selectedItems.has(index) ? (
-                    <Check className="h-4 w-4 text-primary shrink-0" />
-                  ) : (
-                    <X className="h-4 w-4 text-muted-foreground shrink-0" />
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {parsedData.totalAmount !== undefined && (

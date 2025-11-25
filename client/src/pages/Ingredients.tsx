@@ -1011,6 +1011,8 @@ export default function Ingredients() {
         onItemsImported={() => {
           queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
         }}
+        existingIngredients={ingredients || []}
+        existingMaterials={[]}
       />
     </AppLayout>
   );
