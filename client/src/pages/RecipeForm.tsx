@@ -828,9 +828,8 @@ export default function RecipeForm() {
     }
 
     const roundedFlourWeight = Math.round(scalingRequiredFlour);
-    const scaled: ScaledIngredient[] = bakerPercentages.map((item) => {
-      const isFlourIngredient = dominantIngredient && item.ingredientId === dominantIngredient.id;
-      const newWeight = isFlourIngredient ? roundedFlourWeight : item.originalWeight * scalingFlourFactor;
+    let scaled: ScaledIngredient[] = bakerPercentages.map((item) => {
+      const newWeight = (roundedFlourWeight / 100) * item.bakerPercentage;
       return {
         ingredientId: item.ingredientId,
         name: item.name,
@@ -842,6 +841,14 @@ export default function RecipeForm() {
         pricePerGram: item.pricePerGram,
       };
     });
+    
+    if (dominantIngredient) {
+      scaled.sort((a, b) => {
+        if (a.ingredientId === dominantIngredient.id) return -1;
+        if (b.ingredientId === dominantIngredient.id) return 1;
+        return 0;
+      });
+    }
 
     setScaledIngredients(scaled);
     setHasScaled(true);
