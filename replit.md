@@ -153,10 +153,12 @@ Preferred communication style: Simple, everyday language.
 
 **Recipe Form Features**:
 - **Tab-based interface** with 4 sections:
-  1. **Overview tab**: Recipe name, description, servings, batch yield, procedures
-  2. **Ingredients tab**: Food ingredients with component grouping + packaging materials
+  1. **Overview tab**: Recipe name, description, servings, batch yield
+  2. **Ingredients tab**: Food ingredients with component grouping + packaging materials + procedures with grouping
   3. **Costing tab**: Complete cost breakdown (ingredients, materials, labor) with per-unit analysis
   4. **Pricing tab**: Interactive margin slider with live profit calculations and batch projections
+
+- **Validation with Tab Navigation**: When required fields are missing, form navigates to the correct tab and shows a message
 
 - **New database fields**:
   - `laborCost`: Direct labor cost per batch

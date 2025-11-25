@@ -36,7 +36,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRecipeSchema, type Ingredient, type Material } from "@shared/schema";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, ChefHat, Package } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, ChefHat, Package, ClipboardList } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -53,6 +53,11 @@ const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+type ProcedureStep = {
+  componentName: string;
+  text: string;
+};
 
 type RecipeIngredientWithDetails = {
   ingredientId: string;
@@ -456,6 +461,7 @@ export default function RecipeForm() {
   const [selectedMaterials, setSelectedMaterials] = useState<
     Array<{ materialId: string; quantity: string }>
   >([]);
+  const [procedureSteps, setProcedureSteps] = useState<ProcedureStep[]>([]);
   const [showAddIngredient, setShowAddIngredient] = useState(false);
   const [showAddMaterial, setShowAddMaterial] = useState(false);
   const [pendingIngredientIndex, setPendingIngredientIndex] = useState<number | null>(null);
@@ -501,6 +507,20 @@ export default function RecipeForm() {
 
   useEffect(() => {
     if (recipe) {
+      let parsedProcedures: ProcedureStep[] = [];
+      if (recipe.procedures) {
+        try {
+          const parsed = JSON.parse(recipe.procedures);
+          if (Array.isArray(parsed)) {
+            parsedProcedures = parsed;
+          } else {
+            parsedProcedures = [{ componentName: "", text: recipe.procedures }];
+          }
+        } catch {
+          parsedProcedures = [{ componentName: "", text: recipe.procedures }];
+        }
+      }
+
       form.reset({
         name: recipe.name,
         description: recipe.description || "",
@@ -524,14 +544,21 @@ export default function RecipeForm() {
           quantity: m.quantity,
         })) || []
       );
+      setProcedureSteps(parsedProcedures);
       setPricingMarginSlider(parseFloat(recipe.targetMargin) || 50);
     }
   }, [recipe, form]);
+
+  const serializeProcedures = (): string => {
+    if (procedureSteps.length === 0) return "";
+    return JSON.stringify(procedureSteps);
+  };
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
       const response = await apiRequest("POST", "/api/recipes", {
         ...data,
+        procedures: serializeProcedures(),
         ingredients: selectedIngredients,
         materials: selectedMaterials,
       });
@@ -559,6 +586,7 @@ export default function RecipeForm() {
     mutationFn: async (data: FormData) => {
       const response = await apiRequest("PATCH", `/api/recipes/${recipeId}`, {
         ...data,
+        procedures: serializeProcedures(),
         ingredients: selectedIngredients,
         materials: selectedMaterials,
       });
@@ -585,7 +613,6 @@ export default function RecipeForm() {
 
   const watchedMargin = form.watch("targetMargin");
   const watchedFoodCost = form.watch("targetFoodCost");
-  const watchedServings = form.watch("servings");
   const watchedLaborCost = form.watch("laborCost");
   const watchedBatchYield = form.watch("batchYield");
 
@@ -657,7 +684,18 @@ export default function RecipeForm() {
     return (ingredientsCost / batchYieldValue / sliderPrice) * 100;
   }, [ingredientsCost, batchYieldValue, sliderPrice]);
 
-  const onSubmit = (data: FormData) => {
+  const validateAndSubmit = (data: FormData) => {
+    const recipeName = form.getValues("name");
+    if (!recipeName || recipeName.trim() === "") {
+      setActiveTab("overview");
+      toast({
+        title: "Missing Required Field",
+        description: "Please fill out the Recipe Name in the Overview tab before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (recipeId) {
       updateMutation.mutate(data);
     } else {
@@ -725,15 +763,19 @@ export default function RecipeForm() {
     }
   };
 
-  const ingredientsByComponent = useMemo(() => {
-    const grouped: Record<string, typeof selectedIngredients> = {};
-    selectedIngredients.forEach((item) => {
-      const key = item.componentName || "Main";
-      if (!grouped[key]) grouped[key] = [];
-      grouped[key].push(item);
-    });
-    return grouped;
-  }, [selectedIngredients]);
+  const addProcedure = () => {
+    setProcedureSteps([...procedureSteps, { componentName: "", text: "" }]);
+  };
+
+  const removeProcedure = (index: number) => {
+    setProcedureSteps(procedureSteps.filter((_, i) => i !== index));
+  };
+
+  const updateProcedure = (index: number, field: "componentName" | "text", value: string) => {
+    const updated = [...procedureSteps];
+    updated[index] = { ...updated[index], [field]: value };
+    setProcedureSteps(updated);
+  };
 
   if (ingredientsLoading || materialsLoading || (recipeId && recipeLoading)) {
     return (
@@ -766,7 +808,7 @@ export default function RecipeForm() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(validateAndSubmit)}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="overview" data-testid="tab-overview">
@@ -872,27 +914,6 @@ export default function RecipeForm() {
                       )}
                     />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name="procedures"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Procedures / Instructions</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="Step-by-step cooking instructions..."
-                            rows={6}
-                            data-testid="input-recipe-procedures"
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Cooking steps and instructions for preparing this recipe
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1091,6 +1112,70 @@ export default function RecipeForm() {
                           Materials Total: <span className="text-primary">${materialsCost.toFixed(2)}</span>
                         </div>
                       </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Procedures</CardTitle>
+                      <CardDescription>Step-by-step instructions for preparing this recipe</CardDescription>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={addProcedure}
+                      data-testid="button-add-procedure"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Procedure
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {procedureSteps.length === 0 ? (
+                    <div className="text-center py-8 border rounded-lg border-dashed" data-testid="empty-state-procedures">
+                      <ClipboardList className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground">
+                        No procedures added yet. Click "Add Procedure" to start.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {procedureSteps.map((step, index) => (
+                        <div key={index} className="flex gap-3 items-start" data-testid={`procedure-row-${index}`}>
+                          <div className="w-40">
+                            <Input
+                              placeholder="Component"
+                              value={step.componentName}
+                              onChange={(e) => updateProcedure(index, "componentName", e.target.value)}
+                              data-testid={`input-procedure-component-${index}`}
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <Textarea
+                              placeholder="Step instructions..."
+                              value={step.text}
+                              onChange={(e) => updateProcedure(index, "text", e.target.value)}
+                              rows={2}
+                              data-testid={`input-procedure-text-${index}`}
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeProcedure(index)}
+                            data-testid={`button-remove-procedure-${index}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </CardContent>
