@@ -1947,10 +1947,10 @@ export default function RecipeForm() {
             <TabsContent value="scaling" className="space-y-4">
               <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
                 <CardContent className="pt-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-3 flex-1">
+                  <div className="space-y-3">
+                    <div>
                       <h4 className="font-semibold text-sm">Standard Yield</h4>
-                      <div className="text-sm space-y-1">
+                      <div className="text-sm space-y-1 mt-2">
                         {watchedStandardYieldPieces && watchedStandardYieldWeight ? (
                           <>
                             <div data-testid="text-standard-yield-summary">{watchedStandardYieldPieces} pcs • {watchedStandardYieldWeight} g each</div>
