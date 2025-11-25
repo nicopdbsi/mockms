@@ -35,6 +35,10 @@ export const ingredients = pgTable("ingredients", {
   unit: text("unit").notNull(),
   purchaseAmount: numeric("purchase_amount", { precision: 10, scale: 2 }),
   supplierId: varchar("supplier_id").references(() => suppliers.id, { onDelete: "set null" }),
+  isCountBased: boolean("is_count_based").default(false),
+  purchaseUnit: text("purchase_unit"),
+  piecesPerPurchaseUnit: numeric("pieces_per_purchase_unit", { precision: 10, scale: 2 }),
+  weightPerPiece: numeric("weight_per_piece", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -72,6 +76,7 @@ export const recipeIngredients = pgTable("recipe_ingredients", {
   ingredientId: varchar("ingredient_id").notNull().references(() => ingredients.id, { onDelete: "cascade" }),
   quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
   componentName: text("component_name").default("Main"),
+  unit: text("unit").default("g"),
 });
 
 export const recipeMaterials = pgTable("recipe_materials", {

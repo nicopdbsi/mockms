@@ -1,0 +1,178 @@
+1. Decide on a “base unit” for recipes
+
+For costing + Baker’s Math, your system should think in weight for almost everything:
+
+Recipe base unit: grams (g)
+
+Even if the masterlist says “eggs = pieces”, internally you want a way to say:
+
+“1 egg ≈ X grams”
+
+So in the Material (Eggs) record, you store both:
+
+Purchase UOM: pcs (or tray, etc.)
+
+Recipe UOM: g
+
+Weight per piece: e.g., 55 g per egg (user-configurable)
+
+2. How to store this in the Masterlist (conceptually)
+
+For Eggs in your Materials Masterlist:
+
+Name: Eggs – Large
+
+Material Type: Ingredient
+
+Purchase Unit: tray
+
+Pieces per Purchase Unit: 30
+
+Price per Purchase Unit: ₱210
+
+Average Weight per Piece (g): 55
+
+From this, BentoHub can compute:
+
+Total grams per tray = 30 pcs × 55 g = 1,650 g
+
+Cost per gram = ₱210 ÷ 1,650 g ≈ ₱0.1273 / g
+
+Cost per egg (piece) = ₱210 ÷ 30 = ₱7 / pc
+
+You now have both:
+
+cost per g
+
+cost per pc
+
+3. Using eggs in recipes: weight vs. pieces
+Case A: Recipe uses weight (e.g., 300 g eggs)
+
+In the recipe line:
+
+Ingredient: Eggs – Large
+
+Amount: 300
+
+UOM: g
+
+System does:
+
+Cost = 300 g × ₱0.1273 / g
+
+Baker’s Math uses 300 g directly in total flour % math.
+
+Case B: Recipe uses pieces (e.g., 5 pcs eggs)
+
+You let the user encode it in the UI as:
+
+Ingredient: Eggs – Large
+
+Amount: 5
+
+UOM: pcs
+
+System converts behind the scenes:
+
+Weight in grams = 5 pcs × 55 g = 275 g
+
+Cost = 275 g × ₱0.1273 / g
+
+For Baker’s Math and costing, you treat it as 275 g in the calculations, but still display “5 pcs (≈275 g)” in the UI so it’s human-friendly.
+
+4. How this should look in BentoHub’s UI
+In Materials / Masterlist → Eggs – Large
+
+Fields you add:
+
+Purchase details
+
+Purchase Unit: tray
+
+Pieces per Purchase Unit: 30
+
+Price per Purchase Unit: ₱210
+
+Conversion
+
+Average Weight per Piece (g): 55
+
+(Auto-calculated, read-only) Total grams per tray: 1,650 g
+
+(Auto-calculated) Cost per gram
+
+(Auto-calculated) Cost per piece
+
+In Recipe Ingredients UI
+
+When adding a line item:
+
+Row for Eggs:
+
+Ingredient: Eggs – Large
+
+Amount: [ 5 ]
+
+UOM: dropdown → pcs | g | ml (for other items)
+
+Under the row (small text):
+
+≈ 275 g • Cost: ₱X.XX
+
+If the user selects UOM=g, small text flips:
+
+≈ 5 pcs (based on 55 g per pc)
+
+So:
+
+Bakers can think in pcs
+
+System thinks in g
+
+BentoHub shows both
+
+5. For Baker’s Math & Scaling
+
+For a recipe with eggs:
+
+You sum all ingredient weights (in g) – including egg weight after conversion.
+
+Baker’s Math % is always computed based on total flour weight, but eggs are included in total dough weight.
+
+When user scales using Baker’s Math:
+
+New eggs weight (g) is computed.
+
+Then you can also show approximate eggs in pieces:
+NewPieces = NewEggWeight / WeightPerPiece
+
+Example:
+
+Original: 5 eggs (≈275 g)
+
+After scaling: needs 413 g eggs
+
+Show: ≈ 7.5 eggs → tell user: use 7 or 8 eggs (rounding hint)
+
+6. UX rule of thumb inside BentoHub
+
+Masterlist material defines:
+
+How you buy it (tray, box, kg, pcs)
+
+How you use it (recipe UOM + conversion if needed)
+
+Recipe can accept either:
+
+Purchase-friendly units (pcs eggs, trays, spoons)
+
+or Exact units (g, ml)
+
+System always:
+
+Converts to g (or base unit)
+
+Calculates cost and Baker’s Math using those
+
+Displays friendly units + approximate conversions to the user
