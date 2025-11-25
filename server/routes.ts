@@ -382,6 +382,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Parse recipe from PDF
+  app.post("/api/parse-recipe", requireAuth, upload.single("file"), async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      if (req.file.mimetype !== "application/pdf") {
+        return res.status(400).json({ message: "Only PDF files are supported" });
+      }
+
+      const result = await parseRecipePDF(req.file.buffer);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Recipe parsing error:", error);
+      res.status(400).json({ message: "Failed to parse recipe PDF", error: error.message });
+    }
+  });
+
   // Orders routes
   app.get("/api/orders", requireAuth, async (req, res, next) => {
     try {

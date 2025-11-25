@@ -1,4 +1,5 @@
-import * as pdfParse from "pdf-parse";
+import * as pdfParseModule from "pdf-parse";
+const pdfParse = (pdfParseModule as any).default || pdfParseModule;
 
 interface ParsedRecipe {
   name: string;
@@ -11,7 +12,7 @@ export async function parseRecipePDF(fileBuffer: Buffer): Promise<ParsedRecipe> 
   const pdf = await pdfParse(fileBuffer);
   const text = pdf.text;
 
-  const lines = text.split("\n").map((line) => line.trim()).filter((line) => line);
+  const lines = text.split("\n").map((line: string) => line.trim()).filter((line: string) => line);
   
   // Extract recipe name from first non-empty line
   const name = lines[0] || "Uploaded Recipe";
