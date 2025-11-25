@@ -32,19 +32,28 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRecipeSchema, type Ingredient, type Material } from "@shared/schema";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, ChefHat, Package, ClipboardList } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, ChefHat, Package, ClipboardList, Scale, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  servings: z.number().min(1, "Servings must be at least 1"),
+  servings: z.number().optional(),
   targetMargin: z.string().min(0, "Target margin must be positive"),
   targetFoodCost: z.string().min(0, "Target food cost must be positive"),
   laborCost: z.string().optional(),
@@ -84,6 +93,17 @@ type RecipeWithIngredients = {
   procedures: string | null;
   ingredients: RecipeIngredientWithDetails[];
   materials?: RecipeMaterialWithDetails[];
+};
+
+type ScaledIngredient = {
+  ingredientId: string;
+  name: string;
+  originalWeight: number;
+  bakerPercentage: number;
+  newWeight: number;
+  originalCost: number;
+  newCost: number;
+  pricePerGram: number;
 };
 
 function AddIngredientDialog({
@@ -448,6 +468,8 @@ function AddMaterialDialog({
   );
 }
 
+const FLOUR_KEYWORDS = ["flour", "harina", "tepung", "atta"];
+
 export default function RecipeForm() {
   const [, params] = useRoute("/recipes/:id");
   const [, setLocation] = useLocation();
@@ -467,6 +489,11 @@ export default function RecipeForm() {
   const [pendingIngredientIndex, setPendingIngredientIndex] = useState<number | null>(null);
   const [pendingMaterialIndex, setPendingMaterialIndex] = useState<number | null>(null);
   const [pricingMarginSlider, setPricingMarginSlider] = useState(50);
+
+  const [scalingDesiredPieces, setScalingDesiredPieces] = useState<string>("");
+  const [scalingWeightPerPiece, setScalingWeightPerPiece] = useState<string>("");
+  const [scaledIngredients, setScaledIngredients] = useState<ScaledIngredient[]>([]);
+  const [hasScaled, setHasScaled] = useState(false);
 
   const { data: ingredients, isLoading: ingredientsLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
@@ -496,7 +523,7 @@ export default function RecipeForm() {
     defaultValues: {
       name: "",
       description: "",
-      servings: 1,
+      servings: undefined,
       targetMargin: "50",
       targetFoodCost: "30",
       laborCost: "0",
@@ -524,7 +551,7 @@ export default function RecipeForm() {
       form.reset({
         name: recipe.name,
         description: recipe.description || "",
-        servings: recipe.servings,
+        servings: recipe.servings || undefined,
         targetMargin: recipe.targetMargin,
         targetFoodCost: recipe.targetFoodCost || "30",
         laborCost: recipe.laborCost || "0",
@@ -684,6 +711,189 @@ export default function RecipeForm() {
     return (ingredientsCost / batchYieldValue / sliderPrice) * 100;
   }, [ingredientsCost, batchYieldValue, sliderPrice]);
 
+  const originalTotalDoughWeight = useMemo(() => {
+    if (!ingredients) return 0;
+    return selectedIngredients.reduce((sum, item) => {
+      const qty = parseFloat(item.quantity);
+      return sum + (isNaN(qty) ? 0 : qty);
+    }, 0);
+  }, [selectedIngredients, ingredients]);
+
+  const dominantIngredient = useMemo(() => {
+    if (!ingredients || selectedIngredients.length === 0) return null;
+
+    const flourIngredient = selectedIngredients.find((item) => {
+      const ing = ingredients.find((i) => i.id === item.ingredientId);
+      if (!ing) return false;
+      return FLOUR_KEYWORDS.some((keyword) =>
+        ing.name.toLowerCase().includes(keyword)
+      );
+    });
+
+    if (flourIngredient) {
+      const ing = ingredients.find((i) => i.id === flourIngredient.ingredientId);
+      return {
+        id: flourIngredient.ingredientId,
+        name: ing?.name || "Flour",
+        quantity: parseFloat(flourIngredient.quantity) || 0,
+        isFlour: true,
+      };
+    }
+
+    let maxItem: { ingredientId: string; quantity: string; componentName?: string | null } | null = null;
+    let maxQty = 0;
+    for (const item of selectedIngredients) {
+      const qty = parseFloat(item.quantity) || 0;
+      if (qty > maxQty) {
+        maxQty = qty;
+        maxItem = item;
+      }
+    }
+
+    if (maxItem !== null) {
+      const foundItem = maxItem;
+      const ing = ingredients.find((i) => i.id === foundItem.ingredientId);
+      return {
+        id: foundItem.ingredientId,
+        name: ing?.name || "Unknown",
+        quantity: maxQty,
+        isFlour: false,
+      };
+    }
+
+    return null;
+  }, [selectedIngredients, ingredients]);
+
+  const bakerPercentages = useMemo(() => {
+    if (!ingredients || !dominantIngredient || dominantIngredient.quantity <= 0) return [];
+
+    return selectedIngredients.map((item) => {
+      const ing = ingredients.find((i) => i.id === item.ingredientId);
+      const qty = parseFloat(item.quantity) || 0;
+      const percentage = (qty / dominantIngredient.quantity) * 100;
+      return {
+        ingredientId: item.ingredientId,
+        name: ing?.name || "Unknown",
+        originalWeight: qty,
+        bakerPercentage: percentage,
+        pricePerGram: parseFloat(ing?.pricePerGram || "0"),
+      };
+    });
+  }, [selectedIngredients, ingredients, dominantIngredient]);
+
+  const scalingDesiredTotalWeight = useMemo(() => {
+    const pieces = parseFloat(scalingDesiredPieces) || 0;
+    const weight = parseFloat(scalingWeightPerPiece) || 0;
+    return pieces * weight;
+  }, [scalingDesiredPieces, scalingWeightPerPiece]);
+
+  const scalingScaleFactor = useMemo(() => {
+    if (originalTotalDoughWeight <= 0) return 0;
+    return scalingDesiredTotalWeight / originalTotalDoughWeight;
+  }, [scalingDesiredTotalWeight, originalTotalDoughWeight]);
+
+  const scalingRequiredFlour = useMemo(() => {
+    if (!dominantIngredient) return 0;
+    return dominantIngredient.quantity * scalingScaleFactor;
+  }, [dominantIngredient, scalingScaleFactor]);
+
+  const handleScaleRecipe = () => {
+    if (!ingredients || scalingScaleFactor <= 0) {
+      toast({
+        title: "Cannot scale",
+        description: "Please enter valid desired pieces and weight per piece",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const scaled: ScaledIngredient[] = bakerPercentages.map((item) => {
+      const newWeight = item.originalWeight * scalingScaleFactor;
+      return {
+        ingredientId: item.ingredientId,
+        name: item.name,
+        originalWeight: item.originalWeight,
+        bakerPercentage: item.bakerPercentage,
+        newWeight: newWeight,
+        originalCost: item.originalWeight * item.pricePerGram,
+        newCost: newWeight * item.pricePerGram,
+        pricePerGram: item.pricePerGram,
+      };
+    });
+
+    setScaledIngredients(scaled);
+    setHasScaled(true);
+    toast({
+      title: "Recipe scaled successfully",
+      description: `Scaled from ${batchYieldValue} to ${scalingDesiredPieces} pieces`,
+    });
+  };
+
+  const handleApplyScaledWeights = () => {
+    if (!hasScaled || scaledIngredients.length === 0) {
+      toast({
+        title: "No scaled recipe",
+        description: "Please scale the recipe first before applying",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updatedIngredients = selectedIngredients.map((item) => {
+      const scaledItem = scaledIngredients.find((s) => s.ingredientId === item.ingredientId);
+      if (scaledItem) {
+        return {
+          ...item,
+          quantity: scaledItem.newWeight.toFixed(2),
+        };
+      }
+      return item;
+    });
+    setSelectedIngredients(updatedIngredients);
+
+    const newPieces = parseFloat(scalingDesiredPieces) || batchYieldValue;
+    form.setValue("batchYield", newPieces);
+
+    const scaledMaterialQty = selectedMaterials.map((item) => ({
+      ...item,
+      quantity: (parseFloat(item.quantity) * scalingScaleFactor).toFixed(0),
+    }));
+    setSelectedMaterials(scaledMaterialQty);
+
+    const newLaborCost = (laborCostValue * scalingScaleFactor).toFixed(2);
+    form.setValue("laborCost", newLaborCost);
+
+    setHasScaled(false);
+    setScaledIngredients([]);
+    setScalingDesiredPieces("");
+    setScalingWeightPerPiece("");
+
+    toast({
+      title: "Weights applied",
+      description: `Recipe updated to ${newPieces} pieces. Don't forget to save!`,
+    });
+  };
+
+  const scaledTotalCost = useMemo(() => {
+    if (!hasScaled) return 0;
+    const ingredientsCostScaled = scaledIngredients.reduce((sum, item) => sum + item.newCost, 0);
+    const scaledMaterialsCost = materialsCost * scalingScaleFactor;
+    const scaledLaborCost = laborCostValue * scalingScaleFactor;
+    return ingredientsCostScaled + scaledMaterialsCost + scaledLaborCost;
+  }, [hasScaled, scaledIngredients, materialsCost, laborCostValue, scalingScaleFactor]);
+
+  const scaledCostPerPiece = useMemo(() => {
+    const pieces = parseFloat(scalingDesiredPieces) || 0;
+    if (pieces <= 0 || !hasScaled) return 0;
+    return scaledTotalCost / pieces;
+  }, [scaledTotalCost, scalingDesiredPieces, hasScaled]);
+
+  const scaledSuggestedPrice = useMemo(() => {
+    const marginValue = parseFloat(watchedMargin) || 50;
+    if (marginValue >= 100 || marginValue < 0) return 0;
+    return scaledCostPerPiece / (1 - marginValue / 100);
+  }, [scaledCostPerPiece, watchedMargin]);
+
   const validateAndSubmit = (data: FormData) => {
     const recipeName = form.getValues("name");
     if (!recipeName || recipeName.trim() === "") {
@@ -810,7 +1020,7 @@ export default function RecipeForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(validateAndSubmit)}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" data-testid="tab-overview">
                 <ChefHat className="h-4 w-4 mr-2" />
                 Overview
@@ -826,6 +1036,10 @@ export default function RecipeForm() {
               <TabsTrigger value="pricing" data-testid="tab-pricing">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Pricing
+              </TabsTrigger>
+              <TabsTrigger value="scaling" data-testid="tab-scaling">
+                <Scale className="h-4 w-4 mr-2" />
+                Scaling
               </TabsTrigger>
             </TabsList>
 
@@ -883,7 +1097,11 @@ export default function RecipeForm() {
                               {...field}
                               type="number"
                               min="1"
-                              onChange={(e) => field.onChange(Number(e.target.value))}
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
                               data-testid="input-recipe-servings"
                             />
                           </FormControl>
@@ -1415,6 +1633,265 @@ export default function RecipeForm() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            <TabsContent value="scaling" className="space-y-4">
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Scale className="h-5 w-5" />
+                      Baker's Math Scaling
+                    </CardTitle>
+                    <CardDescription>
+                      Scale your recipe based on desired pieces and weight per piece
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="desired-pieces">Desired # of Pieces</Label>
+                          <Input
+                            id="desired-pieces"
+                            type="number"
+                            min="1"
+                            placeholder="e.g., 100"
+                            value={scalingDesiredPieces}
+                            onChange={(e) => setScalingDesiredPieces(e.target.value)}
+                            data-testid="input-scaling-desired-pieces"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="weight-per-piece">Weight per Piece (g)</Label>
+                          <Input
+                            id="weight-per-piece"
+                            type="number"
+                            min="1"
+                            step="0.1"
+                            placeholder="e.g., 30"
+                            value={scalingWeightPerPiece}
+                            onChange={(e) => setScalingWeightPerPiece(e.target.value)}
+                            data-testid="input-scaling-weight-per-piece"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-muted rounded-lg space-y-3">
+                        <h4 className="font-medium text-sm">Auto-Calculated Values</h4>
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <div>
+                            <div className="text-xs text-muted-foreground">Desired Total Weight</div>
+                            <div className="text-lg font-bold" data-testid="text-scaling-total-weight">
+                              {scalingDesiredTotalWeight.toFixed(1)} g
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground">Scale Factor</div>
+                            <div className="text-lg font-bold" data-testid="text-scaling-factor">
+                              {scalingScaleFactor.toFixed(2)}x
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs text-muted-foreground">
+                              Required {dominantIngredient?.name || "Base"} (g)
+                            </div>
+                            <div className="text-lg font-bold" data-testid="text-scaling-required-flour">
+                              {scalingRequiredFlour.toFixed(1)} g
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {dominantIngredient && (
+                        <div className="flex items-center gap-2">
+                          <Badge variant={dominantIngredient.isFlour ? "default" : "secondary"}>
+                            {dominantIngredient.isFlour ? "Flour Detected" : "Dominant Ingredient"}
+                          </Badge>
+                          <span className="text-sm text-muted-foreground">
+                            {dominantIngredient.name} ({dominantIngredient.quantity}g = 100%)
+                          </span>
+                        </div>
+                      )}
+
+                      <Button
+                        type="button"
+                        onClick={handleScaleRecipe}
+                        disabled={!scalingDesiredPieces || !scalingWeightPerPiece || selectedIngredients.length === 0}
+                        className="w-full"
+                        data-testid="button-scale-recipe"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Scale Recipe
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Original Recipe</CardTitle>
+                    <CardDescription>
+                      Current batch yields {batchYieldValue} pieces ({originalTotalDoughWeight.toFixed(1)}g total)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {selectedIngredients.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Add ingredients in the Ingredients tab first
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Ingredient</TableHead>
+                            <TableHead className="text-right">Baker's %</TableHead>
+                            <TableHead className="text-right">Weight (g)</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bakerPercentages.map((item) => (
+                            <TableRow key={item.ingredientId} data-testid={`baker-row-${item.ingredientId}`}>
+                              <TableCell className="font-medium">{item.name}</TableCell>
+                              <TableCell className="text-right">
+                                {item.bakerPercentage.toFixed(1)}%
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {item.originalWeight.toFixed(1)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="font-bold bg-muted">
+                            <TableCell>Total</TableCell>
+                            <TableCell className="text-right">
+                              {bakerPercentages.reduce((sum, i) => sum + i.bakerPercentage, 0).toFixed(1)}%
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {originalTotalDoughWeight.toFixed(1)}
+                            </TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {hasScaled && scaledIngredients.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-green-600">Scaled Recipe Results</CardTitle>
+                    <CardDescription>
+                      Scaled to {scalingDesiredPieces} pieces at {scalingWeightPerPiece}g each
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ingredient</TableHead>
+                          <TableHead className="text-right">Baker's %</TableHead>
+                          <TableHead className="text-right">Original (g)</TableHead>
+                          <TableHead className="text-right">New Weight (g)</TableHead>
+                          <TableHead className="text-right">New Cost</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {scaledIngredients.map((item) => (
+                          <TableRow key={item.ingredientId} data-testid={`scaled-row-${item.ingredientId}`}>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell className="text-right">
+                              {item.bakerPercentage.toFixed(1)}%
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {item.originalWeight.toFixed(1)}
+                            </TableCell>
+                            <TableCell className="text-right font-medium text-green-600">
+                              {item.newWeight.toFixed(1)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              ${item.newCost.toFixed(2)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        <TableRow className="font-bold bg-muted">
+                          <TableCell>Total</TableCell>
+                          <TableCell className="text-right">
+                            {scaledIngredients.reduce((sum, i) => sum + i.bakerPercentage, 0).toFixed(1)}%
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {originalTotalDoughWeight.toFixed(1)}
+                          </TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {scalingDesiredTotalWeight.toFixed(1)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            ${scaledIngredients.reduce((sum, i) => sum + i.newCost, 0).toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <Card className="bg-muted/50">
+                        <CardContent className="pt-6">
+                          <div className="text-center">
+                            <DollarSign className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                            <div className="text-xs text-muted-foreground">Cost per Batch</div>
+                            <div className="text-xl font-bold" data-testid="text-scaled-batch-cost">
+                              ${scaledTotalCost.toFixed(2)}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-muted/50">
+                        <CardContent className="pt-6">
+                          <div className="text-center">
+                            <Calculator className="h-8 w-8 mx-auto text-primary mb-2" />
+                            <div className="text-xs text-muted-foreground">Cost per Piece</div>
+                            <div className="text-xl font-bold text-primary" data-testid="text-scaled-cost-per-piece">
+                              ${scaledCostPerPiece.toFixed(2)}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card className="bg-muted/50">
+                        <CardContent className="pt-6">
+                          <div className="text-center">
+                            <TrendingUp className="h-8 w-8 mx-auto text-green-600 mb-2" />
+                            <div className="text-xs text-muted-foreground">Suggested SRP ({watchedMargin}% margin)</div>
+                            <div className="text-xl font-bold text-green-600" data-testid="text-scaled-suggested-srp">
+                              ${scaledSuggestedPrice.toFixed(2)}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    <Alert>
+                      <Scale className="h-4 w-4" />
+                      <AlertDescription data-testid="text-scaling-summary">
+                        For {scalingDesiredPieces} pieces, your cost per piece is ${scaledCostPerPiece.toFixed(2)} and suggested SRP is ${scaledSuggestedPrice.toFixed(2)}
+                      </AlertDescription>
+                    </Alert>
+
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        type="button"
+                        onClick={handleApplyScaledWeights}
+                        className="flex-1"
+                        data-testid="button-apply-scaled-weights"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Apply Scaled Weights to Recipe
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-center">
+                      This will update the ingredient quantities to the scaled values. Remember to save the recipe to persist changes.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
 

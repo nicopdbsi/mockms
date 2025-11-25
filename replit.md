@@ -152,13 +152,25 @@ Preferred communication style: Simple, everyday language.
 - Located in: `server/receipt-parser.ts`, `client/src/components/ReceiptUpload.tsx`
 
 **Recipe Form Features**:
-- **Tab-based interface** with 4 sections:
-  1. **Overview tab**: Recipe name, description, servings, batch yield
+- **Tab-based interface** with 5 sections:
+  1. **Overview tab**: Recipe name, description, servings (optional), batch yield
   2. **Ingredients tab**: Food ingredients with component grouping + packaging materials + procedures with grouping
   3. **Costing tab**: Complete cost breakdown (ingredients, materials, labor) with per-unit analysis
   4. **Pricing tab**: Interactive margin slider with live profit calculations and batch projections
+  5. **Scaling tab**: Baker's Math scaling for recipe production planning
 
 - **Validation with Tab Navigation**: When required fields are missing, form navigates to the correct tab and shows a message
+
+- **Baker's Math Scaling** (new):
+  - Input: Desired # of pieces, Weight per piece (g)
+  - Auto-calculates: Total dough weight, Scale factor, Required flour
+  - Auto-detects flour by keywords ("flour", "harina", "tepung", "atta")
+  - Falls back to highest-weight ingredient if no flour found
+  - Baker's percentage table shows all ingredients as % of base ingredient
+  - "Scale Recipe" button calculates new weights
+  - Scaled results show: New weights, Cost per batch, Cost per piece, Suggested SRP
+  - "Apply Scaled Weights to Recipe" button updates ingredient quantities
+  - User story: Scale Pandesal from 24 pcs to 100 pcs with automatic cost recalculation
 
 - **New database fields**:
   - `laborCost`: Direct labor cost per batch
