@@ -172,6 +172,16 @@ Preferred communication style: Simple, everyday language.
   - "Apply Scaled Weights to Recipe" button updates ingredient quantities
   - User story: Scale Pandesal from 24 pcs to 100 pcs with automatic cost recalculation
 
+- **Reordering Controls**:
+  - Ingredients, Materials, and Procedures have up/down arrow buttons
+  - Users can rearrange rows by clicking ChevronUp/ChevronDown icons
+  - Order is preserved when saving the recipe
+
+- **Enhanced Pricing Display**:
+  - Pricing tab shows both "Suggested Retail Price (per unit)" and "Batch SRP (X units)"
+  - Both values update dynamically with the margin slider
+  - Clear visual separation with highlighted card display
+
 - **New database fields**:
   - `laborCost`: Direct labor cost per batch
   - `batchYield`: Number of sellable units from one batch
