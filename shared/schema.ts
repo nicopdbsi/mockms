@@ -67,6 +67,10 @@ export const recipes = pgTable("recipes", {
   laborCost: numeric("labor_cost", { precision: 10, scale: 2 }).default("0"),
   batchYield: integer("batch_yield").default(1),
   procedures: text("procedures"),
+  standardYieldPieces: integer("standard_yield_pieces"),
+  standardYieldWeightPerPiece: numeric("standard_yield_weight_per_piece", { precision: 10, scale: 2 }),
+  standardPanSize: text("standard_pan_size"),
+  standardNumTrays: integer("standard_num_trays"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

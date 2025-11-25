@@ -60,6 +60,10 @@ const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   laborCost: z.string().optional(),
   batchYield: z.number().optional(),
   procedures: z.string().optional(),
+  standardYieldPieces: z.number().optional(),
+  standardYieldWeightPerPiece: z.number().optional(),
+  standardPanSize: z.string().optional(),
+  standardNumTrays: z.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -1183,6 +1187,123 @@ export default function RecipeForm() {
                             />
                           </FormControl>
                           <FormDescription>Number of sellable units from one batch</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Standard Yield</CardTitle>
+                      <CardDescription>Default batch configuration for scaling and conversions</CardDescription>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setActiveTab("scaling")}
+                      data-testid="button-go-to-scaling"
+                    >
+                      <Scale className="h-4 w-4 mr-2" />
+                      Go to Scaling
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="standardYieldPieces"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Pieces</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="1"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
+                              placeholder="e.g., 24"
+                              data-testid="input-standard-yield-pieces"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="standardYieldWeightPerPiece"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Weight per Piece (g)</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
+                              placeholder="e.g., 50"
+                              data-testid="input-standard-yield-weight"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="standardPanSize"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pan Size</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="e.g., 9x13, 10-inch round"
+                              data-testid="input-standard-pan-size"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="standardNumTrays"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Number of Trays</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="1"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
+                              placeholder="e.g., 1"
+                              data-testid="input-standard-num-trays"
+                            />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
