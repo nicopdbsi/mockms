@@ -209,6 +209,18 @@ Preferred communication style: Simple, everyday language.
 
 - Located in: `client/src/pages/RecipeForm.tsx`
 
+**Dual-Unit Ingredient System** (Count-Based Ingredients):
+- Toggle "Count-Based Ingredient" for items like eggs, vanilla pods, etc.
+- Fields for count-based ingredients:
+  - Purchase Unit (e.g., tray, dozen, box)
+  - Pieces per Purchase Unit (e.g., 30 eggs per tray)
+  - Average Weight per Piece (g) (e.g., 55g per egg)
+- Auto-calculates: Total grams, Cost per gram, Cost per piece
+- Recipe form shows unit dropdown (g or pcs) for count-based ingredients
+- Displays conversion (e.g., "5 pcs ≈ 275g" or "300g ≈ 5.5 pcs")
+- All costing and Baker's Math calculations use gram weights internally
+- Scaling results show approximate pieces for count-based ingredients
+
 **Pantry Masterlist Features** (Ingredients, Materials, Suppliers):
 - Sortable column headers with visual indicators (ascending/descending)
 - Default alphabetical sorting (A-Z) by name

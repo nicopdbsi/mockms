@@ -72,6 +72,7 @@ type RecipeIngredientWithDetails = {
   ingredientId: string;
   quantity: string;
   componentName?: string | null;
+  unit?: string | null;
   ingredient: Ingredient;
 };
 
@@ -478,7 +479,7 @@ export default function RecipeForm() {
 
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedIngredients, setSelectedIngredients] = useState<
-    Array<{ ingredientId: string; quantity: string; componentName?: string | null }>
+    Array<{ ingredientId: string; quantity: string; componentName?: string | null; unit?: string }>
   >([]);
   const [selectedMaterials, setSelectedMaterials] = useState<
     Array<{ materialId: string; quantity: string }>
@@ -563,6 +564,7 @@ export default function RecipeForm() {
           ingredientId: i.ingredientId,
           quantity: i.quantity,
           componentName: i.componentName,
+          unit: i.unit || "g",
         })) || []
       );
       setSelectedMaterials(
@@ -643,15 +645,30 @@ export default function RecipeForm() {
   const watchedLaborCost = form.watch("laborCost");
   const watchedBatchYield = form.watch("batchYield");
 
+  const getQuantityInGrams = (item: { ingredientId: string; quantity: string; unit?: string }, ingredient: Ingredient | undefined) => {
+    if (!ingredient) return 0;
+    const quantity = parseFloat(item.quantity);
+    if (isNaN(quantity)) return 0;
+    
+    const isCountBased = ingredient.isCountBased || false;
+    const currentUnit = item.unit || "g";
+    const weightPerPiece = parseFloat(ingredient.weightPerPiece || "0");
+    
+    if (isCountBased && currentUnit === "pcs" && weightPerPiece > 0) {
+      return quantity * weightPerPiece;
+    }
+    return quantity;
+  };
+
   const ingredientsCost = useMemo(() => {
     if (!ingredients) return 0;
     return selectedIngredients.reduce((sum, item) => {
       const ingredient = ingredients.find((i) => i.id === item.ingredientId);
       if (!ingredient) return sum;
-      const quantity = parseFloat(item.quantity);
+      const quantityInGrams = getQuantityInGrams(item, ingredient);
       const pricePerGram = parseFloat(ingredient.pricePerGram);
-      if (isNaN(quantity) || isNaN(pricePerGram)) return sum;
-      return sum + pricePerGram * quantity;
+      if (isNaN(pricePerGram)) return sum;
+      return sum + pricePerGram * quantityInGrams;
     }, 0);
   }, [selectedIngredients, ingredients]);
 
@@ -714,8 +731,9 @@ export default function RecipeForm() {
   const originalTotalDoughWeight = useMemo(() => {
     if (!ingredients) return 0;
     return selectedIngredients.reduce((sum, item) => {
-      const qty = parseFloat(item.quantity);
-      return sum + (isNaN(qty) ? 0 : qty);
+      const ingredient = ingredients.find((i) => i.id === item.ingredientId);
+      const qty = getQuantityInGrams(item, ingredient);
+      return sum + qty;
     }, 0);
   }, [selectedIngredients, ingredients]);
 
@@ -732,18 +750,20 @@ export default function RecipeForm() {
 
     if (flourIngredient) {
       const ing = ingredients.find((i) => i.id === flourIngredient.ingredientId);
+      const qtyInGrams = getQuantityInGrams(flourIngredient, ing);
       return {
         id: flourIngredient.ingredientId,
         name: ing?.name || "Flour",
-        quantity: parseFloat(flourIngredient.quantity) || 0,
+        quantity: qtyInGrams,
         isFlour: true,
       };
     }
 
-    let maxItem: { ingredientId: string; quantity: string; componentName?: string | null } | null = null;
+    let maxItem: { ingredientId: string; quantity: string; componentName?: string | null; unit?: string } | null = null;
     let maxQty = 0;
     for (const item of selectedIngredients) {
-      const qty = parseFloat(item.quantity) || 0;
+      const ing = ingredients.find((i) => i.id === item.ingredientId);
+      const qty = getQuantityInGrams(item, ing);
       if (qty > maxQty) {
         maxQty = qty;
         maxItem = item;
@@ -769,12 +789,12 @@ export default function RecipeForm() {
 
     return selectedIngredients.map((item) => {
       const ing = ingredients.find((i) => i.id === item.ingredientId);
-      const qty = parseFloat(item.quantity) || 0;
-      const percentage = (qty / dominantIngredient.quantity) * 100;
+      const qtyInGrams = getQuantityInGrams(item, ing);
+      const percentage = (qtyInGrams / dominantIngredient.quantity) * 100;
       return {
         ingredientId: item.ingredientId,
         name: ing?.name || "Unknown",
-        originalWeight: qty,
+        originalWeight: qtyInGrams,
         bakerPercentage: percentage,
         pricePerGram: parseFloat(ing?.pricePerGram || "0"),
       };
@@ -914,7 +934,7 @@ export default function RecipeForm() {
   };
 
   const addIngredient = () => {
-    setSelectedIngredients([...selectedIngredients, { ingredientId: "", quantity: "0", componentName: null }]);
+    setSelectedIngredients([...selectedIngredients, { ingredientId: "", quantity: "0", componentName: null, unit: "g" }]);
   };
 
   const removeIngredient = (index: number) => {
@@ -923,7 +943,7 @@ export default function RecipeForm() {
 
   const updateIngredient = (
     index: number,
-    field: "ingredientId" | "quantity" | "componentName",
+    field: "ingredientId" | "quantity" | "componentName" | "unit",
     value: string
   ) => {
     if (field === "ingredientId" && value === "__add_new__") {
@@ -1192,87 +1212,129 @@ export default function RecipeForm() {
                     <div className="space-y-3">
                       {selectedIngredients.map((item, index) => {
                         const selectedIng = ingredients?.find((i) => i.id === item.ingredientId);
+                        const isCountBased = selectedIng?.isCountBased || false;
+                        const weightPerPiece = parseFloat(selectedIng?.weightPerPiece || "0");
+                        const currentUnit = item.unit || "g";
+                        
+                        let quantityInGrams = parseFloat(item.quantity) || 0;
+                        let displayConversion = "";
+                        
+                        if (isCountBased && currentUnit === "pcs" && weightPerPiece > 0) {
+                          quantityInGrams = parseFloat(item.quantity) * weightPerPiece;
+                          displayConversion = `${quantityInGrams.toFixed(1)}g`;
+                        } else if (isCountBased && currentUnit === "g" && weightPerPiece > 0) {
+                          const pieces = parseFloat(item.quantity) / weightPerPiece;
+                          displayConversion = `${pieces.toFixed(1)} pcs`;
+                        }
+                        
                         const itemCost = selectedIng
-                          ? parseFloat(item.quantity) * parseFloat(selectedIng.pricePerGram)
+                          ? quantityInGrams * parseFloat(selectedIng.pricePerGram)
                           : 0;
                         return (
-                          <div key={index} className="flex gap-2 items-start" data-testid={`ingredient-row-${index}`}>
-                            <div className="flex flex-col">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveIngredient(index, "up")}
-                                disabled={index === 0}
-                                data-testid={`button-move-ingredient-up-${index}`}
-                              >
-                                <ChevronUp className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveIngredient(index, "down")}
-                                disabled={index === selectedIngredients.length - 1}
-                                data-testid={`button-move-ingredient-down-${index}`}
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="w-36">
-                              <Input
-                                placeholder="Component"
-                                value={item.componentName || ""}
-                                onChange={(e) => updateIngredient(index, "componentName", e.target.value)}
-                                data-testid={`input-component-${index}`}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <Select
-                                value={item.ingredientId}
-                                onValueChange={(value) => updateIngredient(index, "ingredientId", value)}
-                              >
-                                <SelectTrigger data-testid={`select-ingredient-${index}`}>
-                                  <SelectValue placeholder="Select ingredient" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__add_new__" data-testid="option-add-new-ingredient">
-                                    <span className="flex items-center gap-2 text-primary">
-                                      <Plus className="h-4 w-4" />
-                                      Add New Ingredient
-                                    </span>
-                                  </SelectItem>
-                                  {sortedIngredients.map((ing) => (
-                                    <SelectItem key={ing.id} value={ing.id}>
-                                      {ing.name} (${Number(ing.pricePerGram).toFixed(4)}/{ing.unit})
+                          <div key={index} className="flex flex-col gap-1" data-testid={`ingredient-row-${index}`}>
+                            <div className="flex gap-2 items-start">
+                              <div className="flex flex-col">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveIngredient(index, "up")}
+                                  disabled={index === 0}
+                                  data-testid={`button-move-ingredient-up-${index}`}
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveIngredient(index, "down")}
+                                  disabled={index === selectedIngredients.length - 1}
+                                  data-testid={`button-move-ingredient-down-${index}`}
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <div className="w-36">
+                                <Input
+                                  placeholder="Component"
+                                  value={item.componentName || ""}
+                                  onChange={(e) => updateIngredient(index, "componentName", e.target.value)}
+                                  data-testid={`input-component-${index}`}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <Select
+                                  value={item.ingredientId}
+                                  onValueChange={(value) => updateIngredient(index, "ingredientId", value)}
+                                >
+                                  <SelectTrigger data-testid={`select-ingredient-${index}`}>
+                                    <SelectValue placeholder="Select ingredient" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="__add_new__" data-testid="option-add-new-ingredient">
+                                      <span className="flex items-center gap-2 text-primary">
+                                        <Plus className="h-4 w-4" />
+                                        Add New Ingredient
+                                      </span>
                                     </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                                    {sortedIngredients.map((ing) => (
+                                      <SelectItem key={ing.id} value={ing.id}>
+                                        {ing.name} {ing.isCountBased ? "(count)" : ""} (${Number(ing.pricePerGram).toFixed(4)}/g)
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="w-20">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="Qty"
+                                  value={item.quantity}
+                                  onChange={(e) => updateIngredient(index, "quantity", e.target.value)}
+                                  data-testid={`input-quantity-${index}`}
+                                />
+                              </div>
+                              {isCountBased ? (
+                                <div className="w-16">
+                                  <Select
+                                    value={currentUnit}
+                                    onValueChange={(value) => updateIngredient(index, "unit", value)}
+                                  >
+                                    <SelectTrigger data-testid={`select-unit-${index}`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="g">g</SelectItem>
+                                      <SelectItem value="pcs">pcs</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              ) : (
+                                <div className="w-16 text-sm text-muted-foreground pt-2 text-center">
+                                  g
+                                </div>
+                              )}
+                              <div className="w-20 text-right text-sm text-muted-foreground pt-2">
+                                ${isNaN(itemCost) ? "0.00" : itemCost.toFixed(2)}
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeIngredient(index)}
+                                data-testid={`button-remove-ingredient-${index}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
-                            <div className="w-28">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder="Qty"
-                                value={item.quantity}
-                                onChange={(e) => updateIngredient(index, "quantity", e.target.value)}
-                                data-testid={`input-quantity-${index}`}
-                              />
-                            </div>
-                            <div className="w-20 text-right text-sm text-muted-foreground pt-2">
-                              ${isNaN(itemCost) ? "0.00" : itemCost.toFixed(2)}
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeIngredient(index)}
-                              data-testid={`button-remove-ingredient-${index}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {isCountBased && displayConversion && (
+                              <div className="ml-20 text-xs text-muted-foreground" data-testid={`conversion-${index}`}>
+                                ≈ {displayConversion}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
@@ -1899,23 +1961,37 @@ export default function RecipeForm() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {scaledIngredients.map((item) => (
-                          <TableRow key={item.ingredientId} data-testid={`scaled-row-${item.ingredientId}`}>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell className="text-right">
-                              {item.bakerPercentage.toFixed(1)}%
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {item.originalWeight.toFixed(1)}
-                            </TableCell>
-                            <TableCell className="text-right font-medium text-green-600">
-                              {item.newWeight.toFixed(1)}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              ${item.newCost.toFixed(2)}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {scaledIngredients.map((item) => {
+                          const ing = ingredients?.find((i) => i.id === item.ingredientId);
+                          const isCountBased = ing?.isCountBased || false;
+                          const weightPerPiece = parseFloat(ing?.weightPerPiece || "0");
+                          const approxPieces = isCountBased && weightPerPiece > 0 
+                            ? Math.round(item.newWeight / weightPerPiece * 10) / 10
+                            : null;
+                          
+                          return (
+                            <TableRow key={item.ingredientId} data-testid={`scaled-row-${item.ingredientId}`}>
+                              <TableCell className="font-medium">{item.name}</TableCell>
+                              <TableCell className="text-right">
+                                {item.bakerPercentage.toFixed(1)}%
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {item.originalWeight.toFixed(1)}
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-green-600">
+                                <div>{item.newWeight.toFixed(1)}</div>
+                                {approxPieces !== null && (
+                                  <div className="text-xs text-muted-foreground font-normal">
+                                    ≈ {approxPieces} pcs
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                ${item.newCost.toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                         <TableRow className="font-bold bg-muted">
                           <TableCell>Total</TableCell>
                           <TableCell className="text-right">
