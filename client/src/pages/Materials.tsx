@@ -89,7 +89,7 @@ function MaterialForm({
       unit: material?.unit || "",
       pricePerUnit: material?.pricePerUnit || "",
       purchaseAmount: material?.purchaseAmount || "",
-      supplierId: material?.supplierId || "",
+      supplierId: material?.supplierId || "none",
       notes: material?.notes || "",
     },
   });
@@ -98,7 +98,10 @@ function MaterialForm({
     mutationFn: async (data: MaterialFormData) => {
       await apiRequest("POST", "/api/materials", {
         ...data,
-        supplierId: data.supplierId || null,
+        category: data.category || null,
+        purchaseAmount: data.purchaseAmount || null,
+        supplierId: data.supplierId === "none" ? null : data.supplierId || null,
+        notes: data.notes || null,
       });
     },
     onSuccess: () => {
@@ -115,7 +118,10 @@ function MaterialForm({
     mutationFn: async (data: MaterialFormData) => {
       await apiRequest("PATCH", `/api/materials/${material!.id}`, {
         ...data,
-        supplierId: data.supplierId || null,
+        category: data.category || null,
+        purchaseAmount: data.purchaseAmount || null,
+        supplierId: data.supplierId === "none" ? null : data.supplierId || null,
+        notes: data.notes || null,
       });
     },
     onSuccess: () => {
@@ -272,14 +278,17 @@ function MaterialForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Supplier</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={(value) => field.onChange(value === "none" ? "none" : value)} 
+                value={field.value || "none"}
+              >
                 <FormControl>
                   <SelectTrigger data-testid="select-supplier">
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No supplier</SelectItem>
+                  <SelectItem value="none">No supplier</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
