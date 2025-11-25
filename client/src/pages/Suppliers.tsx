@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Building2, Search, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -262,15 +262,67 @@ function SupplierForm({
   );
 }
 
+type SortField = "name" | "contactPerson" | "phone" | "email" | "address";
+type SortDirection = "asc" | "desc";
+
+function SortableHeader({
+  label,
+  field,
+  currentSort,
+  currentDirection,
+  onSort,
+  className,
+}: {
+  label: string;
+  field: SortField;
+  currentSort: SortField;
+  currentDirection: SortDirection;
+  onSort: (field: SortField) => void;
+  className?: string;
+}) {
+  const isActive = currentSort === field;
+  return (
+    <TableHead
+      className={`cursor-pointer select-none hover:bg-muted/50 ${className || ""}`}
+      onClick={() => onSort(field)}
+      data-testid={`sort-header-${field}`}
+    >
+      <div className={`flex items-center gap-1 ${className?.includes("text-right") ? "justify-end" : ""}`}>
+        <span>{label}</span>
+        {isActive ? (
+          currentDirection === "asc" ? (
+            <ArrowUp className="h-4 w-4" />
+          ) : (
+            <ArrowDown className="h-4 w-4" />
+          )
+        ) : (
+          <ArrowUpDown className="h-4 w-4 opacity-50" />
+        )}
+      </div>
+    </TableHead>
+  );
+}
+
 export default function Suppliers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | undefined>();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortField, setSortField] = useState<SortField>("name");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const { toast } = useToast();
 
   const { data: suppliers, isLoading } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
   });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
+  };
 
   const filteredSuppliers = suppliers?.filter((supplier) => {
     if (!searchQuery.trim()) return true;
@@ -282,6 +334,25 @@ export default function Suppliers() {
       (supplier.email && supplier.email.toLowerCase().includes(query)) ||
       (supplier.address && supplier.address.toLowerCase().includes(query))
     );
+  });
+
+  const sortedSuppliers = filteredSuppliers?.slice().sort((a, b) => {
+    const direction = sortDirection === "asc" ? 1 : -1;
+    
+    switch (sortField) {
+      case "name":
+        return direction * a.name.localeCompare(b.name);
+      case "contactPerson":
+        return direction * (a.contactPerson || "").localeCompare(b.contactPerson || "");
+      case "phone":
+        return direction * (a.phone || "").localeCompare(b.phone || "");
+      case "email":
+        return direction * (a.email || "").localeCompare(b.email || "");
+      case "address":
+        return direction * (a.address || "").localeCompare(b.address || "");
+      default:
+        return 0;
+    }
   });
 
   const deleteMutation = useMutation({
@@ -374,20 +445,20 @@ export default function Suppliers() {
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
               </div>
-            ) : filteredSuppliers && filteredSuppliers.length > 0 ? (
+            ) : sortedSuppliers && sortedSuppliers.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Supplier Name</TableHead>
-                    <TableHead>Contact Person</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Address</TableHead>
+                    <SortableHeader label="Supplier Name" field="name" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                    <SortableHeader label="Contact Person" field="contactPerson" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                    <SortableHeader label="Phone" field="phone" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                    <SortableHeader label="Email" field="email" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
+                    <SortableHeader label="Address" field="address" currentSort={sortField} currentDirection={sortDirection} onSort={handleSort} />
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredSuppliers.map((supplier) => (
+                  {sortedSuppliers.map((supplier) => (
                     <TableRow key={supplier.id} data-testid={`row-supplier-${supplier.id}`}>
                       <TableCell className="font-medium" data-testid={`text-supplier-name-${supplier.id}`}>
                         {supplier.name}
