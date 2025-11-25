@@ -44,11 +44,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRecipeSchema, type Ingredient, type Material } from "@shared/schema";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, ChefHat, Package, ClipboardList, Scale, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, Package, ClipboardList, Scale, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import PanYieldConverter from "@/components/PanYieldConverter";
 
 const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
@@ -495,6 +496,8 @@ export default function RecipeForm() {
   const [scalingWeightPerPiece, setScalingWeightPerPiece] = useState<string>("");
   const [scaledIngredients, setScaledIngredients] = useState<ScaledIngredient[]>([]);
   const [hasScaled, setHasScaled] = useState(false);
+  const [showPanConverter, setShowPanConverter] = useState(false);
+  const [panSetup, setPanSetup] = useState("2 trays, 12x18 in");
 
   const { data: ingredients, isLoading: ingredientsLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
@@ -1809,6 +1812,37 @@ export default function RecipeForm() {
             </TabsContent>
 
             <TabsContent value="scaling" className="space-y-4">
+              <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
+                <CardContent className="pt-6">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-3 flex-1">
+                      <h4 className="font-semibold text-sm">Standard Yield</h4>
+                      <div className="text-sm space-y-1">
+                        <div>{batchYieldValue} pcs • {(originalTotalDoughWeight / (batchYieldValue || 1)).toFixed(0)} g each</div>
+                        <div className="text-muted-foreground">Pan: {panSetup}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowPanConverter(true)}
+                        className="text-xs text-primary hover:underline"
+                        data-testid="link-pan-yield-change"
+                      >
+                        Change using Pan & Yield Converter
+                      </button>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPanConverter(true)}
+                      data-testid="button-pan-yield-converter"
+                    >
+                      Pan & Yield Converter
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
