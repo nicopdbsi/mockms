@@ -11,6 +11,8 @@ import {
   type InsertRecipe,
   type RecipeIngredient,
   type InsertRecipeIngredient,
+  type RecipeMaterial,
+  type InsertRecipeMaterial,
   type Order,
   type InsertOrder,
   type IngredientCategory,
@@ -23,6 +25,7 @@ import {
   materials,
   recipes,
   recipeIngredients,
+  recipeMaterials,
   orders,
   ingredientCategories,
   materialCategories
@@ -64,6 +67,11 @@ export interface IStorage {
   createRecipeIngredient(recipeIngredient: InsertRecipeIngredient): Promise<RecipeIngredient>;
   deleteRecipeIngredient(id: string): Promise<boolean>;
   deleteRecipeIngredientsByRecipe(recipeId: string): Promise<void>;
+  
+  getRecipeMaterials(recipeId: string): Promise<(RecipeMaterial & { material: Material })[]>;
+  createRecipeMaterial(recipeMaterial: InsertRecipeMaterial): Promise<RecipeMaterial>;
+  deleteRecipeMaterial(id: string): Promise<boolean>;
+  deleteRecipeMaterialsByRecipe(recipeId: string): Promise<void>;
   
   getOrders(userId: string): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
@@ -231,6 +239,7 @@ export class DbStorage implements IStorage {
       recipeId: recipeIngredients.recipeId,
       ingredientId: recipeIngredients.ingredientId,
       quantity: recipeIngredients.quantity,
+      componentName: recipeIngredients.componentName,
       ingredient: ingredients,
     })
     .from(recipeIngredients)
@@ -252,6 +261,35 @@ export class DbStorage implements IStorage {
 
   async deleteRecipeIngredientsByRecipe(recipeId: string): Promise<void> {
     await db.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, recipeId));
+  }
+
+  async getRecipeMaterials(recipeId: string): Promise<(RecipeMaterial & { material: Material })[]> {
+    const result = await db.select({
+      id: recipeMaterials.id,
+      recipeId: recipeMaterials.recipeId,
+      materialId: recipeMaterials.materialId,
+      quantity: recipeMaterials.quantity,
+      material: materials,
+    })
+    .from(recipeMaterials)
+    .innerJoin(materials, eq(recipeMaterials.materialId, materials.id))
+    .where(eq(recipeMaterials.recipeId, recipeId));
+    
+    return result;
+  }
+
+  async createRecipeMaterial(recipeMaterial: InsertRecipeMaterial): Promise<RecipeMaterial> {
+    const result = await db.insert(recipeMaterials).values(recipeMaterial).returning();
+    return result[0];
+  }
+
+  async deleteRecipeMaterial(id: string): Promise<boolean> {
+    const result = await db.delete(recipeMaterials).where(eq(recipeMaterials.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async deleteRecipeMaterialsByRecipe(recipeId: string): Promise<void> {
+    await db.delete(recipeMaterials).where(eq(recipeMaterials.recipeId, recipeId));
   }
 
   async getOrders(userId: string): Promise<Order[]> {
