@@ -694,7 +694,11 @@ function IngredientForm({
                         <Input
                           placeholder="e.g., tray, dozen, box"
                           data-testid="input-purchase-unit"
-                          {...field}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
@@ -713,7 +717,11 @@ function IngredientForm({
                           step="1"
                           placeholder="e.g., 30 eggs per tray"
                           data-testid="input-pieces-per-unit"
-                          {...field}
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
@@ -733,7 +741,11 @@ function IngredientForm({
                         step="0.1"
                         placeholder="e.g., 55g per egg"
                         data-testid="input-weight-per-piece"
-                        {...field}
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
@@ -752,7 +764,11 @@ function IngredientForm({
                         step="0.01"
                         placeholder="How much you paid"
                         data-testid="input-purchase-amount"
-                        {...field}
+                        value={field.value || ""}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
                       />
                     </FormControl>
                     <FormMessage />
