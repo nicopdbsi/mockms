@@ -229,10 +229,12 @@ function AddSupplierDialog({
   open,
   onOpenChange,
   onSuccess,
+  allSuppliers,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: (supplierId: string) => void;
+  allSuppliers: Supplier[];
 }) {
   const { toast } = useToast();
   const form = useForm<SupplierFormData>({
@@ -244,6 +246,12 @@ function AddSupplierDialog({
       email: "",
     },
   });
+
+  const watchName = form.watch("name") ?? "";
+  const normalizedWatchName = watchName.toLowerCase().trim();
+  const duplicateSupplier = normalizedWatchName ? allSuppliers.find((s) => 
+    s.name.toLowerCase().trim() === normalizedWatchName
+  ) : null;
 
   const createMutation = useMutation({
     mutationFn: async (data: SupplierFormData) => {
@@ -285,6 +293,12 @@ function AddSupplierDialog({
                   <FormControl>
                     <Input placeholder="Enter supplier name" data-testid="input-supplier-name" {...field} />
                   </FormControl>
+                  {duplicateSupplier && (
+                    <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 text-sm" data-testid="warning-duplicate-supplier-inline">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>A supplier named "{duplicateSupplier.name}" already exists</span>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -724,6 +738,7 @@ function MaterialForm({
         open={showAddSupplier}
         onOpenChange={setShowAddSupplier}
         onSuccess={handleSupplierAdded}
+        allSuppliers={suppliers}
       />
     </>
   );
