@@ -29,7 +29,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Package, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Info } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -67,6 +73,10 @@ const ingredientFormSchema = z.object({
   unit: z.string().min(1, "Unit of measure is required"),
   purchaseAmount: z.string().min(1, "Purchase amount is required").refine((val) => parseFloat(val) > 0, "Purchase amount must be greater than 0"),
   supplierId: z.string().optional(),
+  isCountBased: z.boolean().optional(),
+  purchaseUnit: z.string().optional(),
+  piecesPerPurchaseUnit: z.string().optional(),
+  weightPerPiece: z.string().optional(),
 });
 
 type IngredientFormData = z.infer<typeof ingredientFormSchema>;
@@ -400,12 +410,19 @@ function IngredientForm({
       unit: ingredient?.unit || "",
       purchaseAmount: ingredient?.purchaseAmount || "",
       supplierId: ingredient?.supplierId || "none",
+      isCountBased: ingredient?.isCountBased || false,
+      purchaseUnit: ingredient?.purchaseUnit || "",
+      piecesPerPurchaseUnit: ingredient?.piecesPerPurchaseUnit || "",
+      weightPerPiece: ingredient?.weightPerPiece || "",
     },
   });
 
   const watchName = form.watch("name") ?? "";
   const watchQuantity = form.watch("quantity");
   const watchPurchaseAmount = form.watch("purchaseAmount");
+  const watchIsCountBased = form.watch("isCountBased");
+  const watchPiecesPerPurchaseUnit = form.watch("piecesPerPurchaseUnit");
+  const watchWeightPerPiece = form.watch("weightPerPiece");
 
   const normalizedWatchName = watchName.toLowerCase().trim();
   const duplicateIngredient = normalizedWatchName ? allIngredients.find((i) => {
@@ -413,7 +430,29 @@ function IngredientForm({
     return i.name.toLowerCase().trim() === normalizedWatchName;
   }) : null;
   
+  const countBasedCalculations = (() => {
+    if (!watchIsCountBased) return null;
+    const pieces = parseFloat(watchPiecesPerPurchaseUnit || "0");
+    const weightPer = parseFloat(watchWeightPerPiece || "0");
+    const purchaseAmt = parseFloat(watchPurchaseAmount || "0");
+    
+    if (pieces > 0 && weightPer > 0 && purchaseAmt > 0) {
+      const totalGrams = pieces * weightPer;
+      const costPerGram = purchaseAmt / totalGrams;
+      const costPerPiece = purchaseAmt / pieces;
+      return {
+        totalGrams: totalGrams.toFixed(2),
+        costPerGram: costPerGram.toFixed(4),
+        costPerPiece: costPerPiece.toFixed(2),
+      };
+    }
+    return null;
+  })();
+
   const calculatedPricePerGram = (() => {
+    if (watchIsCountBased && countBasedCalculations) {
+      return countBasedCalculations.costPerGram;
+    }
     const qty = parseFloat(watchQuantity);
     const amount = parseFloat(watchPurchaseAmount);
     if (qty > 0 && amount > 0) {
@@ -424,12 +463,32 @@ function IngredientForm({
 
   const createMutation = useMutation({
     mutationFn: async (data: IngredientFormData) => {
-      const pricePerGram = (parseFloat(data.purchaseAmount) / parseFloat(data.quantity)).toFixed(4);
+      let pricePerGram: string;
+      let quantity = data.quantity;
+      
+      if (data.isCountBased) {
+        const pieces = parseFloat(data.piecesPerPurchaseUnit || "0");
+        const weightPer = parseFloat(data.weightPerPiece || "0");
+        const purchaseAmt = parseFloat(data.purchaseAmount);
+        const totalGrams = pieces * weightPer;
+        pricePerGram = (purchaseAmt / totalGrams).toFixed(4);
+        quantity = totalGrams.toString();
+      } else {
+        pricePerGram = (parseFloat(data.purchaseAmount) / parseFloat(data.quantity)).toFixed(4);
+      }
+      
       await apiRequest("POST", "/api/ingredients", {
-        ...data,
+        name: data.name,
         category: data.category || null,
+        quantity,
+        unit: data.isCountBased ? "g" : data.unit,
+        purchaseAmount: data.purchaseAmount,
         pricePerGram,
         supplierId: data.supplierId === "none" ? null : data.supplierId || null,
+        isCountBased: data.isCountBased || false,
+        purchaseUnit: data.isCountBased ? data.purchaseUnit : null,
+        piecesPerPurchaseUnit: data.isCountBased ? data.piecesPerPurchaseUnit : null,
+        weightPerPiece: data.isCountBased ? data.weightPerPiece : null,
       });
     },
     onSuccess: () => {
@@ -444,12 +503,32 @@ function IngredientForm({
 
   const updateMutation = useMutation({
     mutationFn: async (data: IngredientFormData) => {
-      const pricePerGram = (parseFloat(data.purchaseAmount) / parseFloat(data.quantity)).toFixed(4);
+      let pricePerGram: string;
+      let quantity = data.quantity;
+      
+      if (data.isCountBased) {
+        const pieces = parseFloat(data.piecesPerPurchaseUnit || "0");
+        const weightPer = parseFloat(data.weightPerPiece || "0");
+        const purchaseAmt = parseFloat(data.purchaseAmount);
+        const totalGrams = pieces * weightPer;
+        pricePerGram = (purchaseAmt / totalGrams).toFixed(4);
+        quantity = totalGrams.toString();
+      } else {
+        pricePerGram = (parseFloat(data.purchaseAmount) / parseFloat(data.quantity)).toFixed(4);
+      }
+      
       await apiRequest("PATCH", `/api/ingredients/${ingredient!.id}`, {
-        ...data,
+        name: data.name,
         category: data.category || null,
+        quantity,
+        unit: data.isCountBased ? "g" : data.unit,
+        purchaseAmount: data.purchaseAmount,
         pricePerGram,
         supplierId: data.supplierId === "none" ? null : data.supplierId || null,
+        isCountBased: data.isCountBased || false,
+        purchaseUnit: data.isCountBased ? data.purchaseUnit : null,
+        piecesPerPurchaseUnit: data.isCountBased ? data.piecesPerPurchaseUnit : null,
+        weightPerPiece: data.isCountBased ? data.weightPerPiece : null,
       });
     },
     onSuccess: () => {
@@ -570,72 +649,206 @@ function IngredientForm({
             )}
           />
 
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="quantity"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantity *</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
-                      data-testid="input-quantity"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="unit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Unit of Measure *</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="e.g., g, kg, ml, pcs"
-                      data-testid="input-unit"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
           <FormField
             control={form.control}
-            name="purchaseAmount"
+            name="isCountBased"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Purchase Amount *</FormLabel>
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-sm font-medium flex items-center gap-2">
+                    Count-Based Ingredient
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Enable for ingredients sold by count (eggs, vanilla pods) that need weight conversion for recipe costing and Baker's Math.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </FormLabel>
+                  <p className="text-xs text-muted-foreground">
+                    For items like eggs, bought by tray but used by weight in recipes
+                  </p>
+                </div>
                 <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="How much you paid"
-                    data-testid="input-purchase-amount"
-                    {...field}
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    data-testid="switch-count-based"
                   />
                 </FormControl>
-                <FormMessage />
               </FormItem>
             )}
           />
 
-          <div className="rounded-md bg-muted p-3">
-            <div className="text-sm text-muted-foreground mb-1">Price per Gram (auto-calculated)</div>
-            <div className="text-lg font-semibold" data-testid="text-calculated-price">
-              {calculatedPricePerGram ? `$${calculatedPricePerGram}` : "-"}
-            </div>
-          </div>
+          {watchIsCountBased ? (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="purchaseUnit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Purchase Unit *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., tray, dozen, box"
+                          data-testid="input-purchase-unit"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="piecesPerPurchaseUnit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Pieces per Unit *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="1"
+                          placeholder="e.g., 30 eggs per tray"
+                          data-testid="input-pieces-per-unit"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="weightPerPiece"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Average Weight per Piece (g) *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="e.g., 55g per egg"
+                        data-testid="input-weight-per-piece"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="purchaseAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Purchase Amount *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="How much you paid"
+                        data-testid="input-purchase-amount"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {countBasedCalculations && (
+                <div className="rounded-md bg-muted p-3 space-y-2">
+                  <div className="text-sm font-medium">Calculated Values</div>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <div className="text-muted-foreground">Total Grams</div>
+                      <div className="font-semibold" data-testid="text-total-grams">{countBasedCalculations.totalGrams}g</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Cost per Piece</div>
+                      <div className="font-semibold" data-testid="text-cost-per-piece">${countBasedCalculations.costPerPiece}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Cost per Gram</div>
+                      <div className="font-semibold" data-testid="text-cost-per-gram">${countBasedCalculations.costPerGram}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="quantity"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Quantity *</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          data-testid="input-quantity"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Unit of Measure *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., g, kg, ml"
+                          data-testid="input-unit"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="purchaseAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Purchase Amount *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="How much you paid"
+                        data-testid="input-purchase-amount"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="rounded-md bg-muted p-3">
+                <div className="text-sm text-muted-foreground mb-1">Price per Gram (auto-calculated)</div>
+                <div className="text-lg font-semibold" data-testid="text-calculated-price">
+                  {calculatedPricePerGram ? `$${calculatedPricePerGram}` : "-"}
+                </div>
+              </div>
+            </>
+          )}
 
           <FormField
             control={form.control}
