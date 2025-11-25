@@ -3,8 +3,23 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, crypto } from "./auth";
 import passport from "passport";
+import multer from "multer";
 import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
+import { parseReceiptImage, parseReceiptCSV } from "./receipt-parser";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (_req, file, cb) => {
+    const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf', 'text/csv'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Allowed: PNG, JPG, PDF, CSV'));
+    }
+  }
+});
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
@@ -503,6 +518,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Category deleted" });
     } catch (error) {
       next(error);
+    }
+  });
+
+  // Receipt parsing endpoint
+  app.post("/api/parse-receipt", requireAuth, upload.single("file"), async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded" });
+      }
+
+      const file = req.file;
+      let result;
+
+      if (file.mimetype === "text/csv") {
+        const csvContent = file.buffer.toString("utf-8");
+        result = await parseReceiptCSV(csvContent);
+      } else if (file.mimetype.startsWith("image/")) {
+        const base64 = file.buffer.toString("base64");
+        result = await parseReceiptImage(base64, file.mimetype);
+      } else if (file.mimetype === "application/pdf") {
+        return res.status(400).json({ 
+          message: "PDF parsing is not yet supported. Please convert to an image or use CSV format." 
+        });
+      } else {
+        return res.status(400).json({ message: "Unsupported file type" });
+      }
+
+      res.json(result);
+    } catch (error: any) {
+      console.error("Receipt parsing error:", error);
+      res.status(500).json({ message: error.message || "Failed to parse receipt" });
     }
   });
 

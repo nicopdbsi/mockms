@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Package, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/form";
 import type { Ingredient, Supplier, IngredientCategory } from "@shared/schema";
 import { AppLayout } from "@/components/AppLayout";
+import { ReceiptUpload } from "@/components/ReceiptUpload";
 
 const defaultCategories = [
   "Produce",
@@ -694,6 +695,7 @@ function IngredientForm({
 export default function Ingredients() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const { toast } = useToast();
 
   const { data: ingredients, isLoading } = useQuery<Ingredient[]>({
@@ -736,7 +738,7 @@ export default function Ingredients() {
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-semibold" data-testid="text-page-title">
               Ingredient Masterlist
@@ -745,30 +747,40 @@ export default function Ingredients() {
               Manage your ingredients with pricing and supplier information
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => handleOpenDialog()}
-                data-testid="button-add-ingredient"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Ingredient
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingIngredient ? "Edit Ingredient" : "Add New Ingredient"}
-                </DialogTitle>
-              </DialogHeader>
-              <IngredientForm
-                ingredient={editingIngredient}
-                suppliers={suppliers || []}
-                onSuccess={handleCloseDialog}
-                onCancel={handleCloseDialog}
-              />
-            </DialogContent>
-          </Dialog>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowReceiptUpload(true)}
+              data-testid="button-upload-receipt"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import from Receipt
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => handleOpenDialog()}
+                  data-testid="button-add-ingredient"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Ingredient
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingIngredient ? "Edit Ingredient" : "Add New Ingredient"}
+                  </DialogTitle>
+                </DialogHeader>
+                <IngredientForm
+                  ingredient={editingIngredient}
+                  suppliers={suppliers || []}
+                  onSuccess={handleCloseDialog}
+                  onCancel={handleCloseDialog}
+                />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <Card>
@@ -858,6 +870,14 @@ export default function Ingredients() {
           </CardContent>
         </Card>
       </div>
+
+      <ReceiptUpload
+        open={showReceiptUpload}
+        onOpenChange={setShowReceiptUpload}
+        onItemsImported={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
+        }}
+      />
     </AppLayout>
   );
 }

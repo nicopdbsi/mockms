@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -29,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Wrench } from "lucide-react";
+import { Plus, Pencil, Trash2, Wrench, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,10 +42,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { Material, Supplier } from "@shared/schema";
+import type { Material, Supplier, MaterialCategory } from "@shared/schema";
 import { AppLayout } from "@/components/AppLayout";
+import { ReceiptUpload } from "@/components/ReceiptUpload";
 
-const materialCategories = [
+const defaultCategories = [
   "Packaging",
   "Equipment",
   "Utensils",
@@ -67,6 +69,282 @@ const materialFormSchema = z.object({
 
 type MaterialFormData = z.infer<typeof materialFormSchema>;
 
+const supplierFormSchema = z.object({
+  name: z.string().min(1, "Supplier name is required"),
+  contactPerson: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().optional(),
+});
+
+type SupplierFormData = z.infer<typeof supplierFormSchema>;
+
+function AddCategoryDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: (name: string) => void;
+}) {
+  const [name, setName] = useState("");
+  const { toast } = useToast();
+
+  const createMutation = useMutation({
+    mutationFn: async (categoryName: string) => {
+      const response = await apiRequest("POST", "/api/material-categories", { name: categoryName });
+      return response.json();
+    },
+    onSuccess: (category) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/material-categories"] });
+      toast({ title: "Category added successfully" });
+      onSuccess(category.name);
+      setName("");
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to add category", variant: "destructive" });
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Add New Category</DialogTitle>
+          <DialogDescription>Create a new category for your materials.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            placeholder="Category name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            data-testid="input-new-category"
+          />
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => createMutation.mutate(name)}
+              disabled={!name.trim() || createMutation.isPending}
+              data-testid="button-save-category"
+            >
+              {createMutation.isPending ? "Saving..." : "Add Category"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditCategoryDialog({
+  category,
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  category: MaterialCategory | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: () => void;
+}) {
+  const [name, setName] = useState(category?.name || "");
+  const { toast } = useToast();
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("PATCH", `/api/material-categories/${category!.id}`, { name });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/material-categories"] });
+      toast({ title: "Category updated successfully" });
+      onSuccess();
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to update category", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("DELETE", `/api/material-categories/${category!.id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/material-categories"] });
+      toast({ title: "Category deleted successfully" });
+      onSuccess();
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to delete category", variant: "destructive" });
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Edit Category</DialogTitle>
+          <DialogDescription>Edit or delete this category.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <Input
+            placeholder="Category name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            data-testid="input-edit-category"
+          />
+          <div className="flex justify-between">
+            <Button
+              variant="destructive"
+              onClick={() => deleteMutation.mutate()}
+              disabled={deleteMutation.isPending}
+              data-testid="button-delete-category"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => updateMutation.mutate()}
+                disabled={!name.trim() || updateMutation.isPending}
+                data-testid="button-update-category"
+              >
+                {updateMutation.isPending ? "Saving..." : "Update"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function AddSupplierDialog({
+  open,
+  onOpenChange,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSuccess: (supplierId: string) => void;
+}) {
+  const { toast } = useToast();
+  const form = useForm<SupplierFormData>({
+    resolver: zodResolver(supplierFormSchema),
+    defaultValues: {
+      name: "",
+      contactPerson: "",
+      phone: "",
+      email: "",
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: SupplierFormData) => {
+      const response = await apiRequest("POST", "/api/suppliers", {
+        ...data,
+        contactPerson: data.contactPerson || null,
+        phone: data.phone || null,
+        email: data.email || null,
+      });
+      return response.json();
+    },
+    onSuccess: (supplier) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/suppliers"] });
+      toast({ title: "Supplier added successfully" });
+      form.reset();
+      onSuccess(supplier.id);
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to add supplier", variant: "destructive" });
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add New Supplier</DialogTitle>
+          <DialogDescription>Create a new supplier for your business.</DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit((data) => createMutation.mutate(data))} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Supplier Name *</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter supplier name" data-testid="input-supplier-name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="contactPerson"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Person</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter contact person" data-testid="input-contact-person" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Phone number" data-testid="input-supplier-phone" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="Email address" data-testid="input-supplier-email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={createMutation.isPending} data-testid="button-save-supplier">
+                {createMutation.isPending ? "Saving..." : "Add Supplier"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function MaterialForm({
   material,
   suppliers,
@@ -79,6 +357,21 @@ function MaterialForm({
   onCancel: () => void;
 }) {
   const { toast } = useToast();
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [showEditCategory, setShowEditCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<MaterialCategory | null>(null);
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+
+  const { data: customCategories } = useQuery<MaterialCategory[]>({
+    queryKey: ["/api/material-categories"],
+  });
+
+  const allCategories = [
+    ...defaultCategories,
+    ...(customCategories?.map((c) => c.name) || []).filter(
+      (name) => !defaultCategories.includes(name)
+    ),
+  ];
 
   const form = useForm<MaterialFormData>({
     resolver: zodResolver(materialFormSchema),
@@ -144,65 +437,36 @@ function MaterialForm({
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  const handleCategoryAdded = (name: string) => {
+    form.setValue("category", name);
+  };
+
+  const handleSupplierAdded = (supplierId: string) => {
+    form.setValue("supplierId", supplierId);
+  };
+
+  const handleEditCategory = (categoryName: string) => {
+    const customCategory = customCategories?.find((c) => c.name === categoryName);
+    if (customCategory) {
+      setEditingCategory(customCategory);
+      setShowEditCategory(true);
+    }
+  };
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Item Name *</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="Enter item name"
-                  data-testid="input-material-name"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger data-testid="select-category">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {materialCategories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
             control={form.control}
-            name="quantity"
+            name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Quantity *</FormLabel>
+                <FormLabel>Item Name *</FormLabel>
                 <FormControl>
                   <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0"
-                    data-testid="input-quantity"
+                    placeholder="Enter item name"
+                    data-testid="input-material-name"
                     {...field}
                   />
                 </FormControl>
@@ -213,39 +477,177 @@ function MaterialForm({
 
           <FormField
             control={form.control}
-            name="unit"
+            name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unit *</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="e.g., pcs, box, pack"
-                    data-testid="input-unit"
-                    {...field}
-                  />
-                </FormControl>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Category</FormLabel>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => setShowAddCategory(true)}
+                    data-testid="button-add-category"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger data-testid="select-category" className="flex-1">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {allCategories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {field.value && customCategories?.some((c) => c.name === field.value) && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEditCategory(field.value!)}
+                      data-testid="button-edit-category"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="quantity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantity *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0"
+                      data-testid="input-quantity"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Unit *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., pcs, box, pack"
+                      data-testid="input-unit"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="pricePerUnit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Price per Unit *</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      data-testid="input-price-per-unit"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="purchaseAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Purchase Amount</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="Total paid"
+                      data-testid="input-purchase-amount"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <FormField
             control={form.control}
-            name="pricePerUnit"
+            name="supplierId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Price per Unit *</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    data-testid="input-price-per-unit"
-                    {...field}
-                  />
-                </FormControl>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Supplier</FormLabel>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-xs"
+                    onClick={() => setShowAddSupplier(true)}
+                    data-testid="button-add-supplier"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add New
+                  </Button>
+                </div>
+                <Select 
+                  onValueChange={(value) => field.onChange(value === "none" ? "none" : value)} 
+                  value={field.value || "none"}
+                >
+                  <FormControl>
+                    <SelectTrigger data-testid="select-supplier">
+                      <SelectValue placeholder="Select supplier" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">No supplier</SelectItem>
+                    {suppliers.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
@@ -253,16 +655,14 @@ function MaterialForm({
 
           <FormField
             control={form.control}
-            name="purchaseAmount"
+            name="notes"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Purchase Amount</FormLabel>
+                <FormLabel>Notes</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="Total paid"
-                    data-testid="input-purchase-amount"
+                  <Textarea
+                    placeholder="Enter any notes"
+                    data-testid="input-notes"
                     {...field}
                   />
                 </FormControl>
@@ -270,80 +670,53 @@ function MaterialForm({
               </FormItem>
             )}
           />
-        </div>
 
-        <FormField
-          control={form.control}
-          name="supplierId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Supplier</FormLabel>
-              <Select 
-                onValueChange={(value) => field.onChange(value === "none" ? "none" : value)} 
-                value={field.value || "none"}
-              >
-                <FormControl>
-                  <SelectTrigger data-testid="select-supplier">
-                    <SelectValue placeholder="Select supplier" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="none">No supplier</SelectItem>
-                  {suppliers.map((supplier) => (
-                    <SelectItem key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              data-testid="button-cancel"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isPending}
+              data-testid="button-submit-material"
+            >
+              {isPending ? "Saving..." : material ? "Update" : "Add"} Item
+            </Button>
+          </div>
+        </form>
+      </Form>
 
-        <FormField
-          control={form.control}
-          name="notes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Notes</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Enter any notes"
-                  data-testid="input-notes"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <AddCategoryDialog
+        open={showAddCategory}
+        onOpenChange={setShowAddCategory}
+        onSuccess={handleCategoryAdded}
+      />
 
-        <div className="flex justify-end gap-2 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            data-testid="button-cancel"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isPending}
-            data-testid="button-submit-material"
-          >
-            {isPending ? "Saving..." : material ? "Update" : "Add"} Item
-          </Button>
-        </div>
-      </form>
-    </Form>
+      <EditCategoryDialog
+        category={editingCategory}
+        open={showEditCategory}
+        onOpenChange={setShowEditCategory}
+        onSuccess={() => setEditingCategory(null)}
+      />
+
+      <AddSupplierDialog
+        open={showAddSupplier}
+        onOpenChange={setShowAddSupplier}
+        onSuccess={handleSupplierAdded}
+      />
+    </>
   );
 }
 
 export default function Materials() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | undefined>();
+  const [showReceiptUpload, setShowReceiptUpload] = useState(false);
   const { toast } = useToast();
 
   const { data: materials, isLoading } = useQuery<Material[]>({
@@ -395,16 +768,25 @@ export default function Materials() {
               Manage your packaging, equipment, and other materials
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={() => handleOpenDialog()}
-                data-testid="button-add-material"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Item
-              </Button>
-            </DialogTrigger>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowReceiptUpload(true)}
+              data-testid="button-upload-receipt"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import from Receipt
+            </Button>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button
+                  onClick={() => handleOpenDialog()}
+                  data-testid="button-add-material"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>
@@ -418,7 +800,8 @@ export default function Materials() {
                 onCancel={handleCloseDialog}
               />
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          </div>
         </div>
 
         <Card>
@@ -508,6 +891,14 @@ export default function Materials() {
           </CardContent>
         </Card>
       </div>
+
+      <ReceiptUpload
+        open={showReceiptUpload}
+        onOpenChange={setShowReceiptUpload}
+        onItemsImported={() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+        }}
+      />
     </AppLayout>
   );
 }
