@@ -278,7 +278,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Recipe not found" });
       }
       const ingredients = await storage.getRecipeIngredients(req.params.id);
-      res.json({ ...recipe, ingredients });
+      const recipeMaterials = await storage.getRecipeMaterials(req.params.id);
+      res.json({ ...recipe, ingredients, materials: recipeMaterials });
     } catch (error) {
       next(error);
     }
@@ -286,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/recipes", requireAuth, async (req, res, next) => {
     try {
-      const { ingredients, ...recipeData } = req.body;
+      const { ingredients, materials, ...recipeData } = req.body;
       const data = insertRecipeSchema.parse({
         ...recipeData,
         userId: req.user!.id,
@@ -299,12 +300,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
+            componentName: ing.componentName || null,
+          });
+        }
+      }
+
+      if (materials && Array.isArray(materials)) {
+        for (const mat of materials) {
+          await storage.createRecipeMaterial({
+            recipeId: recipe.id,
+            materialId: mat.materialId,
+            quantity: mat.quantity,
           });
         }
       }
       
       const recipeIngredients = await storage.getRecipeIngredients(recipe.id);
-      res.json({ ...recipe, ingredients: recipeIngredients });
+      const recipeMaterials = await storage.getRecipeMaterials(recipe.id);
+      res.json({ ...recipe, ingredients: recipeIngredients, materials: recipeMaterials });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid input", errors: error.errors });
@@ -315,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/recipes/:id", requireAuth, async (req, res, next) => {
     try {
-      const { ingredients, ...recipeData } = req.body;
+      const { ingredients, materials, ...recipeData } = req.body;
       const recipe = await storage.updateRecipe(
         req.params.id,
         req.user!.id,
@@ -332,12 +345,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
+            componentName: ing.componentName || null,
+          });
+        }
+      }
+
+      if (materials && Array.isArray(materials)) {
+        await storage.deleteRecipeMaterialsByRecipe(req.params.id);
+        for (const mat of materials) {
+          await storage.createRecipeMaterial({
+            recipeId: recipe.id,
+            materialId: mat.materialId,
+            quantity: mat.quantity,
           });
         }
       }
 
       const recipeIngredients = await storage.getRecipeIngredients(recipe.id);
-      res.json({ ...recipe, ingredients: recipeIngredients });
+      const recipeMaterials = await storage.getRecipeMaterials(recipe.id);
+      res.json({ ...recipe, ingredients: recipeIngredients, materials: recipeMaterials });
     } catch (error) {
       next(error);
     }
