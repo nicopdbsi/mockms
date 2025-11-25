@@ -158,9 +158,9 @@ export default function RecipeForm() {
       const ingredient = ingredients.find((i) => i.id === item.ingredientId);
       if (!ingredient) return sum;
       const quantity = parseFloat(item.quantity);
-      const costPerUnit = parseFloat(ingredient.costPerUnit);
-      if (isNaN(quantity) || isNaN(costPerUnit)) return sum;
-      return sum + costPerUnit * quantity;
+      const pricePerGram = parseFloat(ingredient.pricePerGram);
+      if (isNaN(quantity) || isNaN(pricePerGram)) return sum;
+      return sum + pricePerGram * quantity;
     }, 0);
   }, [selectedIngredients, ingredients]);
 
@@ -349,7 +349,7 @@ export default function RecipeForm() {
                                 <SelectContent>
                                   {ingredients?.map((ing) => (
                                     <SelectItem key={ing.id} value={ing.id}>
-                                      {ing.name} (${Number(ing.costPerUnit).toFixed(2)}/{ing.unit})
+                                      {ing.name} (${Number(ing.pricePerGram).toFixed(4)}/g)
                                     </SelectItem>
                                   ))}
                                 </SelectContent>

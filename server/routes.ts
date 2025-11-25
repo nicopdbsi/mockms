@@ -376,10 +376,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const totalCost = orders.reduce((sum, order) => sum + Number(order.totalCost), 0);
       const totalProfit = totalRevenue - totalCost;
 
-      const lowStockIngredients = ingredients.filter(ing => 
-        ing.minStock && Number(ing.currentStock) < Number(ing.minStock)
-      );
-
       res.json({
         totalRecipes: recipes.length,
         totalOrders: orders.length,
@@ -387,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalCost,
         totalProfit,
         profitMargin: totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0,
-        lowStockCount: lowStockIngredients.length,
+        totalIngredients: ingredients.length,
       });
     } catch (error) {
       next(error);

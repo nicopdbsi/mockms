@@ -12,6 +12,8 @@ import Dashboard from "@/pages/Dashboard";
 import Recipes from "@/pages/Recipes";
 import RecipeForm from "@/pages/RecipeForm";
 import Ingredients from "@/pages/Ingredients";
+import Materials from "@/pages/Materials";
+import Suppliers from "@/pages/Suppliers";
 import Analytics from "@/pages/Analytics";
 import NotFound from "@/pages/not-found";
 
@@ -36,11 +38,9 @@ function Router() {
           <RecipeForm />
         </AppLayout>
       </Route>
-      <Route path="/ingredients">
-        <AppLayout>
-          <Ingredients />
-        </AppLayout>
-      </Route>
+      <Route path="/pantry/ingredients" component={Ingredients} />
+      <Route path="/pantry/materials" component={Materials} />
+      <Route path="/pantry/suppliers" component={Suppliers} />
       <Route path="/analytics">
         <AppLayout>
           <Analytics />

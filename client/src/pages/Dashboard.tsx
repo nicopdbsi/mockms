@@ -1,8 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DollarSign, TrendingUp, Package, ChefHat, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { DollarSign, TrendingUp, Package, ChefHat } from "lucide-react";
 
 type AnalyticsOverview = {
   totalRecipes: number;
@@ -11,7 +10,7 @@ type AnalyticsOverview = {
   totalCost: number;
   totalProfit: number;
   profitMargin: string;
-  lowStockCount: number;
+  totalIngredients: number;
 };
 
 export default function Dashboard() {
@@ -58,12 +57,11 @@ export default function Dashboard() {
       testId: "stat-recipes",
     },
     {
-      title: "Low Stock Items",
-      value: analytics?.lowStockCount || 0,
+      title: "Ingredients",
+      value: analytics?.totalIngredients || 0,
       icon: Package,
-      description: "Need restocking",
-      testId: "stat-low-stock",
-      warning: (analytics?.lowStockCount || 0) > 0,
+      description: "Total ingredients tracked",
+      testId: "stat-ingredients",
     },
   ];
 
@@ -91,17 +89,9 @@ export default function Dashboard() {
               <div className="text-2xl font-bold" data-testid={`${stat.testId}-value`}>
                 {stat.value}
               </div>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-muted-foreground" data-testid={`${stat.testId}-description`}>
-                  {stat.description}
-                </p>
-                {stat.warning && (
-                  <Badge variant="destructive" className="text-xs">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    Alert
-                  </Badge>
-                )}
-              </div>
+              <p className="text-xs text-muted-foreground mt-1" data-testid={`${stat.testId}-description`}>
+                {stat.description}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -125,21 +115,6 @@ export default function Dashboard() {
               </p>
             </div>
           </div>
-
-          {(analytics?.lowStockCount || 0) > 0 && (
-            <div className="flex items-start gap-3">
-              <div className="rounded-full bg-destructive/10 p-2">
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Stock Alert</p>
-                <p className="text-sm text-muted-foreground">
-                  You have {analytics?.lowStockCount} ingredient(s) running low on stock.
-                  Visit the Ingredients page to restock.
-                </p>
-              </div>
-            </div>
-          )}
 
           {analytics?.totalRecipes === 0 && (
             <div className="flex items-start gap-3">

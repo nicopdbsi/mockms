@@ -26,9 +26,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Wrench } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -40,98 +41,95 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import type { Ingredient, Supplier } from "@shared/schema";
+import type { Material, Supplier } from "@shared/schema";
 import { AppLayout } from "@/components/AppLayout";
 
-const ingredientCategories = [
-  "Produce",
-  "Meat & Poultry",
-  "Seafood",
-  "Dairy",
-  "Grains & Flour",
-  "Spices & Seasonings",
-  "Oils & Fats",
-  "Sweeteners",
-  "Baking",
-  "Canned Goods",
-  "Frozen",
+const materialCategories = [
+  "Packaging",
+  "Equipment",
+  "Utensils",
+  "Containers",
+  "Labels",
+  "Cleaning Supplies",
   "Other",
 ];
 
-const ingredientFormSchema = z.object({
+const materialFormSchema = z.object({
   name: z.string().min(1, "Item name is required"),
   category: z.string().optional(),
-  pricePerGram: z.string().min(1, "Price per gram is required"),
   quantity: z.string().min(1, "Quantity is required"),
-  unit: z.string().min(1, "Unit of measure is required"),
+  unit: z.string().min(1, "Unit is required"),
+  pricePerUnit: z.string().min(1, "Price per unit is required"),
   purchaseAmount: z.string().optional(),
   supplierId: z.string().optional(),
+  notes: z.string().optional(),
 });
 
-type IngredientFormData = z.infer<typeof ingredientFormSchema>;
+type MaterialFormData = z.infer<typeof materialFormSchema>;
 
-function IngredientForm({
-  ingredient,
+function MaterialForm({
+  material,
   suppliers,
   onSuccess,
   onCancel,
 }: {
-  ingredient?: Ingredient;
+  material?: Material;
   suppliers: Supplier[];
   onSuccess: () => void;
   onCancel: () => void;
 }) {
   const { toast } = useToast();
 
-  const form = useForm<IngredientFormData>({
-    resolver: zodResolver(ingredientFormSchema),
+  const form = useForm<MaterialFormData>({
+    resolver: zodResolver(materialFormSchema),
     defaultValues: {
-      name: ingredient?.name || "",
-      category: ingredient?.category || "",
-      pricePerGram: ingredient?.pricePerGram || "",
-      quantity: ingredient?.quantity || "0",
-      unit: ingredient?.unit || "",
-      purchaseAmount: ingredient?.purchaseAmount || "",
-      supplierId: ingredient?.supplierId || "",
+      name: material?.name || "",
+      category: material?.category || "",
+      quantity: material?.quantity || "0",
+      unit: material?.unit || "",
+      pricePerUnit: material?.pricePerUnit || "",
+      purchaseAmount: material?.purchaseAmount || "",
+      supplierId: material?.supplierId || "",
+      notes: material?.notes || "",
     },
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: IngredientFormData) => {
-      await apiRequest("POST", "/api/ingredients", {
+    mutationFn: async (data: MaterialFormData) => {
+      await apiRequest("POST", "/api/materials", {
         ...data,
         supplierId: data.supplierId || null,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
-      toast({ title: "Ingredient added successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      toast({ title: "Material added successfully" });
       onSuccess();
     },
     onError: () => {
-      toast({ title: "Failed to add ingredient", variant: "destructive" });
+      toast({ title: "Failed to add material", variant: "destructive" });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: IngredientFormData) => {
-      await apiRequest("PATCH", `/api/ingredients/${ingredient!.id}`, {
+    mutationFn: async (data: MaterialFormData) => {
+      await apiRequest("PATCH", `/api/materials/${material!.id}`, {
         ...data,
         supplierId: data.supplierId || null,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
-      toast({ title: "Ingredient updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      toast({ title: "Material updated successfully" });
       onSuccess();
     },
     onError: () => {
-      toast({ title: "Failed to update ingredient", variant: "destructive" });
+      toast({ title: "Failed to update material", variant: "destructive" });
     },
   });
 
-  const onSubmit = (data: IngredientFormData) => {
-    if (ingredient) {
+  const onSubmit = (data: MaterialFormData) => {
+    if (material) {
       updateMutation.mutate(data);
     } else {
       createMutation.mutate(data);
@@ -151,8 +149,8 @@ function IngredientForm({
               <FormLabel>Item Name *</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="Enter ingredient name"
-                  data-testid="input-ingredient-name"
+                  placeholder="Enter item name"
+                  data-testid="input-material-name"
                   {...field}
                 />
               </FormControl>
@@ -174,33 +172,13 @@ function IngredientForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {ingredientCategories.map((cat) => (
+                  {materialCategories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="pricePerGram"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Price per Gram *</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.0001"
-                  placeholder="0.0000"
-                  data-testid="input-price-per-gram"
-                  {...field}
-                />
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -232,10 +210,10 @@ function IngredientForm({
             name="unit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Unit of Measure *</FormLabel>
+                <FormLabel>Unit *</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="e.g., g, kg, ml, pcs"
+                    placeholder="e.g., pcs, box, pack"
                     data-testid="input-unit"
                     {...field}
                   />
@@ -246,25 +224,47 @@ function IngredientForm({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="purchaseAmount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Purchase Amount (How much you bought it for)</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="Total amount paid"
-                  data-testid="input-purchase-amount"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            name="pricePerUnit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Price per Unit *</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    data-testid="input-price-per-unit"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="purchaseAmount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Purchase Amount</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    placeholder="Total paid"
+                    data-testid="input-purchase-amount"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
         <FormField
           control={form.control}
@@ -292,6 +292,24 @@ function IngredientForm({
           )}
         />
 
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Enter any notes"
+                  data-testid="input-notes"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="flex justify-end gap-2 pt-4">
           <Button
             type="button"
@@ -304,9 +322,9 @@ function IngredientForm({
           <Button
             type="submit"
             disabled={isPending}
-            data-testid="button-submit-ingredient"
+            data-testid="button-submit-material"
           >
-            {isPending ? "Saving..." : ingredient ? "Update" : "Add"} Ingredient
+            {isPending ? "Saving..." : material ? "Update" : "Add"} Item
           </Button>
         </div>
       </form>
@@ -314,13 +332,13 @@ function IngredientForm({
   );
 }
 
-export default function Ingredients() {
+export default function Materials() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
+  const [editingMaterial, setEditingMaterial] = useState<Material | undefined>();
   const { toast } = useToast();
 
-  const { data: ingredients, isLoading } = useQuery<Ingredient[]>({
-    queryKey: ["/api/ingredients"],
+  const { data: materials, isLoading } = useQuery<Material[]>({
+    queryKey: ["/api/materials"],
   });
 
   const { data: suppliers } = useQuery<Supplier[]>({
@@ -329,25 +347,25 @@ export default function Ingredients() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/ingredients/${id}`);
+      await apiRequest("DELETE", `/api/materials/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
-      toast({ title: "Ingredient deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/materials"] });
+      toast({ title: "Material deleted successfully" });
     },
     onError: () => {
-      toast({ title: "Failed to delete ingredient", variant: "destructive" });
+      toast({ title: "Failed to delete material", variant: "destructive" });
     },
   });
 
-  const handleOpenDialog = (ingredient?: Ingredient) => {
-    setEditingIngredient(ingredient);
+  const handleOpenDialog = (material?: Material) => {
+    setEditingMaterial(material);
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
-    setEditingIngredient(undefined);
+    setEditingMaterial(undefined);
   };
 
   const getSupplierName = (supplierId: string | null) => {
@@ -362,30 +380,30 @@ export default function Ingredients() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold" data-testid="text-page-title">
-              Ingredient Masterlist
+              Materials & Equipment Masterlist
             </h1>
             <p className="text-muted-foreground">
-              Manage your ingredients with pricing and supplier information
+              Manage your packaging, equipment, and other materials
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button
                 onClick={() => handleOpenDialog()}
-                data-testid="button-add-ingredient"
+                data-testid="button-add-material"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Add Ingredient
+                Add Item
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
                 <DialogTitle>
-                  {editingIngredient ? "Edit Ingredient" : "Add New Ingredient"}
+                  {editingMaterial ? "Edit Item" : "Add New Item"}
                 </DialogTitle>
               </DialogHeader>
-              <IngredientForm
-                ingredient={editingIngredient}
+              <MaterialForm
+                material={editingMaterial}
                 suppliers={suppliers || []}
                 onSuccess={handleCloseDialog}
                 onCancel={handleCloseDialog}
@@ -397,8 +415,8 @@ export default function Ingredients() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Ingredients
+              <Wrench className="h-5 w-5" />
+              Materials & Equipment
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -408,54 +426,54 @@ export default function Ingredients() {
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
               </div>
-            ) : ingredients && ingredients.length > 0 ? (
+            ) : materials && materials.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item Name</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Price/Gram</TableHead>
                     <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead>UOM</TableHead>
+                    <TableHead>Unit</TableHead>
+                    <TableHead className="text-right">Price/Unit</TableHead>
                     <TableHead className="text-right">Purchase Amt</TableHead>
                     <TableHead>Supplier</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ingredients.map((ingredient) => (
-                    <TableRow key={ingredient.id} data-testid={`row-ingredient-${ingredient.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-ingredient-name-${ingredient.id}`}>
-                        {ingredient.name}
+                  {materials.map((material) => (
+                    <TableRow key={material.id} data-testid={`row-material-${material.id}`}>
+                      <TableCell className="font-medium" data-testid={`text-material-name-${material.id}`}>
+                        {material.name}
                       </TableCell>
-                      <TableCell>{ingredient.category || "-"}</TableCell>
+                      <TableCell>{material.category || "-"}</TableCell>
+                      <TableCell className="text-right">{material.quantity}</TableCell>
+                      <TableCell>{material.unit}</TableCell>
                       <TableCell className="text-right">
-                        ${parseFloat(ingredient.pricePerGram).toFixed(4)}
+                        ${parseFloat(material.pricePerUnit).toFixed(2)}
                       </TableCell>
-                      <TableCell className="text-right">{ingredient.quantity}</TableCell>
-                      <TableCell>{ingredient.unit}</TableCell>
                       <TableCell className="text-right">
-                        {ingredient.purchaseAmount
-                          ? `$${parseFloat(ingredient.purchaseAmount).toFixed(2)}`
+                        {material.purchaseAmount
+                          ? `$${parseFloat(material.purchaseAmount).toFixed(2)}`
                           : "-"}
                       </TableCell>
-                      <TableCell>{getSupplierName(ingredient.supplierId)}</TableCell>
+                      <TableCell>{getSupplierName(material.supplierId)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => handleOpenDialog(ingredient)}
-                            data-testid={`button-edit-ingredient-${ingredient.id}`}
+                            onClick={() => handleOpenDialog(material)}
+                            data-testid={`button-edit-material-${material.id}`}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => deleteMutation.mutate(ingredient.id)}
+                            onClick={() => deleteMutation.mutate(material.id)}
                             disabled={deleteMutation.isPending}
-                            data-testid={`button-delete-ingredient-${ingredient.id}`}
+                            data-testid={`button-delete-material-${material.id}`}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -467,14 +485,14 @@ export default function Ingredients() {
               </Table>
             ) : (
               <div className="text-center py-12">
-                <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No ingredients yet</h3>
+                <Wrench className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No materials yet</h3>
                 <p className="text-muted-foreground mb-4">
-                  Add your first ingredient to start building your recipe costing
+                  Add packaging, equipment, and other materials you use
                 </p>
-                <Button onClick={() => handleOpenDialog()} data-testid="button-add-first-ingredient">
+                <Button onClick={() => handleOpenDialog()} data-testid="button-add-first-material">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Ingredient
+                  Add Item
                 </Button>
               </div>
             )}

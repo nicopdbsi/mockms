@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/lib/auth";
 import {
@@ -7,16 +7,25 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ChefHat, Package, TrendingUp, LogOut } from "lucide-react";
+import { LayoutDashboard, ChefHat, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface AppLayoutProps {
@@ -35,25 +44,41 @@ const menuItems = [
     icon: ChefHat,
   },
   {
-    title: "Ingredients",
-    url: "/ingredients",
-    icon: Package,
-  },
-  {
     title: "Analytics",
     url: "/analytics",
     icon: TrendingUp,
   },
 ];
 
+const pantryItems = [
+  {
+    title: "Ingredients",
+    url: "/pantry/ingredients",
+    icon: Package,
+  },
+  {
+    title: "Materials & Equipment",
+    url: "/pantry/materials",
+    icon: Wrench,
+  },
+  {
+    title: "Suppliers",
+    url: "/pantry/suppliers",
+    icon: Building2,
+  },
+];
+
 function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
+  const [pantryOpen, setPantryOpen] = useState(location.startsWith("/pantry"));
 
   const getUserInitials = () => {
     if (!user?.username) return "U";
     return user.username.substring(0, 2).toUpperCase();
   };
+
+  const isPantryActive = location.startsWith("/pantry");
 
   return (
     <Sidebar>
@@ -67,7 +92,50 @@ function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {menuItems.slice(0, 2).map((item) => {
+                const isActive = location === item.url;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild data-active={isActive}>
+                      <Link href={item.url} data-testid={`link-${item.title.toLowerCase()}`}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
+
+              <Collapsible open={pantryOpen} onOpenChange={setPantryOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton data-active={isPantryActive} data-testid="button-pantry">
+                      <Warehouse />
+                      <span>Pantry</span>
+                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${pantryOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {pantryItems.map((item) => {
+                        const isActive = location === item.url;
+                        return (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton asChild data-active={isActive}>
+                              <Link href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/ & /g, "-")}`}>
+                                <item.icon className="h-4 w-4" />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+
+              {menuItems.slice(2).map((item) => {
                 const isActive = location === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
