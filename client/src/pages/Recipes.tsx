@@ -3,6 +3,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -22,20 +23,29 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { type Recipe } from "@shared/schema";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 export default function Recipes() {
   const [, setLocation] = useLocation();
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: recipes, isLoading } = useQuery<Recipe[]>({
     queryKey: ["/api/recipes"],
   });
+
+  const filteredRecipes = useMemo(() => {
+    if (!recipes) return [];
+    return recipes.filter((recipe) =>
+      recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (recipe.description && recipe.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  }, [recipes, searchQuery]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -92,11 +102,27 @@ export default function Recipes() {
         <CardHeader>
           <CardTitle>All Recipes</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search recipes by name or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-8"
+              data-testid="input-search-recipes"
+            />
+          </div>
           {!recipes || recipes.length === 0 ? (
             <div className="text-center py-12" data-testid="empty-state-recipes">
               <p className="text-muted-foreground">
                 No recipes yet. Create your first recipe to get started.
+              </p>
+            </div>
+          ) : filteredRecipes.length === 0 ? (
+            <div className="text-center py-12" data-testid="empty-state-search-recipes">
+              <p className="text-muted-foreground">
+                No recipes match your search.
               </p>
             </div>
           ) : (
@@ -111,7 +137,7 @@ export default function Recipes() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recipes.map((recipe) => (
+                {filteredRecipes.map((recipe) => (
                   <TableRow key={recipe.id} data-testid={`row-recipe-${recipe.id}`}>
                     <TableCell className="font-medium" data-testid={`text-recipe-name-${recipe.id}`}>
                       {recipe.name}
