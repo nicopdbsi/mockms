@@ -152,14 +152,37 @@ Preferred communication style: Simple, everyday language.
 - Located in: `server/receipt-parser.ts`, `client/src/components/ReceiptUpload.tsx`
 
 **Recipe Form Features**:
-- Target Margin (%) and Target Food Cost (%) fields for pricing calculations
-- Ingredients dropdown sorted alphabetically (A-Z)
-- Inline "Add New Ingredient" option in dropdown opens a dialog to add ingredients on the fly
-- Cost Calculation card shows:
-  - Total Cost and Cost per Serving
-  - Suggested Price based on Target Margin
-  - Suggested Price based on Target Food Cost
-  - Actual food cost/margin percentages for each calculation
+- **Tab-based interface** with 4 sections:
+  1. **Overview tab**: Recipe name, description, servings, batch yield, procedures
+  2. **Ingredients tab**: Food ingredients with component grouping + packaging materials
+  3. **Costing tab**: Complete cost breakdown (ingredients, materials, labor) with per-unit analysis
+  4. **Pricing tab**: Interactive margin slider with live profit calculations and batch projections
+
+- **New database fields**:
+  - `laborCost`: Direct labor cost per batch
+  - `batchYield`: Number of sellable units from one batch
+  - `procedures`: Step-by-step cooking instructions
+  - `componentName` on recipe ingredients: Group ingredients by component (e.g., "Cake", "Frosting")
+  - `recipeMaterials` table: Links packaging/materials to recipes with quantities
+
+- **Cost Calculation Features**:
+  - Ingredients cost (based on pricePerGram × quantity)
+  - Materials/packaging cost (based on pricePerUnit × quantity)
+  - Labor cost (editable per batch)
+  - Total batch cost and cost per unit (based on batch yield)
+  - Target margin and food cost percentage calculations
+  - Suggested pricing based on margin OR food cost targets
+
+- **Interactive Pricing Slider**:
+  - Adjustable margin (0-90%)
+  - Live-updating price, profit, and food cost percentage
+  - Batch projections (total revenue and profit)
+
+- **Inline Add Dialogs**:
+  - Add new ingredients directly from recipe form
+  - Add new materials directly from recipe form
+  - Duplicate detection with case-insensitive matching
+
 - Located in: `client/src/pages/RecipeForm.tsx`
 
 **Pantry Masterlist Features** (Ingredients, Materials, Suppliers):
