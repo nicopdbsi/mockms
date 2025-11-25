@@ -1947,7 +1947,7 @@ export default function RecipeForm() {
             <TabsContent value="scaling" className="space-y-4">
               <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
                 <CardContent className="pt-6">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="space-y-3 flex-1">
                       <h4 className="font-semibold text-sm">Standard Yield</h4>
                       <div className="text-sm space-y-1">
@@ -1965,14 +1965,6 @@ export default function RecipeForm() {
                           <div className="text-muted-foreground">No standard yield configured. Add values in the Overview tab.</div>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowPanConverter(true)}
-                        className="text-xs text-primary hover:underline"
-                        data-testid="link-pan-yield-change"
-                      >
-                        Change using Pan & Yield Converter
-                      </button>
                     </div>
                     <Button
                       type="button"
