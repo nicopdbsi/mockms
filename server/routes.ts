@@ -7,6 +7,7 @@ import multer from "multer";
 import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
 import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
+import { parseRecipePDF } from "./recipe-parser";
 
 const upload = multer({
   storage: multer.memoryStorage(),
