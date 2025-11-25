@@ -92,7 +92,7 @@ function IngredientForm({
       quantity: ingredient?.quantity || "0",
       unit: ingredient?.unit || "",
       purchaseAmount: ingredient?.purchaseAmount || "",
-      supplierId: ingredient?.supplierId || "",
+      supplierId: ingredient?.supplierId || "none",
     },
   });
 
@@ -100,7 +100,9 @@ function IngredientForm({
     mutationFn: async (data: IngredientFormData) => {
       await apiRequest("POST", "/api/ingredients", {
         ...data,
-        supplierId: data.supplierId || null,
+        category: data.category || null,
+        purchaseAmount: data.purchaseAmount || null,
+        supplierId: data.supplierId === "none" ? null : data.supplierId || null,
       });
     },
     onSuccess: () => {
@@ -117,7 +119,9 @@ function IngredientForm({
     mutationFn: async (data: IngredientFormData) => {
       await apiRequest("PATCH", `/api/ingredients/${ingredient!.id}`, {
         ...data,
-        supplierId: data.supplierId || null,
+        category: data.category || null,
+        purchaseAmount: data.purchaseAmount || null,
+        supplierId: data.supplierId === "none" ? null : data.supplierId || null,
       });
     },
     onSuccess: () => {
@@ -272,14 +276,17 @@ function IngredientForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Supplier</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={(value) => field.onChange(value === "none" ? "none" : value)} 
+                value={field.value || "none"}
+              >
                 <FormControl>
                   <SelectTrigger data-testid="select-supplier">
                     <SelectValue placeholder="Select supplier" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No supplier</SelectItem>
+                  <SelectItem value="none">No supplier</SelectItem>
                   {suppliers.map((supplier) => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
