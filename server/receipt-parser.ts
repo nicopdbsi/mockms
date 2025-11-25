@@ -1,7 +1,8 @@
 import OpenAI from "openai";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+const pdfParseModule = require("pdf-parse");
+const pdfParse = pdfParseModule.default || pdfParseModule;
 
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
 const openai = new OpenAI({
@@ -149,15 +150,15 @@ export async function parseReceiptCSV(csvContent: string): Promise<ParsedReceipt
   const response = await openai.chat.completions.create({
     model: "gpt-4o",
     response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
+    max_completion_tokens: 16000,
     messages: [
       {
         role: "system",
-        content: systemPrompt
+        content: systemPrompt + `\n\nIMPORTANT: This is a CSV file. You MUST extract and return ALL items from the CSV, even if there are many (50, 100, or more items). Do not skip or truncate items. Parse every single row in the CSV.`
       },
       {
         role: "user",
-        content: `Parse this CSV data and extract all items. Return numeric values for quantity and price fields.\n\n${csvContent}`
+        content: `Parse this CSV data and extract ALL items. There may be many items - make sure to include every single one. Return numeric values for quantity and price fields.\n\n${csvContent}`
       }
     ]
   });
