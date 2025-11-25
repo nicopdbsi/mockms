@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -22,19 +23,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRecipeSchema, type Ingredient } from "@shared/schema";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   servings: z.number().min(1, "Servings must be at least 1"),
   targetMargin: z.string().min(0, "Target margin must be positive"),
+  targetFoodCost: z.string().min(0, "Target food cost must be positive"),
   ingredients: z.array(
     z.object({
       ingredientId: z.string(),
@@ -51,11 +61,197 @@ type RecipeWithIngredients = {
   description: string | null;
   servings: number;
   targetMargin: string;
+  targetFoodCost: string | null;
   ingredients: Array<{
     ingredientId: string;
     quantity: string;
   }>;
 };
+
+function AddIngredientDialog({
+  open,
+  onOpenChange,
+  existingIngredients,
+  onSuccess,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  existingIngredients: Ingredient[];
+  onSuccess: (ingredientId: string) => void;
+}) {
+  const { toast } = useToast();
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [unit, setUnit] = useState("g");
+  const [purchaseAmount, setPurchaseAmount] = useState("");
+
+  const normalizedName = (name ?? "").trim().toLowerCase();
+  const duplicateIngredient = normalizedName
+    ? existingIngredients.find(
+        (i) => i.name.toLowerCase().trim() === normalizedName
+      )
+    : null;
+
+  const calculatedPricePerGram = useMemo(() => {
+    const qty = parseFloat(quantity);
+    const amount = parseFloat(purchaseAmount);
+    if (qty > 0 && amount > 0) {
+      return (amount / qty).toFixed(4);
+    }
+    return null;
+  }, [quantity, purchaseAmount]);
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const pricePerGram = calculatedPricePerGram || "0";
+      const response = await apiRequest("POST", "/api/ingredients", {
+        name,
+        quantity,
+        unit,
+        purchaseAmount,
+        pricePerGram,
+      });
+      return response.json();
+    },
+    onSuccess: (newIngredient) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
+      toast({ title: "Ingredient added successfully" });
+      onSuccess(newIngredient.id);
+      setName("");
+      setQuantity("");
+      setUnit("g");
+      setPurchaseAmount("");
+      onOpenChange(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to add ingredient", variant: "destructive" });
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !quantity || !purchaseAmount) return;
+    createMutation.mutate();
+  };
+
+  const resetForm = () => {
+    setName("");
+    setQuantity("");
+    setUnit("g");
+    setPurchaseAmount("");
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) resetForm();
+        onOpenChange(isOpen);
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add New Ingredient</DialogTitle>
+          <DialogDescription>
+            Add a new ingredient to your masterlist. It will be available for selection immediately.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="ingredient-name">Ingredient Name *</Label>
+            <Input
+              id="ingredient-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., All Purpose Flour"
+              data-testid="input-new-ingredient-name"
+            />
+            {duplicateIngredient && (
+              <Alert variant="destructive" className="py-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription data-testid="warning-duplicate-ingredient-inline">
+                  An ingredient named '{duplicateIngredient.name}' already exists
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="ingredient-quantity">Quantity *</Label>
+              <Input
+                id="ingredient-quantity"
+                type="number"
+                step="0.01"
+                min="0"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="e.g., 1000"
+                data-testid="input-new-ingredient-quantity"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ingredient-unit">Unit</Label>
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger data-testid="select-new-ingredient-unit">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="g">g (grams)</SelectItem>
+                  <SelectItem value="kg">kg (kilograms)</SelectItem>
+                  <SelectItem value="ml">ml (milliliters)</SelectItem>
+                  <SelectItem value="L">L (liters)</SelectItem>
+                  <SelectItem value="pcs">pcs (pieces)</SelectItem>
+                  <SelectItem value="oz">oz (ounces)</SelectItem>
+                  <SelectItem value="lb">lb (pounds)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="ingredient-purchase">Purchase Amount ($) *</Label>
+            <Input
+              id="ingredient-purchase"
+              type="number"
+              step="0.01"
+              min="0"
+              value={purchaseAmount}
+              onChange={(e) => setPurchaseAmount(e.target.value)}
+              placeholder="e.g., 5.00"
+              data-testid="input-new-ingredient-purchase"
+            />
+          </div>
+
+          {calculatedPricePerGram && (
+            <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
+              Calculated Price: ${calculatedPricePerGram}/{unit}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={
+                createMutation.isPending ||
+                !name.trim() ||
+                !quantity ||
+                !purchaseAmount ||
+                !!duplicateIngredient
+              }
+              data-testid="button-save-new-ingredient"
+            >
+              {createMutation.isPending ? "Saving..." : "Add Ingredient"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function RecipeForm() {
   const [, params] = useRoute("/recipes/:id");
@@ -66,6 +262,8 @@ export default function RecipeForm() {
   const [selectedIngredients, setSelectedIngredients] = useState<
     Array<{ ingredientId: string; quantity: string }>
   >([]);
+  const [showAddIngredient, setShowAddIngredient] = useState(false);
+  const [pendingIngredientIndex, setPendingIngredientIndex] = useState<number | null>(null);
 
   const { data: ingredients, isLoading: ingredientsLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
@@ -76,6 +274,11 @@ export default function RecipeForm() {
     enabled: !!recipeId,
   });
 
+  const sortedIngredients = useMemo(() => {
+    if (!ingredients) return [];
+    return [...ingredients].sort((a, b) => a.name.localeCompare(b.name));
+  }, [ingredients]);
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -83,6 +286,7 @@ export default function RecipeForm() {
       description: "",
       servings: 1,
       targetMargin: "50",
+      targetFoodCost: "30",
       ingredients: [],
     },
   });
@@ -94,6 +298,7 @@ export default function RecipeForm() {
         description: recipe.description || "",
         servings: recipe.servings,
         targetMargin: recipe.targetMargin,
+        targetFoodCost: recipe.targetFoodCost || "30",
       });
       setSelectedIngredients(recipe.ingredients || []);
     }
@@ -152,6 +357,10 @@ export default function RecipeForm() {
     },
   });
 
+  const watchedMargin = form.watch("targetMargin");
+  const watchedFoodCost = form.watch("targetFoodCost");
+  const watchedServings = form.watch("servings");
+
   const totalCost = useMemo(() => {
     if (!ingredients) return 0;
     return selectedIngredients.reduce((sum, item) => {
@@ -164,12 +373,28 @@ export default function RecipeForm() {
     }, 0);
   }, [selectedIngredients, ingredients]);
 
-  const suggestedPrice = useMemo(() => {
-    const marginValue = parseFloat(form.watch("targetMargin"));
+  const suggestedPriceByMargin = useMemo(() => {
+    const marginValue = parseFloat(watchedMargin);
     if (isNaN(marginValue) || marginValue >= 100 || marginValue < 0) return 0;
     const margin = marginValue / 100;
     return totalCost / (1 - margin);
-  }, [totalCost, form]);
+  }, [totalCost, watchedMargin]);
+
+  const suggestedPriceByFoodCost = useMemo(() => {
+    const foodCostValue = parseFloat(watchedFoodCost);
+    if (isNaN(foodCostValue) || foodCostValue <= 0 || foodCostValue >= 100) return 0;
+    return totalCost / (foodCostValue / 100);
+  }, [totalCost, watchedFoodCost]);
+
+  const actualFoodCost = useMemo(() => {
+    if (suggestedPriceByMargin <= 0) return 0;
+    return (totalCost / suggestedPriceByMargin) * 100;
+  }, [totalCost, suggestedPriceByMargin]);
+
+  const actualMargin = useMemo(() => {
+    if (suggestedPriceByFoodCost <= 0) return 0;
+    return ((suggestedPriceByFoodCost - totalCost) / suggestedPriceByFoodCost) * 100;
+  }, [totalCost, suggestedPriceByFoodCost]);
 
   const onSubmit = (data: FormData) => {
     if (recipeId) {
@@ -188,9 +413,23 @@ export default function RecipeForm() {
   };
 
   const updateIngredient = (index: number, field: "ingredientId" | "quantity", value: string) => {
+    if (value === "__add_new__") {
+      setPendingIngredientIndex(index);
+      setShowAddIngredient(true);
+      return;
+    }
     const updated = [...selectedIngredients];
     updated[index] = { ...updated[index], [field]: value };
     setSelectedIngredients(updated);
+  };
+
+  const handleNewIngredientAdded = (ingredientId: string) => {
+    if (pendingIngredientIndex !== null) {
+      const updated = [...selectedIngredients];
+      updated[pendingIngredientIndex] = { ...updated[pendingIngredientIndex], ingredientId };
+      setSelectedIngredients(updated);
+      setPendingIngredientIndex(null);
+    }
   };
 
   if (ingredientsLoading || (recipeId && recipeLoading)) {
@@ -266,7 +505,7 @@ export default function RecipeForm() {
                       </FormItem>
                     )}
                   />
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <FormField
                       control={form.control}
                       name="servings"
@@ -303,7 +542,30 @@ export default function RecipeForm() {
                             />
                           </FormControl>
                           <FormDescription>
-                            Your desired profit margin percentage
+                            Desired profit margin
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="targetFoodCost"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Target Food Cost (%)</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              data-testid="input-recipe-food-cost"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Desired food cost percentage
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -347,9 +609,15 @@ export default function RecipeForm() {
                                   <SelectValue placeholder="Select ingredient" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {ingredients?.map((ing) => (
+                                  <SelectItem value="__add_new__" data-testid="option-add-new-ingredient">
+                                    <span className="flex items-center gap-2 text-primary">
+                                      <Plus className="h-4 w-4" />
+                                      Add New Ingredient
+                                    </span>
+                                  </SelectItem>
+                                  {sortedIngredients.map((ing) => (
                                     <SelectItem key={ing.id} value={ing.id}>
-                                      {ing.name} (${Number(ing.pricePerGram).toFixed(4)}/g)
+                                      {ing.name} (${Number(ing.pricePerGram).toFixed(4)}/{ing.unit})
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -360,7 +628,7 @@ export default function RecipeForm() {
                                 type="number"
                                 step="0.01"
                                 min="0"
-                                placeholder="Quantity"
+                                placeholder="Qty (g)"
                                 value={item.quantity}
                                 onChange={(e) =>
                                   updateIngredient(index, "quantity", e.target.value)
@@ -421,30 +689,52 @@ export default function RecipeForm() {
               <div className="flex justify-between items-center">
                 <span className="text-sm text-muted-foreground">Cost per Serving:</span>
                 <span className="font-medium" data-testid="text-cost-per-serving">
-                  ${(totalCost / (form.watch("servings") || 1)).toFixed(2)}
+                  ${(totalCost / (watchedServings || 1)).toFixed(2)}
                 </span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Target Margin:</span>
-                <span className="font-medium" data-testid="text-target-margin-display">
-                  {form.watch("targetMargin")}%
-                </span>
-              </div>
-              <div className="pt-4 border-t">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Suggested Price:</span>
-                  <span className="text-xl font-bold text-primary" data-testid="text-suggested-price">
-                    ${suggestedPrice.toFixed(2)}
-                  </span>
+
+              <div className="pt-4 border-t space-y-4">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-muted-foreground">Based on {watchedMargin}% Margin:</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Suggested Price:</span>
+                    <span className="text-xl font-bold text-primary" data-testid="text-suggested-price-margin">
+                      ${suggestedPriceByMargin.toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Food Cost: {actualFoodCost.toFixed(1)}%
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Price per serving to achieve target margin
-                </p>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-muted-foreground">Based on {watchedFoodCost}% Food Cost:</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Suggested Price:</span>
+                    <span className="text-xl font-bold text-primary" data-testid="text-suggested-price-food-cost">
+                      ${suggestedPriceByFoodCost.toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Margin: {actualMargin.toFixed(1)}%
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+
+      <AddIngredientDialog
+        open={showAddIngredient}
+        onOpenChange={setShowAddIngredient}
+        existingIngredients={ingredients || []}
+        onSuccess={handleNewIngredientAdded}
+      />
     </div>
   );
 }
