@@ -1209,21 +1209,9 @@ export default function RecipeForm() {
 
               <Card>
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Standard Yield</CardTitle>
-                      <CardDescription>Default batch configuration for scaling and conversions</CardDescription>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setActiveTab("scaling")}
-                      data-testid="button-go-to-scaling"
-                    >
-                      <Scale className="h-4 w-4 mr-2" />
-                      Go to Scaling
-                    </Button>
+                  <div>
+                    <CardTitle>Standard Yield</CardTitle>
+                    <CardDescription>Default batch configuration for scaling and conversions</CardDescription>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -1321,6 +1309,14 @@ export default function RecipeForm() {
                       )}
                     />
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPanConverter(true)}
+                    className="text-sm text-primary hover:underline"
+                    data-testid="link-change-pan-yield"
+                  >
+                    Change using Pan & Yield Converter
+                  </button>
                 </CardContent>
               </Card>
             </TabsContent>
