@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, crypto } from "./auth";
 import passport from "passport";
-import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema } from "@shared/schema";
+import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -385,6 +385,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
         profitMargin: totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0,
         totalIngredients: ingredients.length,
       });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Ingredient Categories routes
+  app.get("/api/ingredient-categories", requireAuth, async (req, res, next) => {
+    try {
+      const categories = await storage.getIngredientCategories(req.user!.id);
+      res.json(categories);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/ingredient-categories", requireAuth, async (req, res, next) => {
+    try {
+      const data = insertIngredientCategorySchema.parse({
+        ...req.body,
+        userId: req.user!.id,
+      });
+      const category = await storage.createIngredientCategory(data);
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/ingredient-categories/:id", requireAuth, async (req, res, next) => {
+    try {
+      const { name } = req.body;
+      if (!name || typeof name !== "string") {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const category = await storage.updateIngredientCategory(
+        req.params.id,
+        req.user!.id,
+        name
+      );
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/ingredient-categories/:id", requireAuth, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteIngredientCategory(req.params.id, req.user!.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json({ message: "Category deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Material Categories routes
+  app.get("/api/material-categories", requireAuth, async (req, res, next) => {
+    try {
+      const categories = await storage.getMaterialCategories(req.user!.id);
+      res.json(categories);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/material-categories", requireAuth, async (req, res, next) => {
+    try {
+      const data = insertMaterialCategorySchema.parse({
+        ...req.body,
+        userId: req.user!.id,
+      });
+      const category = await storage.createMaterialCategory(data);
+      res.json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/material-categories/:id", requireAuth, async (req, res, next) => {
+    try {
+      const { name } = req.body;
+      if (!name || typeof name !== "string") {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const category = await storage.updateMaterialCategory(
+        req.params.id,
+        req.user!.id,
+        name
+      );
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(category);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/material-categories/:id", requireAuth, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteMaterialCategory(req.params.id, req.user!.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json({ message: "Category deleted" });
     } catch (error) {
       next(error);
     }

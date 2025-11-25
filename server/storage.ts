@@ -13,13 +13,19 @@ import {
   type InsertRecipeIngredient,
   type Order,
   type InsertOrder,
+  type IngredientCategory,
+  type InsertIngredientCategory,
+  type MaterialCategory,
+  type InsertMaterialCategory,
   users,
   suppliers,
   ingredients,
   materials,
   recipes,
   recipeIngredients,
-  orders
+  orders,
+  ingredientCategories,
+  materialCategories
 } from "@shared/schema";
 import { db } from "../db/index";
 import { eq, and, desc } from "drizzle-orm";
@@ -62,6 +68,16 @@ export interface IStorage {
   getOrders(userId: string): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   getOrdersByRecipe(recipeId: string, userId: string): Promise<Order[]>;
+  
+  getIngredientCategories(userId: string): Promise<IngredientCategory[]>;
+  createIngredientCategory(category: InsertIngredientCategory): Promise<IngredientCategory>;
+  updateIngredientCategory(id: string, userId: string, name: string): Promise<IngredientCategory | undefined>;
+  deleteIngredientCategory(id: string, userId: string): Promise<boolean>;
+  
+  getMaterialCategories(userId: string): Promise<MaterialCategory[]>;
+  createMaterialCategory(category: InsertMaterialCategory): Promise<MaterialCategory>;
+  updateMaterialCategory(id: string, userId: string, name: string): Promise<MaterialCategory | undefined>;
+  deleteMaterialCategory(id: string, userId: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -251,6 +267,58 @@ export class DbStorage implements IStorage {
     return db.select().from(orders)
       .where(and(eq(orders.recipeId, recipeId), eq(orders.userId, userId)))
       .orderBy(desc(orders.createdAt));
+  }
+
+  async getIngredientCategories(userId: string): Promise<IngredientCategory[]> {
+    return db.select().from(ingredientCategories)
+      .where(eq(ingredientCategories.userId, userId))
+      .orderBy(ingredientCategories.name);
+  }
+
+  async createIngredientCategory(category: InsertIngredientCategory): Promise<IngredientCategory> {
+    const result = await db.insert(ingredientCategories).values(category).returning();
+    return result[0];
+  }
+
+  async updateIngredientCategory(id: string, userId: string, name: string): Promise<IngredientCategory | undefined> {
+    const result = await db.update(ingredientCategories)
+      .set({ name })
+      .where(and(eq(ingredientCategories.id, id), eq(ingredientCategories.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteIngredientCategory(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(ingredientCategories)
+      .where(and(eq(ingredientCategories.id, id), eq(ingredientCategories.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getMaterialCategories(userId: string): Promise<MaterialCategory[]> {
+    return db.select().from(materialCategories)
+      .where(eq(materialCategories.userId, userId))
+      .orderBy(materialCategories.name);
+  }
+
+  async createMaterialCategory(category: InsertMaterialCategory): Promise<MaterialCategory> {
+    const result = await db.insert(materialCategories).values(category).returning();
+    return result[0];
+  }
+
+  async updateMaterialCategory(id: string, userId: string, name: string): Promise<MaterialCategory | undefined> {
+    const result = await db.update(materialCategories)
+      .set({ name })
+      .where(and(eq(materialCategories.id, id), eq(materialCategories.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMaterialCategory(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(materialCategories)
+      .where(and(eq(materialCategories.id, id), eq(materialCategories.userId, userId)))
+      .returning();
+    return result.length > 0;
   }
 }
 

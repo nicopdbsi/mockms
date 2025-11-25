@@ -79,12 +79,42 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const ingredientCategories = pgTable("ingredient_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const materialCategories = pgTable("material_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const ingredientCategoriesRelations = relations(ingredientCategories, ({ one }) => ({
+  user: one(users, {
+    fields: [ingredientCategories.userId],
+    references: [users.id],
+  }),
+}));
+
+export const materialCategoriesRelations = relations(materialCategories, ({ one }) => ({
+  user: one(users, {
+    fields: [materialCategories.userId],
+    references: [users.id],
+  }),
+}));
+
 export const usersRelations = relations(users, ({ many }) => ({
   ingredients: many(ingredients),
   recipes: many(recipes),
   orders: many(orders),
   suppliers: many(suppliers),
   materials: many(materials),
+  ingredientCategories: many(ingredientCategories),
+  materialCategories: many(materialCategories),
 }));
 
 export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
@@ -186,6 +216,16 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
   createdAt: true,
 });
 
+export const insertIngredientCategorySchema = createInsertSchema(ingredientCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMaterialCategorySchema = createInsertSchema(materialCategories).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -206,3 +246,9 @@ export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
+
+export type InsertIngredientCategory = z.infer<typeof insertIngredientCategorySchema>;
+export type IngredientCategory = typeof ingredientCategories.$inferSelect;
+
+export type InsertMaterialCategory = z.infer<typeof insertMaterialCategorySchema>;
+export type MaterialCategory = typeof materialCategories.$inferSelect;
