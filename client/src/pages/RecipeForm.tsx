@@ -1078,7 +1078,7 @@ export default function RecipeForm() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview" data-testid="tab-overview">
-                <ChefHat className="h-4 w-4 mr-2" />
+                <ClipboardList className="h-4 w-4 mr-2" />
                 Overview
               </TabsTrigger>
               <TabsTrigger value="ingredients" data-testid="tab-ingredients">
@@ -2147,6 +2147,16 @@ export default function RecipeForm() {
         onOpenChange={setShowAddMaterial}
         existingMaterials={materials || []}
         onSuccess={handleNewMaterialAdded}
+      />
+
+      <PanYieldConverter
+        open={showPanConverter}
+        onOpenChange={setShowPanConverter}
+        currentYield={batchYieldValue}
+        currentPanSetup={panSetup}
+        flourWeight={Math.round(scalingRequiredFlour) || dominantIngredient?.quantity || 0}
+        batchYieldValue={batchYieldValue}
+        scaledIngredients={scaledIngredients.length > 0 ? scaledIngredients : bakerPercentages}
       />
     </div>
   );
