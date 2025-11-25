@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Facebook, Twitter, Instagram, Linkedin, Mail } from "lucide-react";
 import { useState } from "react";
+import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
 
 const footerLinks = {
   product: [
@@ -45,9 +46,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           <div className="lg:col-span-2">
-            <h3 className="text-2xl font-bold mb-4" data-testid="text-footer-logo">
-              BentoHub
-            </h3>
+            <div className="mb-4" data-testid="text-footer-logo">
+              <img src={bentoLogo} alt="BentoHub Logo" className="h-8 w-auto" />
+            </div>
             <p className="text-muted-foreground mb-6">
               Empowering food entrepreneurs to launch, manage, and grow profitable businesses with confidence.
             </p>

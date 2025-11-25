@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, ChefHat, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -84,7 +85,7 @@ function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
-          <ChefHat className="h-6 w-6 text-primary" data-testid="logo-icon" />
+          <img src={bentoLogo} alt="BentoHub Logo" className="h-6 w-auto" data-testid="logo-icon" />
           <span className="text-lg font-semibold" data-testid="text-app-name">BentoHub</span>
         </div>
       </SidebarHeader>

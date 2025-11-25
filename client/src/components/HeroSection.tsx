@@ -6,6 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import testimonial1 from "@assets/generated_images/testimonial_customer_photo_one.png";
 import testimonial2 from "@assets/generated_images/testimonial_customer_photo_two.png";
 import testimonial3 from "@assets/generated_images/testimonial_customer_photo_three.png";
+import bentoLogoBig from "@assets/BentohubLogo (2)_1764103859025.png";
 
 export default function HeroSection() {
   const [, setLocation] = useLocation();
@@ -19,6 +20,7 @@ export default function HeroSection() {
       </div>
 
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-20 text-center">
+        <img src={bentoLogoBig} alt="BentoHub Logo" className="h-16 w-auto mx-auto mb-8" data-testid="logo-hero" />
         <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 tracking-tight">
           STOP GUESSING.<br />START EARNING.
         </h1>
