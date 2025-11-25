@@ -79,7 +79,7 @@ Preferred communication style: Simple, everyday language.
 - Suppliers table: Contact and vendor management
 - Ingredients table: Food items with pricing per gram, quantity tracking, and supplier references
 - Materials table: Non-food items (packaging, equipment) with per-unit pricing
-- Recipes table: Dish definitions with servings, margins, and cost calculations
+- Recipes table: Dish definitions with servings, target margin, target food cost, and cost calculations
 - RecipeIngredients table: Junction table linking recipes to ingredients with quantities
 - Orders table: Production records linking recipes to actual revenue/cost
 
@@ -144,3 +144,21 @@ Preferred communication style: Simple, everyday language.
 - Extracts supplier info, item names, quantities, prices, and categories
 - Normalizes numeric values for database storage
 - Located in: `server/receipt-parser.ts`, `client/src/components/ReceiptUpload.tsx`
+
+**Recipe Form Features**:
+- Target Margin (%) and Target Food Cost (%) fields for pricing calculations
+- Ingredients dropdown sorted alphabetically (A-Z)
+- Inline "Add New Ingredient" option in dropdown opens a dialog to add ingredients on the fly
+- Cost Calculation card shows:
+  - Total Cost and Cost per Serving
+  - Suggested Price based on Target Margin
+  - Suggested Price based on Target Food Cost
+  - Actual food cost/margin percentages for each calculation
+- Located in: `client/src/pages/RecipeForm.tsx`
+
+**Pantry Masterlist Features** (Ingredients, Materials, Suppliers):
+- Sortable column headers with visual indicators (ascending/descending)
+- Default alphabetical sorting (A-Z) by name
+- Duplicate detection with case-insensitive matching
+- Warning messages and disabled save buttons when duplicates detected
+- Inline "Add New Supplier" option within Ingredient and Material forms
