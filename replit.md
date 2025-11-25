@@ -143,6 +143,12 @@ Preferred communication style: Simple, everyday language.
 - Auto-detects items as "ingredient" or "material" type
 - Extracts supplier info, item names, quantities, prices, and categories
 - Normalizes numeric values for database storage
+- **Duplicate Detection**: Case-insensitive matching against existing items
+  - Shows warning alert with count of duplicates
+  - Auto-deselects duplicate items
+  - Duplicates are disabled and cannot be re-selected
+  - "Exists" badge shown on duplicate items
+  - Duplicates are always excluded from import
 - Located in: `server/receipt-parser.ts`, `client/src/components/ReceiptUpload.tsx`
 
 **Recipe Form Features**:
