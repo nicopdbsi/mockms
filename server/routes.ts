@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, crypto } from "./auth";
 import passport from "passport";
-import { insertUserSchema, insertIngredientSchema, insertRecipeSchema, insertOrderSchema } from "@shared/schema";
+import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -84,6 +84,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ user: userWithoutPassword });
   });
 
+  // Suppliers routes
+  app.get("/api/suppliers", requireAuth, async (req, res, next) => {
+    try {
+      const suppliers = await storage.getSuppliers(req.user!.id);
+      res.json(suppliers);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/suppliers", requireAuth, async (req, res, next) => {
+    try {
+      const data = insertSupplierSchema.parse({
+        ...req.body,
+        userId: req.user!.id,
+      });
+      const supplier = await storage.createSupplier(data);
+      res.json(supplier);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/suppliers/:id", requireAuth, async (req, res, next) => {
+    try {
+      const supplier = await storage.updateSupplier(
+        req.params.id,
+        req.user!.id,
+        req.body
+      );
+      if (!supplier) {
+        return res.status(404).json({ message: "Supplier not found" });
+      }
+      res.json(supplier);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/suppliers/:id", requireAuth, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteSupplier(req.params.id, req.user!.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Supplier not found" });
+      }
+      res.json({ message: "Supplier deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Ingredients routes
   app.get("/api/ingredients", requireAuth, async (req, res, next) => {
     try {
@@ -133,6 +187,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Ingredient not found" });
       }
       res.json({ message: "Ingredient deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Materials routes
+  app.get("/api/materials", requireAuth, async (req, res, next) => {
+    try {
+      const materials = await storage.getMaterials(req.user!.id);
+      res.json(materials);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/materials", requireAuth, async (req, res, next) => {
+    try {
+      const data = insertMaterialSchema.parse({
+        ...req.body,
+        userId: req.user!.id,
+      });
+      const material = await storage.createMaterial(data);
+      res.json(material);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/materials/:id", requireAuth, async (req, res, next) => {
+    try {
+      const material = await storage.updateMaterial(
+        req.params.id,
+        req.user!.id,
+        req.body
+      );
+      if (!material) {
+        return res.status(404).json({ message: "Material not found" });
+      }
+      res.json(material);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/materials/:id", requireAuth, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteMaterial(req.params.id, req.user!.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Material not found" });
+      }
+      res.json({ message: "Material deleted" });
     } catch (error) {
       next(error);
     }

@@ -1,8 +1,12 @@
 import { 
   type User, 
   type InsertUser,
+  type Supplier,
+  type InsertSupplier,
   type Ingredient,
   type InsertIngredient,
+  type Material,
+  type InsertMaterial,
   type Recipe,
   type InsertRecipe,
   type RecipeIngredient,
@@ -10,7 +14,9 @@ import {
   type Order,
   type InsertOrder,
   users,
+  suppliers,
   ingredients,
+  materials,
   recipes,
   recipeIngredients,
   orders
@@ -24,11 +30,23 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
+  getSuppliers(userId: string): Promise<Supplier[]>;
+  getSupplier(id: string, userId: string): Promise<Supplier | undefined>;
+  createSupplier(supplier: InsertSupplier): Promise<Supplier>;
+  updateSupplier(id: string, userId: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined>;
+  deleteSupplier(id: string, userId: string): Promise<boolean>;
+  
   getIngredients(userId: string): Promise<Ingredient[]>;
   getIngredient(id: string, userId: string): Promise<Ingredient | undefined>;
   createIngredient(ingredient: InsertIngredient): Promise<Ingredient>;
   updateIngredient(id: string, userId: string, ingredient: Partial<InsertIngredient>): Promise<Ingredient | undefined>;
   deleteIngredient(id: string, userId: string): Promise<boolean>;
+  
+  getMaterials(userId: string): Promise<Material[]>;
+  getMaterial(id: string, userId: string): Promise<Material | undefined>;
+  createMaterial(material: InsertMaterial): Promise<Material>;
+  updateMaterial(id: string, userId: string, material: Partial<InsertMaterial>): Promise<Material | undefined>;
+  deleteMaterial(id: string, userId: string): Promise<boolean>;
   
   getRecipes(userId: string): Promise<Recipe[]>;
   getRecipe(id: string, userId: string): Promise<Recipe | undefined>;
@@ -67,6 +85,37 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async getSuppliers(userId: string): Promise<Supplier[]> {
+    return db.select().from(suppliers).where(eq(suppliers.userId, userId)).orderBy(desc(suppliers.createdAt));
+  }
+
+  async getSupplier(id: string, userId: string): Promise<Supplier | undefined> {
+    const result = await db.select().from(suppliers)
+      .where(and(eq(suppliers.id, id), eq(suppliers.userId, userId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createSupplier(supplier: InsertSupplier): Promise<Supplier> {
+    const result = await db.insert(suppliers).values(supplier).returning();
+    return result[0];
+  }
+
+  async updateSupplier(id: string, userId: string, supplier: Partial<InsertSupplier>): Promise<Supplier | undefined> {
+    const result = await db.update(suppliers)
+      .set(supplier)
+      .where(and(eq(suppliers.id, id), eq(suppliers.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSupplier(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(suppliers)
+      .where(and(eq(suppliers.id, id), eq(suppliers.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
   async getIngredients(userId: string): Promise<Ingredient[]> {
     return db.select().from(ingredients).where(eq(ingredients.userId, userId));
   }
@@ -94,6 +143,37 @@ export class DbStorage implements IStorage {
   async deleteIngredient(id: string, userId: string): Promise<boolean> {
     const result = await db.delete(ingredients)
       .where(and(eq(ingredients.id, id), eq(ingredients.userId, userId)))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getMaterials(userId: string): Promise<Material[]> {
+    return db.select().from(materials).where(eq(materials.userId, userId)).orderBy(desc(materials.createdAt));
+  }
+
+  async getMaterial(id: string, userId: string): Promise<Material | undefined> {
+    const result = await db.select().from(materials)
+      .where(and(eq(materials.id, id), eq(materials.userId, userId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createMaterial(material: InsertMaterial): Promise<Material> {
+    const result = await db.insert(materials).values(material).returning();
+    return result[0];
+  }
+
+  async updateMaterial(id: string, userId: string, material: Partial<InsertMaterial>): Promise<Material | undefined> {
+    const result = await db.update(materials)
+      .set(material)
+      .where(and(eq(materials.id, id), eq(materials.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deleteMaterial(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(materials)
+      .where(and(eq(materials.id, id), eq(materials.userId, userId)))
       .returning();
     return result.length > 0;
   }

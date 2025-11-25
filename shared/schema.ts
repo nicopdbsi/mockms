@@ -13,14 +13,42 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const suppliers = pgTable("suppliers", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  contactPerson: text("contact_person"),
+  phone: text("phone"),
+  email: text("email"),
+  address: text("address"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const ingredients = pgTable("ingredients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
+  category: text("category"),
+  pricePerGram: numeric("price_per_gram", { precision: 10, scale: 4 }).notNull(),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }).default("0").notNull(),
   unit: text("unit").notNull(),
-  costPerUnit: numeric("cost_per_unit", { precision: 10, scale: 2 }).notNull(),
-  currentStock: numeric("current_stock", { precision: 10, scale: 2 }).default("0").notNull(),
-  minStock: numeric("min_stock", { precision: 10, scale: 2 }).default("0"),
+  purchaseAmount: numeric("purchase_amount", { precision: 10, scale: 2 }),
+  supplierId: varchar("supplier_id").references(() => suppliers.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const materials = pgTable("materials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  category: text("category"),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }).default("0").notNull(),
+  unit: text("unit").notNull(),
+  pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }).notNull(),
+  purchaseAmount: numeric("purchase_amount", { precision: 10, scale: 2 }),
+  supplierId: varchar("supplier_id").references(() => suppliers.id, { onDelete: "set null" }),
+  notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -55,6 +83,17 @@ export const usersRelations = relations(users, ({ many }) => ({
   ingredients: many(ingredients),
   recipes: many(recipes),
   orders: many(orders),
+  suppliers: many(suppliers),
+  materials: many(materials),
+}));
+
+export const suppliersRelations = relations(suppliers, ({ one, many }) => ({
+  user: one(users, {
+    fields: [suppliers.userId],
+    references: [users.id],
+  }),
+  ingredients: many(ingredients),
+  materials: many(materials),
 }));
 
 export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
@@ -62,7 +101,22 @@ export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
     fields: [ingredients.userId],
     references: [users.id],
   }),
+  supplier: one(suppliers, {
+    fields: [ingredients.supplierId],
+    references: [suppliers.id],
+  }),
   recipeIngredients: many(recipeIngredients),
+}));
+
+export const materialsRelations = relations(materials, ({ one }) => ({
+  user: one(users, {
+    fields: [materials.userId],
+    references: [users.id],
+  }),
+  supplier: one(suppliers, {
+    fields: [materials.supplierId],
+    references: [suppliers.id],
+  }),
 }));
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
@@ -103,7 +157,17 @@ export const insertUserSchema = createInsertSchema(users).omit({
   businessName: createInsertSchema(users).shape.businessName.optional(),
 });
 
+export const insertSupplierSchema = createInsertSchema(suppliers).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertIngredientSchema = createInsertSchema(ingredients).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertMaterialSchema = createInsertSchema(materials).omit({
   id: true,
   createdAt: true,
 });
@@ -125,8 +189,14 @@ export const insertOrderSchema = createInsertSchema(orders).omit({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
+export type InsertSupplier = z.infer<typeof insertSupplierSchema>;
+export type Supplier = typeof suppliers.$inferSelect;
+
 export type InsertIngredient = z.infer<typeof insertIngredientSchema>;
 export type Ingredient = typeof ingredients.$inferSelect;
+
+export type InsertMaterial = z.infer<typeof insertMaterialSchema>;
+export type Material = typeof materials.$inferSelect;
 
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof recipes.$inferSelect;
