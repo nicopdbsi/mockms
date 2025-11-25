@@ -1858,7 +1858,7 @@ export default function RecipeForm() {
                           </div>
                           <div>
                             <div className="text-xs text-muted-foreground">
-                              Required {dominantIngredient?.name || "Base"} (g)
+                              Required Amount of Flour
                             </div>
                             <div className="text-lg font-bold" data-testid="text-scaling-required-flour">
                               {scalingRequiredFlour.toFixed(1)} g
