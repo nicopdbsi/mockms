@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Wrench, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Wrench, Upload, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -717,6 +717,7 @@ export default function Materials() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | undefined>();
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: materials, isLoading } = useQuery<Material[]>({
@@ -725,6 +726,24 @@ export default function Materials() {
 
   const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
+  });
+
+  const getSupplierName = (supplierId: string | null) => {
+    if (!supplierId || !suppliers) return "-";
+    const supplier = suppliers.find((s) => s.id === supplierId);
+    return supplier?.name || "-";
+  };
+
+  const filteredMaterials = materials?.filter((material) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const supplierName = getSupplierName(material.supplierId).toLowerCase();
+    return (
+      material.name.toLowerCase().includes(query) ||
+      (material.category && material.category.toLowerCase().includes(query)) ||
+      (material.unit && material.unit.toLowerCase().includes(query)) ||
+      supplierName.includes(query)
+    );
   });
 
   const deleteMutation = useMutation({
@@ -748,12 +767,6 @@ export default function Materials() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingMaterial(undefined);
-  };
-
-  const getSupplierName = (supplierId: string | null) => {
-    if (!supplierId || !suppliers) return "-";
-    const supplier = suppliers.find((s) => s.id === supplierId);
-    return supplier?.name || "-";
   };
 
   return (
@@ -805,11 +818,26 @@ export default function Materials() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <CardTitle className="flex items-center gap-2">
               <Wrench className="h-5 w-5" />
               Materials & Equipment
+              {filteredMaterials && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({filteredMaterials.length} {filteredMaterials.length === 1 ? "item" : "items"})
+                </span>
+              )}
             </CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search materials..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-materials"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -818,7 +846,7 @@ export default function Materials() {
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
               </div>
-            ) : materials && materials.length > 0 ? (
+            ) : filteredMaterials && filteredMaterials.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -833,7 +861,7 @@ export default function Materials() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {materials.map((material) => (
+                  {filteredMaterials.map((material) => (
                     <TableRow key={material.id} data-testid={`row-material-${material.id}`}>
                       <TableCell className="font-medium" data-testid={`text-material-name-${material.id}`}>
                         {material.name}

@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Building2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -249,10 +249,23 @@ function SupplierForm({
 export default function Suppliers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | undefined>();
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: suppliers, isLoading } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
+  });
+
+  const filteredSuppliers = suppliers?.filter((supplier) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      supplier.name.toLowerCase().includes(query) ||
+      (supplier.contactPerson && supplier.contactPerson.toLowerCase().includes(query)) ||
+      (supplier.phone && supplier.phone.toLowerCase().includes(query)) ||
+      (supplier.email && supplier.email.toLowerCase().includes(query)) ||
+      (supplier.address && supplier.address.toLowerCase().includes(query))
+    );
   });
 
   const deleteMutation = useMutation({
@@ -316,11 +329,26 @@ export default function Suppliers() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <CardTitle className="flex items-center gap-2">
               <Building2 className="h-5 w-5" />
               Suppliers
+              {filteredSuppliers && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({filteredSuppliers.length} {filteredSuppliers.length === 1 ? "supplier" : "suppliers"})
+                </span>
+              )}
             </CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search suppliers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-suppliers"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -329,7 +357,7 @@ export default function Suppliers() {
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
               </div>
-            ) : suppliers && suppliers.length > 0 ? (
+            ) : filteredSuppliers && filteredSuppliers.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -342,7 +370,7 @@ export default function Suppliers() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {suppliers.map((supplier) => (
+                  {filteredSuppliers.map((supplier) => (
                     <TableRow key={supplier.id} data-testid={`row-supplier-${supplier.id}`}>
                       <TableCell className="font-medium" data-testid={`text-supplier-name-${supplier.id}`}>
                         {supplier.name}

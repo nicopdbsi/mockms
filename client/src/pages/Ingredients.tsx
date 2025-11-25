@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Package, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Upload, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -696,6 +696,7 @@ export default function Ingredients() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
 
   const { data: ingredients, isLoading } = useQuery<Ingredient[]>({
@@ -704,6 +705,24 @@ export default function Ingredients() {
 
   const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
+  });
+
+  const getSupplierName = (supplierId: string | null) => {
+    if (!supplierId || !suppliers) return "-";
+    const supplier = suppliers.find((s) => s.id === supplierId);
+    return supplier?.name || "-";
+  };
+
+  const filteredIngredients = ingredients?.filter((ingredient) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const supplierName = getSupplierName(ingredient.supplierId).toLowerCase();
+    return (
+      ingredient.name.toLowerCase().includes(query) ||
+      (ingredient.category && ingredient.category.toLowerCase().includes(query)) ||
+      (ingredient.unit && ingredient.unit.toLowerCase().includes(query)) ||
+      supplierName.includes(query)
+    );
   });
 
   const deleteMutation = useMutation({
@@ -727,12 +746,6 @@ export default function Ingredients() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingIngredient(undefined);
-  };
-
-  const getSupplierName = (supplierId: string | null) => {
-    if (!supplierId || !suppliers) return "-";
-    const supplier = suppliers.find((s) => s.id === supplierId);
-    return supplier?.name || "-";
   };
 
   return (
@@ -784,11 +797,26 @@ export default function Ingredients() {
         </div>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
               Ingredients
+              {filteredIngredients && (
+                <span className="text-sm font-normal text-muted-foreground">
+                  ({filteredIngredients.length} {filteredIngredients.length === 1 ? "item" : "items"})
+                </span>
+              )}
             </CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search ingredients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+                data-testid="input-search-ingredients"
+              />
+            </div>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -797,7 +825,7 @@ export default function Ingredients() {
                 <Skeleton className="h-12 w-full" />
                 <Skeleton className="h-12 w-full" />
               </div>
-            ) : ingredients && ingredients.length > 0 ? (
+            ) : filteredIngredients && filteredIngredients.length > 0 ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -812,7 +840,7 @@ export default function Ingredients() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {ingredients.map((ingredient) => (
+                  {filteredIngredients.map((ingredient) => (
                     <TableRow key={ingredient.id} data-testid={`row-ingredient-${ingredient.id}`}>
                       <TableCell className="font-medium" data-testid={`text-ingredient-name-${ingredient.id}`}>
                         {ingredient.name}
