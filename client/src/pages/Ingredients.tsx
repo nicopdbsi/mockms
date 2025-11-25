@@ -61,10 +61,9 @@ const ingredientCategories = [
 const ingredientFormSchema = z.object({
   name: z.string().min(1, "Item name is required"),
   category: z.string().optional(),
-  pricePerGram: z.string().min(1, "Price per gram is required"),
-  quantity: z.string().min(1, "Quantity is required"),
+  quantity: z.string().min(1, "Quantity is required").refine((val) => parseFloat(val) > 0, "Quantity must be greater than 0"),
   unit: z.string().min(1, "Unit of measure is required"),
-  purchaseAmount: z.string().optional(),
+  purchaseAmount: z.string().min(1, "Purchase amount is required").refine((val) => parseFloat(val) > 0, "Purchase amount must be greater than 0"),
   supplierId: z.string().optional(),
 });
 
@@ -88,20 +87,32 @@ function IngredientForm({
     defaultValues: {
       name: ingredient?.name || "",
       category: ingredient?.category || "",
-      pricePerGram: ingredient?.pricePerGram || "",
-      quantity: ingredient?.quantity || "0",
+      quantity: ingredient?.quantity || "",
       unit: ingredient?.unit || "",
       purchaseAmount: ingredient?.purchaseAmount || "",
       supplierId: ingredient?.supplierId || "none",
     },
   });
 
+  const watchQuantity = form.watch("quantity");
+  const watchPurchaseAmount = form.watch("purchaseAmount");
+  
+  const calculatedPricePerGram = (() => {
+    const qty = parseFloat(watchQuantity);
+    const amount = parseFloat(watchPurchaseAmount);
+    if (qty > 0 && amount > 0) {
+      return (amount / qty).toFixed(4);
+    }
+    return null;
+  })();
+
   const createMutation = useMutation({
     mutationFn: async (data: IngredientFormData) => {
+      const pricePerGram = (parseFloat(data.purchaseAmount) / parseFloat(data.quantity)).toFixed(4);
       await apiRequest("POST", "/api/ingredients", {
         ...data,
         category: data.category || null,
-        purchaseAmount: data.purchaseAmount || null,
+        pricePerGram,
         supplierId: data.supplierId === "none" ? null : data.supplierId || null,
       });
     },
@@ -117,10 +128,11 @@ function IngredientForm({
 
   const updateMutation = useMutation({
     mutationFn: async (data: IngredientFormData) => {
+      const pricePerGram = (parseFloat(data.purchaseAmount) / parseFloat(data.quantity)).toFixed(4);
       await apiRequest("PATCH", `/api/ingredients/${ingredient!.id}`, {
         ...data,
         category: data.category || null,
-        purchaseAmount: data.purchaseAmount || null,
+        pricePerGram,
         supplierId: data.supplierId === "none" ? null : data.supplierId || null,
       });
     },
@@ -190,26 +202,6 @@ function IngredientForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="pricePerGram"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Price per Gram *</FormLabel>
-              <FormControl>
-                <Input
-                  type="number"
-                  step="0.0001"
-                  placeholder="0.0000"
-                  data-testid="input-price-per-gram"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -255,12 +247,12 @@ function IngredientForm({
           name="purchaseAmount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Purchase Amount (How much you bought it for)</FormLabel>
+              <FormLabel>Purchase Amount *</FormLabel>
               <FormControl>
                 <Input
                   type="number"
                   step="0.01"
-                  placeholder="Total amount paid"
+                  placeholder="How much you paid"
                   data-testid="input-purchase-amount"
                   {...field}
                 />
@@ -269,6 +261,16 @@ function IngredientForm({
             </FormItem>
           )}
         />
+
+        <div className="rounded-md bg-muted p-3">
+          <div className="text-sm text-muted-foreground mb-1">Price per Gram (auto-calculated)</div>
+          <div className="text-lg font-semibold" data-testid="text-calculated-price">
+            {calculatedPricePerGram ? `$${calculatedPricePerGram}` : "Enter quantity and purchase amount"}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            Formula: Purchase Amount ÷ Quantity
+          </div>
+        </div>
 
         <FormField
           control={form.control}
