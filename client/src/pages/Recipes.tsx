@@ -23,17 +23,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { type Recipe } from "@shared/schema";
-import { Plus, Pencil, Trash2, Search, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Search } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 
 export default function Recipes() {
   const [, setLocation] = useLocation();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const { data: recipes, isLoading } = useQuery<Recipe[]>({
@@ -47,45 +46,6 @@ export default function Recipes() {
       (recipe.description && recipe.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
   }, [recipes, searchQuery]);
-
-  const parseRecipeMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch("/api/parse-recipe", {
-        method: "POST",
-        body: formData,
-      });
-      if (!response.ok) throw new Error("Failed to parse recipe");
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast({ title: "Recipe parsed successfully" });
-      setLocation(`/recipes/new?name=${encodeURIComponent(data.name)}&description=${encodeURIComponent(data.description)}`);
-    },
-    onError: () => {
-      toast({
-        title: "Error parsing recipe",
-        description: "Failed to parse the PDF. Please ensure it's a valid recipe document.",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type !== "application/pdf") {
-        toast({
-          title: "Invalid file type",
-          description: "Please upload a PDF file",
-          variant: "destructive",
-        });
-        return;
-      }
-      parseRecipeMutation.mutate(file);
-    }
-  };
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -129,32 +89,13 @@ export default function Recipes() {
             Manage your recipes and calculate costs
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            onClick={() => setLocation("/recipes/new")}
-            data-testid="button-add-recipe"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Recipe
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={parseRecipeMutation.isPending}
-            data-testid="button-upload-recipe"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload PDF
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf"
-            onChange={handleFileUpload}
-            className="hidden"
-            data-testid="input-recipe-pdf"
-          />
-        </div>
+        <Button
+          onClick={() => setLocation("/recipes/new")}
+          data-testid="button-add-recipe"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Recipe
+        </Button>
       </div>
 
       <Card>

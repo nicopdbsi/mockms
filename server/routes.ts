@@ -7,7 +7,6 @@ import multer from "multer";
 import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
 import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
-import { parseRecipePDF } from "./recipe-parser";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -379,25 +378,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Recipe deleted" });
     } catch (error) {
       next(error);
-    }
-  });
-
-  // Parse recipe from PDF
-  app.post("/api/parse-recipe", requireAuth, upload.single("file"), async (req, res, next) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-
-      if (req.file.mimetype !== "application/pdf") {
-        return res.status(400).json({ message: "Only PDF files are supported" });
-      }
-
-      const result = await parseRecipePDF(req.file.buffer);
-      res.json(result);
-    } catch (error: any) {
-      console.error("Recipe parsing error:", error);
-      res.status(400).json({ message: "Failed to parse recipe PDF", error: error.message });
     }
   });
 
