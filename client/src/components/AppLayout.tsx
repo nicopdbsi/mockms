@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
 
@@ -42,7 +42,7 @@ const menuItems = [
   {
     title: "Recipes",
     url: "/recipes",
-    icon: ChefHat,
+    icon: UtensilsCrossed,
   },
   {
     title: "Analytics",
