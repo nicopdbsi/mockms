@@ -60,6 +60,9 @@ export const recipes = pgTable("recipes", {
   servings: integer("servings").default(1).notNull(),
   targetMargin: numeric("target_margin", { precision: 5, scale: 2 }).default("50"),
   targetFoodCost: numeric("target_food_cost", { precision: 5, scale: 2 }).default("30"),
+  laborCost: numeric("labor_cost", { precision: 10, scale: 2 }).default("0"),
+  batchYield: integer("batch_yield").default(1),
+  procedures: text("procedures"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -67,6 +70,14 @@ export const recipeIngredients = pgTable("recipe_ingredients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   recipeId: varchar("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
   ingredientId: varchar("ingredient_id").notNull().references(() => ingredients.id, { onDelete: "cascade" }),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
+  componentName: text("component_name").default("Main"),
+});
+
+export const recipeMaterials = pgTable("recipe_materials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  recipeId: varchar("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+  materialId: varchar("material_id").notNull().references(() => materials.id, { onDelete: "cascade" }),
   quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
 });
 
@@ -139,7 +150,7 @@ export const ingredientsRelations = relations(ingredients, ({ one, many }) => ({
   recipeIngredients: many(recipeIngredients),
 }));
 
-export const materialsRelations = relations(materials, ({ one }) => ({
+export const materialsRelations = relations(materials, ({ one, many }) => ({
   user: one(users, {
     fields: [materials.userId],
     references: [users.id],
@@ -148,6 +159,7 @@ export const materialsRelations = relations(materials, ({ one }) => ({
     fields: [materials.supplierId],
     references: [suppliers.id],
   }),
+  recipeMaterials: many(recipeMaterials),
 }));
 
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
@@ -156,6 +168,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
     references: [users.id],
   }),
   recipeIngredients: many(recipeIngredients),
+  recipeMaterials: many(recipeMaterials),
   orders: many(orders),
 }));
 
@@ -167,6 +180,17 @@ export const recipeIngredientsRelations = relations(recipeIngredients, ({ one })
   ingredient: one(ingredients, {
     fields: [recipeIngredients.ingredientId],
     references: [ingredients.id],
+  }),
+}));
+
+export const recipeMaterialsRelations = relations(recipeMaterials, ({ one }) => ({
+  recipe: one(recipes, {
+    fields: [recipeMaterials.recipeId],
+    references: [recipes.id],
+  }),
+  material: one(materials, {
+    fields: [recipeMaterials.materialId],
+    references: [materials.id],
   }),
 }));
 
@@ -212,6 +236,10 @@ export const insertRecipeIngredientSchema = createInsertSchema(recipeIngredients
   id: true,
 });
 
+export const insertRecipeMaterialSchema = createInsertSchema(recipeMaterials).omit({
+  id: true,
+});
+
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
   createdAt: true,
@@ -244,6 +272,9 @@ export type Recipe = typeof recipes.$inferSelect;
 
 export type InsertRecipeIngredient = z.infer<typeof insertRecipeIngredientSchema>;
 export type RecipeIngredient = typeof recipeIngredients.$inferSelect;
+
+export type InsertRecipeMaterial = z.infer<typeof insertRecipeMaterialSchema>;
+export type RecipeMaterial = typeof recipeMaterials.$inferSelect;
 
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
