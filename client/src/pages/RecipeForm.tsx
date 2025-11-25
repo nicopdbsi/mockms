@@ -807,18 +807,19 @@ export default function RecipeForm() {
     return pieces * weight;
   }, [scalingDesiredPieces, scalingWeightPerPiece]);
 
-  const scalingScaleFactor = useMemo(() => {
-    if (originalTotalDoughWeight <= 0) return 0;
-    return scalingDesiredTotalWeight / originalTotalDoughWeight;
-  }, [scalingDesiredTotalWeight, originalTotalDoughWeight]);
+  const scalingFlourFactor = useMemo(() => {
+    const totalBakersPercent = bakerPercentages.reduce((sum, i) => sum + i.bakerPercentage, 0);
+    if (totalBakersPercent <= 0) return 0;
+    return 100 / totalBakersPercent;
+  }, [bakerPercentages]);
 
   const scalingRequiredFlour = useMemo(() => {
     if (!dominantIngredient) return 0;
-    return dominantIngredient.quantity * scalingScaleFactor;
-  }, [dominantIngredient, scalingScaleFactor]);
+    return dominantIngredient.quantity * scalingFlourFactor;
+  }, [dominantIngredient, scalingFlourFactor]);
 
   const handleScaleRecipe = () => {
-    if (!ingredients || scalingScaleFactor <= 0) {
+    if (!ingredients || scalingFlourFactor <= 0) {
       toast({
         title: "Cannot scale",
         description: "Please enter valid desired pieces and weight per piece",
@@ -828,7 +829,7 @@ export default function RecipeForm() {
     }
 
     const scaled: ScaledIngredient[] = bakerPercentages.map((item) => {
-      const newWeight = item.originalWeight * scalingScaleFactor;
+      const newWeight = item.originalWeight * scalingFlourFactor;
       return {
         ingredientId: item.ingredientId,
         name: item.name,
@@ -876,11 +877,11 @@ export default function RecipeForm() {
 
     const scaledMaterialQty = selectedMaterials.map((item) => ({
       ...item,
-      quantity: (parseFloat(item.quantity) * scalingScaleFactor).toFixed(0),
+      quantity: (parseFloat(item.quantity) * scalingFlourFactor).toFixed(0),
     }));
     setSelectedMaterials(scaledMaterialQty);
 
-    const newLaborCost = (laborCostValue * scalingScaleFactor).toFixed(2);
+    const newLaborCost = (laborCostValue * scalingFlourFactor).toFixed(2);
     form.setValue("laborCost", newLaborCost);
 
     setHasScaled(false);
@@ -897,10 +898,10 @@ export default function RecipeForm() {
   const scaledTotalCost = useMemo(() => {
     if (!hasScaled) return 0;
     const ingredientsCostScaled = scaledIngredients.reduce((sum, item) => sum + item.newCost, 0);
-    const scaledMaterialsCost = materialsCost * scalingScaleFactor;
-    const scaledLaborCost = laborCostValue * scalingScaleFactor;
+    const scaledMaterialsCost = materialsCost * scalingFlourFactor;
+    const scaledLaborCost = laborCostValue * scalingFlourFactor;
     return ingredientsCostScaled + scaledMaterialsCost + scaledLaborCost;
-  }, [hasScaled, scaledIngredients, materialsCost, laborCostValue, scalingScaleFactor]);
+  }, [hasScaled, scaledIngredients, materialsCost, laborCostValue, scalingFlourFactor]);
 
   const scaledCostPerPiece = useMemo(() => {
     const pieces = parseFloat(scalingDesiredPieces) || 0;
@@ -1851,9 +1852,9 @@ export default function RecipeForm() {
                             </div>
                           </div>
                           <div>
-                            <div className="text-xs text-muted-foreground">Scale Factor</div>
+                            <div className="text-xs text-muted-foreground">Flour Factor</div>
                             <div className="text-lg font-bold" data-testid="text-scaling-factor">
-                              {scalingScaleFactor.toFixed(2)}x
+                              {scalingFlourFactor.toFixed(4)}
                             </div>
                           </div>
                           <div>
