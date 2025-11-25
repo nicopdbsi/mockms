@@ -350,7 +350,7 @@ function AddSupplierDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isPending} data-testid="button-save-supplier">
+              <Button type="submit" disabled={createMutation.isPending || !!duplicateSupplier} data-testid="button-save-supplier">
                 {createMutation.isPending ? "Saving..." : "Add Supplier"}
               </Button>
             </div>
@@ -690,7 +690,7 @@ function IngredientForm({
             </Button>
             <Button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || !!duplicateIngredient}
               data-testid="button-submit-ingredient"
             >
               {isPending ? "Saving..." : ingredient ? "Update" : "Add"} Ingredient

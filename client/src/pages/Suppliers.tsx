@@ -251,7 +251,7 @@ function SupplierForm({
           </Button>
           <Button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || !!duplicateSupplier}
             data-testid="button-submit-supplier"
           >
             {isPending ? "Saving..." : supplier ? "Update" : "Add"} Supplier

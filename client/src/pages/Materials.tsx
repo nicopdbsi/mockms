@@ -348,7 +348,7 @@ function AddSupplierDialog({
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={createMutation.isPending} data-testid="button-save-supplier">
+              <Button type="submit" disabled={createMutation.isPending || !!duplicateSupplier} data-testid="button-save-supplier">
                 {createMutation.isPending ? "Saving..." : "Add Supplier"}
               </Button>
             </div>
@@ -712,7 +712,7 @@ function MaterialForm({
             </Button>
             <Button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || !!duplicateMaterial}
               data-testid="button-submit-material"
             >
               {isPending ? "Saving..." : material ? "Update" : "Add"} Item
