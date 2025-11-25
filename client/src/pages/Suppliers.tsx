@@ -23,7 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Building2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Building2, Search, AlertTriangle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,10 +51,12 @@ type SupplierFormData = z.infer<typeof supplierFormSchema>;
 
 function SupplierForm({
   supplier,
+  allSuppliers,
   onSuccess,
   onCancel,
 }: {
   supplier?: Supplier;
+  allSuppliers: Supplier[];
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -71,6 +73,14 @@ function SupplierForm({
       notes: supplier?.notes || "",
     },
   });
+
+  const watchName = form.watch("name") ?? "";
+
+  const normalizedWatchName = watchName.toLowerCase().trim();
+  const duplicateSupplier = normalizedWatchName ? allSuppliers.find((s) => {
+    if (supplier && s.id === supplier.id) return false;
+    return s.name.toLowerCase().trim() === normalizedWatchName;
+  }) : null;
 
   const createMutation = useMutation({
     mutationFn: async (data: SupplierFormData) => {
@@ -126,6 +136,12 @@ function SupplierForm({
                   {...field}
                 />
               </FormControl>
+              {duplicateSupplier && (
+                <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 text-sm" data-testid="warning-duplicate-supplier">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>A supplier named "{duplicateSupplier.name}" already exists</span>
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -321,6 +337,7 @@ export default function Suppliers() {
               </DialogHeader>
               <SupplierForm
                 supplier={editingSupplier}
+                allSuppliers={suppliers || []}
                 onSuccess={handleCloseDialog}
                 onCancel={handleCloseDialog}
               />

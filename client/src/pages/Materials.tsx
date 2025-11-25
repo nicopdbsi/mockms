@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Wrench, Upload, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Wrench, Upload, Search, AlertTriangle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -348,11 +348,13 @@ function AddSupplierDialog({
 function MaterialForm({
   material,
   suppliers,
+  allMaterials,
   onSuccess,
   onCancel,
 }: {
   material?: Material;
   suppliers: Supplier[];
+  allMaterials: Material[];
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -386,6 +388,14 @@ function MaterialForm({
       notes: material?.notes || "",
     },
   });
+
+  const watchName = form.watch("name") ?? "";
+
+  const normalizedWatchName = watchName.toLowerCase().trim();
+  const duplicateMaterial = normalizedWatchName ? allMaterials.find((m) => {
+    if (material && m.id === material.id) return false;
+    return m.name.toLowerCase().trim() === normalizedWatchName;
+  }) : null;
 
   const createMutation = useMutation({
     mutationFn: async (data: MaterialFormData) => {
@@ -470,6 +480,12 @@ function MaterialForm({
                     {...field}
                   />
                 </FormControl>
+                {duplicateMaterial && (
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 text-sm" data-testid="warning-duplicate-material">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>A material named "{duplicateMaterial.name}" already exists</span>
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -809,6 +825,7 @@ export default function Materials() {
               <MaterialForm
                 material={editingMaterial}
                 suppliers={suppliers || []}
+                allMaterials={materials || []}
                 onSuccess={handleCloseDialog}
                 onCancel={handleCloseDialog}
               />

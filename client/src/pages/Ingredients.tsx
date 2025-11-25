@@ -29,7 +29,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Package, Upload, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Upload, Search, AlertTriangle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -350,11 +350,13 @@ function AddSupplierDialog({
 function IngredientForm({
   ingredient,
   suppliers,
+  allIngredients,
   onSuccess,
   onCancel,
 }: {
   ingredient?: Ingredient;
   suppliers: Supplier[];
+  allIngredients: Ingredient[];
   onSuccess: () => void;
   onCancel: () => void;
 }) {
@@ -387,8 +389,15 @@ function IngredientForm({
     },
   });
 
+  const watchName = form.watch("name") ?? "";
   const watchQuantity = form.watch("quantity");
   const watchPurchaseAmount = form.watch("purchaseAmount");
+
+  const normalizedWatchName = watchName.toLowerCase().trim();
+  const duplicateIngredient = normalizedWatchName ? allIngredients.find((i) => {
+    if (ingredient && i.id === ingredient.id) return false;
+    return i.name.toLowerCase().trim() === normalizedWatchName;
+  }) : null;
   
   const calculatedPricePerGram = (() => {
     const qty = parseFloat(watchQuantity);
@@ -482,6 +491,12 @@ function IngredientForm({
                     {...field}
                   />
                 </FormControl>
+                {duplicateIngredient && (
+                  <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500 text-sm" data-testid="warning-duplicate-ingredient">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>An ingredient named "{duplicateIngredient.name}" already exists</span>
+                  </div>
+                )}
                 <FormMessage />
               </FormItem>
             )}
@@ -788,6 +803,7 @@ export default function Ingredients() {
                 <IngredientForm
                   ingredient={editingIngredient}
                   suppliers={suppliers || []}
+                  allIngredients={ingredients || []}
                   onSuccess={handleCloseDialog}
                   onCancel={handleCloseDialog}
                 />
