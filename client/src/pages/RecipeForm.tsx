@@ -1191,71 +1191,11 @@ export default function RecipeForm() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Customer Portioning</CardTitle>
-                  <CardDescription>Defines how you portion and sell your product</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="standardYieldPieces"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Number of Pieces</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              placeholder="e.g., 24"
-                              data-testid="input-standard-yield-pieces"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="standardYieldWeightPerPiece"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Weight per Piece (g)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              placeholder="e.g., 50"
-                              data-testid="input-standard-yield-weight"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Kitchen Production Setup</CardTitle>
+                  <CardTitle>Standard Recipe Yield</CardTitle>
                   <CardDescription>Standard batch configuration for production and scaling</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-3">
                     <FormField
                       control={form.control}
                       name="standardYieldPieces"
@@ -1299,6 +1239,30 @@ export default function RecipeForm() {
                               }}
                               placeholder="e.g., 50"
                               data-testid="input-kitchen-setup-weight"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="batchYield"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Batch Yield</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="1"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
+                              placeholder="e.g., 24"
+                              data-testid="input-batch-yield"
                             />
                           </FormControl>
                           <FormMessage />
