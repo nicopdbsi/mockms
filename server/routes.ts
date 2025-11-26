@@ -7,7 +7,6 @@ import multer from "multer";
 import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
 import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
-import { parseRecipeImage, parseRecipePDF } from "./recipe-parser";
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -574,32 +573,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Receipt parsing error:", error);
       res.status(500).json({ message: error.message || "Failed to parse receipt" });
-    }
-  });
-
-  // Recipe parsing endpoint
-  app.post("/api/recipes/parse-image", requireAuth, upload.single("file"), async (req, res, next) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded" });
-      }
-
-      const file = req.file;
-      let result;
-
-      if (file.mimetype.startsWith("image/")) {
-        const base64 = file.buffer.toString("base64");
-        result = await parseRecipeImage(base64, file.mimetype);
-      } else if (file.mimetype === "application/pdf") {
-        result = await parseRecipePDF(file.buffer);
-      } else {
-        return res.status(400).json({ message: "Unsupported file type. Please upload an image (PNG, JPG) or PDF." });
-      }
-
-      res.json(result);
-    } catch (error: any) {
-      console.error("Recipe parsing error:", error);
-      res.status(500).json({ message: error.message || "Failed to parse recipe" });
     }
   });
 
