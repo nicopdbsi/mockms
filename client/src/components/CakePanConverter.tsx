@@ -10,9 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { Ingredient } from "@shared/schema";
 
 type PanShape = "round" | "rectangular" | "square";
 
@@ -24,7 +33,24 @@ interface PanDimensions {
   height?: number;
 }
 
-export default function CakePanConverter() {
+interface RecipeIngredient {
+  ingredientId: string;
+  quantity: string;
+  unit: string;
+  componentName?: string | null;
+}
+
+interface CakePanConverterProps {
+  selectedIngredients?: RecipeIngredient[];
+  ingredients?: Ingredient[];
+  getQuantityInGrams?: (item: RecipeIngredient, ingredient?: Ingredient) => number;
+}
+
+export default function CakePanConverter({
+  selectedIngredients = [],
+  ingredients = [],
+  getQuantityInGrams = () => 0,
+}: CakePanConverterProps) {
   const { toast } = useToast();
   const [originalPan, setOriginalPan] = useState<PanDimensions>({
     shape: "round",
@@ -59,6 +85,26 @@ export default function CakePanConverter() {
     if (originalVolume <= 0) return 0;
     return newVolume / originalVolume;
   }, [originalVolume, newVolume]);
+
+  const scaledIngredients = useMemo(() => {
+    if (conversionRatio === 0 || selectedIngredients.length === 0) return [];
+
+    return selectedIngredients
+      .map((item) => {
+        const ingredient = ingredients.find((i) => i.id === item.ingredientId);
+        if (!ingredient) return null;
+
+        const originalWeight = getQuantityInGrams(item, ingredient);
+        const scaledWeight = originalWeight * conversionRatio;
+
+        return {
+          name: ingredient.name,
+          originalWeight,
+          scaledWeight,
+        };
+      })
+      .filter((item) => item !== null);
+  }, [selectedIngredients, ingredients, conversionRatio, getQuantityInGrams]);
 
   const handleCopyRatio = () => {
     navigator.clipboard.writeText(conversionRatio.toFixed(2));
@@ -311,16 +357,13 @@ export default function CakePanConverter() {
               <div className="pt-4 border-t space-y-3">
                 <h4 className="font-medium text-sm">How to use:</h4>
                 <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                  <li>Multiply each ingredient amount by <span className="font-semibold text-foreground">{conversionRatio.toFixed(2)}</span></li>
-                  {conversionRatio < 1 && (
-                    <li>Your pan is smaller - you'll need fewer ingredients</li>
-                  )}
-                  {conversionRatio > 1 && (
-                    <li>Your pan is larger - you'll need more ingredients</li>
-                  )}
-                  {conversionRatio === 1 && (
-                    <li>Your pans are the same size - use the original amounts</li>
-                  )}
+                  <li>
+                    Multiply each ingredient amount by{" "}
+                    <span className="font-semibold text-foreground">{conversionRatio.toFixed(2)}</span>
+                  </li>
+                  {conversionRatio < 1 && <li>Your pan is smaller - you'll need fewer ingredients</li>}
+                  {conversionRatio > 1 && <li>Your pan is larger - you'll need more ingredients</li>}
+                  {conversionRatio === 1 && <li>Your pans are the same size - use the original amounts</li>}
                   <li>Adjust baking time as needed (usually only slightly longer for larger pans)</li>
                 </ol>
               </div>
@@ -328,13 +371,50 @@ export default function CakePanConverter() {
               <Alert className="mt-4">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  Baking time does not scale proportionally. Check your cake often and use a cake tester to ensure it's done.
+                  Baking time does not scale proportionally. Check your cake often and use a cake tester to ensure
+                  it's done.
                 </AlertDescription>
               </Alert>
             </>
           )}
         </CardContent>
       </Card>
+
+      {/* Scaled Ingredients */}
+      {scaledIngredients.length > 0 && originalVolume > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Scaled Ingredient Weights</CardTitle>
+            <CardDescription>
+              Ingredient amounts adjusted for {conversionRatio.toFixed(2)}x conversion
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Ingredient</TableHead>
+                  <TableHead className="text-right">Original (g)</TableHead>
+                  <TableHead className="text-right">Scaled (g)</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {scaledIngredients.map((item, index) => (
+                  <TableRow key={index} data-testid={`row-scaled-ingredient-${index}`}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell className="text-right" data-testid={`text-original-weight-${index}`}>
+                      {item.originalWeight.toFixed(1)}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-primary" data-testid={`text-scaled-weight-${index}`}>
+                      {item.scaledWeight.toFixed(1)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

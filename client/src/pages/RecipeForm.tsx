@@ -1982,7 +1982,14 @@ export default function RecipeForm() {
                 </Button>
               </div>
 
-              <CakePanConverter />
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Cake Pan Conversion</h3>
+                <CakePanConverter 
+                  selectedIngredients={selectedIngredients}
+                  ingredients={ingredients}
+                  getQuantityInGrams={getQuantityInGrams}
+                />
+              </div>
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
