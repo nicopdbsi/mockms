@@ -312,11 +312,13 @@ export class DbStorage implements IStorage {
       quantity: recipeIngredients.quantity,
       componentName: recipeIngredients.componentName,
       unit: recipeIngredients.unit,
+      order: recipeIngredients.order,
       ingredient: ingredients,
     })
     .from(recipeIngredients)
     .innerJoin(ingredients, eq(recipeIngredients.ingredientId, ingredients.id))
-    .where(eq(recipeIngredients.recipeId, recipeId));
+    .where(eq(recipeIngredients.recipeId, recipeId))
+    .orderBy(recipeIngredients.order);
     
     return result;
   }

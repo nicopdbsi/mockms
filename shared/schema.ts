@@ -86,6 +86,7 @@ export const recipeIngredients = pgTable("recipe_ingredients", {
   quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
   componentName: text("component_name").default("Main"),
   unit: text("unit").default("g"),
+  order: integer("order").default(0).notNull(),
 });
 
 export const recipeMaterials = pgTable("recipe_materials", {

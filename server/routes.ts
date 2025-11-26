@@ -321,12 +321,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recipe = await storage.createRecipe(data);
       
       if (ingredients && Array.isArray(ingredients)) {
-        for (const ing of ingredients) {
+        for (let index = 0; index < ingredients.length; index++) {
+          const ing = ingredients[index];
           await storage.createRecipeIngredient({
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
             componentName: ing.componentName || null,
+            order: index,
           });
         }
       }
@@ -366,12 +368,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (ingredients && Array.isArray(ingredients)) {
         await storage.deleteRecipeIngredientsByRecipe(req.params.id);
-        for (const ing of ingredients) {
+        for (let index = 0; index < ingredients.length; index++) {
+          const ing = ingredients[index];
           await storage.createRecipeIngredient({
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
             componentName: ing.componentName || null,
+            order: index,
           });
         }
       }
