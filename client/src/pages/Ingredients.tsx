@@ -18,6 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -29,7 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Package, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Info } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Info, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -969,6 +970,7 @@ function IngredientForm({
 
 type SortField = "name" | "category" | "pricePerGram" | "quantity" | "unit" | "purchaseAmount" | "supplier";
 type SortDirection = "asc" | "desc";
+type Recipe = { id: string; name: string; category?: string };
 
 function SortableHeader({
   label,
@@ -1015,6 +1017,9 @@ export default function Ingredients() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingDeleteIngredient, setPendingDeleteIngredient] = useState<Ingredient | null>(null);
+  const [recipesUsingIngredient, setRecipesUsingIngredient] = useState<Recipe[]>([]);
   const { toast } = useToast();
 
   const { data: ingredients, isLoading } = useQuery<Ingredient[]>({
@@ -1075,6 +1080,24 @@ export default function Ingredients() {
     }
   });
 
+  const checkRecipeUsageMutation = useMutation({
+    mutationFn: async (ingredientId: string) => {
+      const response = await apiRequest("GET", `/api/ingredients/${ingredientId}/recipes`);
+      return response.json();
+    },
+    onSuccess: (recipes: Recipe[], ingredientId: string) => {
+      const ingredient = ingredients?.find(ing => ing.id === ingredientId);
+      if (ingredient) {
+        setPendingDeleteIngredient(ingredient);
+        setRecipesUsingIngredient(recipes);
+        setShowDeleteConfirm(true);
+      }
+    },
+    onError: () => {
+      toast({ title: "Failed to check recipe usage", variant: "destructive" });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/ingredients/${id}`);
@@ -1082,11 +1105,24 @@ export default function Ingredients() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/ingredients"] });
       toast({ title: "Ingredient deleted successfully" });
+      setShowDeleteConfirm(false);
+      setPendingDeleteIngredient(null);
+      setRecipesUsingIngredient([]);
     },
     onError: () => {
       toast({ title: "Failed to delete ingredient", variant: "destructive" });
     },
   });
+
+  const handleDeleteIngredient = (ingredient: Ingredient) => {
+    checkRecipeUsageMutation.mutate(ingredient.id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (pendingDeleteIngredient) {
+      deleteMutation.mutate(pendingDeleteIngredient.id);
+    }
+  };
 
   const handleOpenDialog = (ingredient?: Ingredient) => {
     setEditingIngredient(ingredient);

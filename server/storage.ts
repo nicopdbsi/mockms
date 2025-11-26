@@ -50,6 +50,7 @@ export interface IStorage {
   createIngredient(ingredient: InsertIngredient): Promise<Ingredient>;
   updateIngredient(id: string, userId: string, ingredient: Partial<InsertIngredient>): Promise<Ingredient | undefined>;
   deleteIngredient(id: string, userId: string): Promise<boolean>;
+  getRecipesByIngredient(ingredientId: string, userId: string): Promise<Recipe[]>;
   
   getMaterials(userId: string): Promise<Material[]>;
   getMaterial(id: string, userId: string): Promise<Material | undefined>;
@@ -169,6 +170,30 @@ export class DbStorage implements IStorage {
       .where(and(eq(ingredients.id, id), eq(ingredients.userId, userId)))
       .returning();
     return result.length > 0;
+  }
+
+  async getRecipesByIngredient(ingredientId: string, userId: string): Promise<Recipe[]> {
+    const result = await db.select({
+      id: recipes.id,
+      userId: recipes.userId,
+      name: recipes.name,
+      description: recipes.description,
+      category: recipes.category,
+      servings: recipes.servings,
+      targetMargin: recipes.targetMargin,
+      targetFoodCost: recipes.targetFoodCost,
+      laborCost: recipes.laborCost,
+      batchYield: recipes.batchYield,
+      procedures: recipes.procedures,
+      standardYieldPieces: recipes.standardYieldPieces,
+      standardYieldWeightPerPiece: recipes.standardYieldWeightPerPiece,
+      standardPanSize: recipes.standardPanSize,
+      standardNumTrays: recipes.standardNumTrays,
+      createdAt: recipes.createdAt,
+    }).from(recipes)
+      .innerJoin(recipeIngredients, eq(recipes.id, recipeIngredients.recipeId))
+      .where(and(eq(recipeIngredients.ingredientId, ingredientId), eq(recipes.userId, userId)));
+    return result;
   }
 
   async getMaterials(userId: string): Promise<Material[]> {

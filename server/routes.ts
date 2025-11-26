@@ -207,6 +207,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/ingredients/:id/recipes", requireAuth, async (req, res, next) => {
+    try {
+      const recipes = await storage.getRecipesByIngredient(req.params.id, req.user!.id);
+      res.json(recipes);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Materials routes
   app.get("/api/materials", requireAuth, async (req, res, next) => {
     try {
