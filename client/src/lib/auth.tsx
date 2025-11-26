@@ -7,6 +7,7 @@ type User = {
   username: string;
   email: string;
   businessName: string | null;
+  role: string;
   createdAt: string;
 };
 

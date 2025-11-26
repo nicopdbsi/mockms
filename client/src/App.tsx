@@ -15,6 +15,7 @@ import Ingredients from "@/pages/Ingredients";
 import Materials from "@/pages/Materials";
 import Suppliers from "@/pages/Suppliers";
 import Analytics from "@/pages/Analytics";
+import Admin from "@/pages/Admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -44,6 +45,11 @@ function Router() {
       <Route path="/analytics">
         <AppLayout>
           <Analytics />
+        </AppLayout>
+      </Route>
+      <Route path="/admin">
+        <AppLayout>
+          <Admin />
         </AppLayout>
       </Route>
       <Route component={NotFound} />

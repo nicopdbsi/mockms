@@ -28,6 +28,17 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+function requireAdminRole(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const user = req.user as any;
+  if (user.role !== "admin") {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
@@ -551,6 +562,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Category not found" });
       }
       res.json({ message: "Category deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Admin routes
+  app.get("/api/admin/users", requireAdminRole, async (req, res, next) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const sanitized = allUsers.map(({ password, ...user }) => user);
+      res.json(sanitized);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/admin/users/:id/role", requireAdminRole, async (req, res, next) => {
+    try {
+      const { role } = req.body;
+      const validRoles = ["regular", "beta_tester", "admin"];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      const updatedUser = await storage.updateUserRole(req.params.id, role);
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password, ...sanitized } = updatedUser;
+      res.json(sanitized);
     } catch (error) {
       next(error);
     }
