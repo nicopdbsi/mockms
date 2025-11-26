@@ -12,7 +12,10 @@ export default function Signup() {
   const { register, user } = useAuth();
   const { toast } = useToast();
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [businessName, setBusinessName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   if (user) {
@@ -24,8 +27,7 @@ export default function Signup() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const email = `${username}@bentohub.local`;
-      await register(username, email, password);
+      await register(username, email, password, firstName || undefined, businessName || undefined);
       toast({
         title: "Account created!",
         description: "Welcome to BentoHub. Let's get started!",
@@ -63,6 +65,40 @@ export default function Signup() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 data-testid="input-username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="your@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                data-testid="input-email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name (Optional)</Label>
+              <Input
+                id="firstName"
+                type="text"
+                placeholder="Your first name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                data-testid="input-first-name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="businessName">Business Name (Optional)</Label>
+              <Input
+                id="businessName"
+                type="text"
+                placeholder="Your Kitchen Name"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                data-testid="input-business-name"
               />
             </div>
             <div className="space-y-2">
