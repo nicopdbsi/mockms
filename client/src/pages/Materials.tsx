@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/currency";
@@ -410,7 +410,7 @@ function MaterialForm({
   const watchQuantity = form.watch("quantity") ?? "";
   
   // Auto-calculate price per unit from purchase amount / quantity
-  React.useEffect(() => {
+  useEffect(() => {
     if (watchPurchaseAmount && watchQuantity) {
       const amount = parseFloat(watchPurchaseAmount);
       const qty = parseFloat(watchQuantity);
@@ -419,7 +419,7 @@ function MaterialForm({
         form.setValue("pricePerUnit", calculatedPrice);
       }
     }
-  }, [watchPurchaseAmount, watchQuantity, form]);
+  }, [watchPurchaseAmount, watchQuantity, form.setValue]);
 
   const normalizedWatchName = watchName.toLowerCase().trim();
   const duplicateMaterial = normalizedWatchName ? allMaterials.find((m) => {
@@ -855,7 +855,7 @@ export default function Materials() {
       case "category":
         return direction * (a.category || "").localeCompare(b.category || "");
       case "quantity":
-        return direction * (parseFloat(a.quantity) - parseFloat(b.quantity));
+        return direction * ((parseFloat(a.quantity || "0")) - (parseFloat(b.quantity || "0")));
       case "unit":
         return direction * (a.unit || "").localeCompare(b.unit || "");
       case "pricePerUnit":
