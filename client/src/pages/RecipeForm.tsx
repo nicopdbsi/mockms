@@ -62,12 +62,12 @@ const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   targetMargin: z.string().min(0, "Target margin must be positive"),
   targetFoodCost: z.string().min(0, "Target food cost must be positive"),
   laborCost: z.string().optional(),
-  batchYield: z.number().optional(),
+  batchYield: z.coerce.number().optional(),
   procedures: z.string().optional(),
-  standardYieldPieces: z.number().optional(),
+  standardYieldPieces: z.coerce.number().optional(),
   standardYieldWeightPerPiece: z.coerce.number().optional(),
   standardPanSize: z.string().optional(),
-  standardNumTrays: z.number().optional(),
+  standardNumTrays: z.coerce.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
