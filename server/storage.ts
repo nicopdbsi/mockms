@@ -41,6 +41,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   getUserCount(): Promise<number>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   
   getSuppliers(userId: string): Promise<Supplier[]>;
   getSupplier(id: string, userId: string): Promise<Supplier | undefined>;
@@ -128,6 +129,13 @@ export class DbStorage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     return result[0];
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(users)
+      .where(eq(users.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   async getSuppliers(userId: string): Promise<Supplier[]> {

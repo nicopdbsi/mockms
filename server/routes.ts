@@ -602,6 +602,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/admin/users/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteUser(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Receipt parsing endpoint
   app.post("/api/parse-receipt", requireAuth, upload.single("file"), async (req, res, next) => {
     try {
