@@ -913,6 +913,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
         return {
           ...item,
           quantity: scaledItem.newWeight.toFixed(2),
+          unit: item.unit || "g",
         };
       }
       return item;
@@ -1231,146 +1232,184 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-4">
-                    <FormField
-                      control={form.control}
-                      name="standardYieldPieces"
-                      render={({ field }) => (
-                        <FormItem>
+                    {isViewMode ? (
+                      <>
+                        <div>
                           <FormLabel>Number of Pieces</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              placeholder="e.g., 24"
-                              data-testid="input-kitchen-setup-pieces"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="standardYieldWeightPerPiece"
-                      render={({ field }) => (
-                        <FormItem>
+                          <div className="mt-2 p-2 text-sm">{form.getValues("standardYieldPieces") || "-"}</div>
+                        </div>
+                        <div>
                           <FormLabel>Weight per Piece (g)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              placeholder="e.g., 50"
-                              data-testid="input-kitchen-setup-weight"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="batchYield"
-                      render={({ field }) => (
-                        <FormItem>
+                          <div className="mt-2 p-2 text-sm">{form.getValues("standardYieldWeightPerPiece") || "-"}</div>
+                        </div>
+                        <div>
                           <FormLabel>Batch Yield</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              placeholder="e.g., 24"
-                              data-testid="input-batch-yield"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="servings"
-                      render={({ field }) => (
-                        <FormItem>
+                          <div className="mt-2 p-2 text-sm">{form.getValues("batchYield") || "-"}</div>
+                        </div>
+                        <div>
                           <FormLabel>Serving Size (portions)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              placeholder="e.g., 8"
-                              data-testid="input-serving-size"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          <div className="mt-2 p-2 text-sm">{form.getValues("servings") || "-"}</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="standardYieldPieces"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Number of Pieces</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="1"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    field.onChange(val === "" ? undefined : Number(val));
+                                  }}
+                                  placeholder="e.g., 24"
+                                  data-testid="input-kitchen-setup-pieces"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="standardYieldWeightPerPiece"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Weight per Piece (g)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  step="0.1"
+                                  min="0"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    field.onChange(val === "" ? undefined : Number(val));
+                                  }}
+                                  placeholder="e.g., 50"
+                                  data-testid="input-kitchen-setup-weight"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="batchYield"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Batch Yield</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="1"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    field.onChange(val === "" ? undefined : Number(val));
+                                  }}
+                                  placeholder="e.g., 24"
+                                  data-testid="input-batch-yield"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="servings"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Serving Size (portions)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="1"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    field.onChange(val === "" ? undefined : Number(val));
+                                  }}
+                                  placeholder="e.g., 8"
+                                  data-testid="input-serving-size"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="standardPanSize"
-                      render={({ field }) => (
-                        <FormItem>
+                    {isViewMode ? (
+                      <>
+                        <div>
                           <FormLabel>Pan Size</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="e.g., 9x13, 10-inch round"
-                              data-testid="input-standard-pan-size"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="standardNumTrays"
-                      render={({ field }) => (
-                        <FormItem>
+                          <div className="mt-2 p-2 text-sm">{form.getValues("standardPanSize") || "-"}</div>
+                        </div>
+                        <div>
                           <FormLabel>Number of Trays</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              placeholder="e.g., 1"
-                              data-testid="input-standard-num-trays"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          <div className="mt-2 p-2 text-sm">{form.getValues("standardNumTrays") || "-"}</div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <FormField
+                          control={form.control}
+                          name="standardPanSize"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Pan Size</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="e.g., 9x13, 10-inch round"
+                                  data-testid="input-standard-pan-size"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="standardNumTrays"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Number of Trays</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  type="number"
+                                  min="1"
+                                  value={field.value ?? ""}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    field.onChange(val === "" ? undefined : Number(val));
+                                  }}
+                                  placeholder="e.g., 1"
+                                  data-testid="input-standard-num-trays"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1604,74 +1643,88 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                           : 0;
                         return (
                           <div key={index} className="flex gap-2 items-center" data-testid={`material-row-${index}`}>
-                            <div className="flex flex-col">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveMaterial(index, "up")}
-                                disabled={index === 0}
-                                data-testid={`button-move-material-up-${index}`}
-                              >
-                                <ChevronUp className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveMaterial(index, "down")}
-                                disabled={index === selectedMaterials.length - 1}
-                                data-testid={`button-move-material-down-${index}`}
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <div className="flex-1">
-                              <Select
-                                value={item.materialId}
-                                onValueChange={(value) => updateMaterial(index, "materialId", value)}
-                              >
-                                <SelectTrigger data-testid={`select-material-${index}`}>
-                                  <SelectValue placeholder="Select material" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="__add_new__">
-                                    <span className="flex items-center gap-2 text-primary">
-                                      <Plus className="h-4 w-4" />
-                                      Add New Material
-                                    </span>
-                                  </SelectItem>
-                                  {sortedMaterials.map((mat) => (
-                                    <SelectItem key={mat.id} value={mat.id}>
-                                      {mat.name} ({formatCurrency(Number(mat.pricePerUnit).toFixed(2), user?.currency || "USD")}/{mat.unit})
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="w-28">
-                              <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="Qty"
-                                value={item.quantity}
-                                onChange={(e) => updateMaterial(index, "quantity", e.target.value)}
-                                data-testid={`input-material-quantity-${index}`}
-                              />
-                            </div>
-                            <div className="w-20 text-right text-sm text-muted-foreground">
-                              {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeMaterial(index)}
-                              data-testid={`button-remove-material-${index}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {!isViewMode && (
+                              <div className="flex flex-col">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveMaterial(index, "up")}
+                                  disabled={index === 0}
+                                  data-testid={`button-move-material-up-${index}`}
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveMaterial(index, "down")}
+                                  disabled={index === selectedMaterials.length - 1}
+                                  data-testid={`button-move-material-down-${index}`}
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                            {isViewMode ? (
+                              <>
+                                <div className="flex-1 text-sm">{selectedMat?.name}</div>
+                                <div className="w-28 text-sm text-right">{item.quantity} {selectedMat?.unit}</div>
+                                <div className="w-20 text-right text-sm font-medium">
+                                  {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex-1">
+                                  <Select
+                                    value={item.materialId}
+                                    onValueChange={(value) => updateMaterial(index, "materialId", value)}
+                                  >
+                                    <SelectTrigger data-testid={`select-material-${index}`}>
+                                      <SelectValue placeholder="Select material" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="__add_new__">
+                                        <span className="flex items-center gap-2 text-primary">
+                                          <Plus className="h-4 w-4" />
+                                          Add New Material
+                                        </span>
+                                      </SelectItem>
+                                      {sortedMaterials.map((mat) => (
+                                        <SelectItem key={mat.id} value={mat.id}>
+                                          {mat.name} ({formatCurrency(Number(mat.pricePerUnit).toFixed(2), user?.currency || "USD")}/{mat.unit})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="w-28">
+                                  <Input
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    placeholder="Qty"
+                                    value={item.quantity}
+                                    onChange={(e) => updateMaterial(index, "quantity", e.target.value)}
+                                    data-testid={`input-material-quantity-${index}`}
+                                  />
+                                </div>
+                                <div className="w-20 text-right text-sm text-muted-foreground">
+                                  {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeMaterial(index)}
+                                  data-testid={`button-remove-material-${index}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         );
                       })}
@@ -1718,54 +1771,67 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                     <div className="space-y-4">
                       {procedureSteps.map((step, index) => (
                         <div key={index} className="flex gap-2 items-start" data-testid={`procedure-row-${index}`}>
-                          <div className="flex flex-col">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => moveProcedure(index, "up")}
-                              disabled={index === 0}
-                              data-testid={`button-move-procedure-up-${index}`}
-                            >
-                              <ChevronUp className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => moveProcedure(index, "down")}
-                              disabled={index === procedureSteps.length - 1}
-                              data-testid={`button-move-procedure-down-${index}`}
-                            >
-                              <ChevronDown className="h-4 w-4" />
-                            </Button>
-                          </div>
-                          <div className="w-36">
-                            <Input
-                              placeholder="Component"
-                              value={step.componentName}
-                              onChange={(e) => updateProcedure(index, "componentName", e.target.value)}
-                              data-testid={`input-procedure-component-${index}`}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <Textarea
-                              placeholder="Step instructions..."
-                              value={step.text}
-                              onChange={(e) => updateProcedure(index, "text", e.target.value)}
-                              rows={2}
-                              data-testid={`input-procedure-text-${index}`}
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeProcedure(index)}
-                            data-testid={`button-remove-procedure-${index}`}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          {!isViewMode && (
+                            <div className="flex flex-col">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveProcedure(index, "up")}
+                                disabled={index === 0}
+                                data-testid={`button-move-procedure-up-${index}`}
+                              >
+                                <ChevronUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveProcedure(index, "down")}
+                                disabled={index === procedureSteps.length - 1}
+                                data-testid={`button-move-procedure-down-${index}`}
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                          {isViewMode ? (
+                            <div className="flex-1 space-y-2">
+                              {step.componentName && (
+                                <div className="text-sm font-medium">{step.componentName}</div>
+                              )}
+                              <div className="text-sm whitespace-pre-wrap">{step.text}</div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="w-36">
+                                <Input
+                                  placeholder="Component"
+                                  value={step.componentName}
+                                  onChange={(e) => updateProcedure(index, "componentName", e.target.value)}
+                                  data-testid={`input-procedure-component-${index}`}
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <Textarea
+                                  placeholder="Step instructions..."
+                                  value={step.text}
+                                  onChange={(e) => updateProcedure(index, "text", e.target.value)}
+                                  rows={2}
+                                  data-testid={`input-procedure-text-${index}`}
+                                />
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeProcedure(index)}
+                                data-testid={`button-remove-procedure-${index}`}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1796,27 +1862,34 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b">
-                        <div className="flex-1 mr-4">
-                          <FormField
-                            control={form.control}
-                            name="laborCost"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center justify-between space-y-0">
-                                <FormLabel className="text-muted-foreground">Labor Cost ({user?.currency || "USD"})</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    className="w-28 text-right"
-                                    data-testid="input-labor-cost"
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                        {isViewMode ? (
+                          <div className="flex justify-between items-center w-full">
+                            <span className="text-muted-foreground">Labor Cost ({user?.currency || "USD"})</span>
+                            <span className="font-medium text-right w-28">{formatCurrency(laborCostValue.toFixed(2), user?.currency || "USD")}</span>
+                          </div>
+                        ) : (
+                          <div className="flex-1 mr-4">
+                            <FormField
+                              control={form.control}
+                              name="laborCost"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-between space-y-0">
+                                  <FormLabel className="text-muted-foreground">Labor Cost ({user?.currency || "USD"})</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      className="w-28 text-right"
+                                      data-testid="input-labor-cost"
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        )}
                       </div>
                       <div className="flex justify-between items-center py-3 bg-muted rounded-lg px-3">
                         <span className="font-semibold">Total Batch Cost</span>
