@@ -61,9 +61,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const hashedPassword = await crypto.hash(data.password);
+      
+      // Check if this is the first user
+      const userCount = await storage.getUserCount();
+      const role = userCount === 0 ? "admin" : "regular";
+      
       const user = await storage.createUser({
         ...data,
         password: hashedPassword,
+        role,
       });
 
       req.login(user, (err) => {

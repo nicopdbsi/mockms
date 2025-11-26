@@ -31,7 +31,7 @@ import {
   materialCategories
 } from "@shared/schema";
 import { db } from "../db/index";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -39,6 +39,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   getAllUsers(): Promise<User[]>;
+  getUserCount(): Promise<number>;
   updateUserRole(id: string, role: string): Promise<User | undefined>;
   
   getSuppliers(userId: string): Promise<Supplier[]>;
@@ -114,6 +115,11 @@ export class DbStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return db.select().from(users).orderBy(desc(users.createdAt));
+  }
+
+  async getUserCount(): Promise<number> {
+    const result = await db.select({ count: sql`count(*)` }).from(users);
+    return Number(result[0]?.count || 0);
   }
 
   async updateUserRole(id: string, role: string): Promise<User | undefined> {
