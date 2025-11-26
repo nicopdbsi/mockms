@@ -61,8 +61,8 @@ const defaultCategories = [
 const materialFormSchema = z.object({
   name: z.string().min(1, "Item name is required"),
   category: z.string().optional(),
-  quantity: z.string().min(1, "Quantity is required"),
-  unit: z.string().min(1, "Unit is required"),
+  quantity: z.string().optional(),
+  unit: z.string().optional(),
   pricePerUnit: z.string().min(1, "Price per unit is required"),
   purchaseAmount: z.string().optional(),
   supplierId: z.string().optional(),
@@ -396,7 +396,7 @@ function MaterialForm({
     defaultValues: {
       name: material?.name || "",
       category: material?.category || "",
-      quantity: material?.quantity || "0",
+      quantity: material?.quantity || "",
       unit: material?.unit || "",
       pricePerUnit: material?.pricePerUnit || "",
       purchaseAmount: material?.purchaseAmount || "",
@@ -406,6 +406,20 @@ function MaterialForm({
   });
 
   const watchName = form.watch("name") ?? "";
+  const watchPurchaseAmount = form.watch("purchaseAmount") ?? "";
+  const watchQuantity = form.watch("quantity") ?? "";
+  
+  // Auto-calculate price per unit from purchase amount / quantity
+  React.useEffect(() => {
+    if (watchPurchaseAmount && watchQuantity) {
+      const amount = parseFloat(watchPurchaseAmount);
+      const qty = parseFloat(watchQuantity);
+      if (qty > 0 && amount > 0) {
+        const calculatedPrice = (amount / qty).toFixed(2);
+        form.setValue("pricePerUnit", calculatedPrice);
+      }
+    }
+  }, [watchPurchaseAmount, watchQuantity, form]);
 
   const normalizedWatchName = watchName.toLowerCase().trim();
   const duplicateMaterial = normalizedWatchName ? allMaterials.find((m) => {
@@ -567,7 +581,7 @@ function MaterialForm({
               name="quantity"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Quantity *</FormLabel>
+                  <FormLabel>Quantity</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -587,7 +601,7 @@ function MaterialForm({
               name="unit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Unit *</FormLabel>
+                  <FormLabel>Unit</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="e.g., pcs, box, pack"
