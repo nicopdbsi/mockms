@@ -413,6 +413,7 @@ function IngredientForm({
   onCancel: () => void;
 }) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [showEditCategory, setShowEditCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState<IngredientCategory | null>(null);
