@@ -41,6 +41,11 @@ function Router() {
           <RecipeForm />
         </AppLayout>
       </Route>
+      <Route path="/recipes/:id/view">
+        <AppLayout>
+          <RecipeForm viewOnly={true} />
+        </AppLayout>
+      </Route>
       <Route path="/pantry/ingredients" component={Ingredients} />
       <Route path="/pantry/materials" component={Materials} />
       <Route path="/pantry/suppliers" component={Suppliers} />

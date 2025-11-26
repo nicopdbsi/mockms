@@ -485,7 +485,7 @@ function AddMaterialDialog({
 
 const FLOUR_KEYWORDS = ["flour", "harina", "tepung", "atta"];
 
-export default function RecipeForm() {
+export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean }) {
   const [, params] = useRoute("/recipes/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();

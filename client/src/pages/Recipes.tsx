@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { type Recipe } from "@shared/schema";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -156,6 +156,15 @@ export default function Recipes() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
+                          title="View recipe"
+                          data-testid={`button-view-recipe-${recipe.id}`}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Button
                           size="icon"
                           variant="ghost"
