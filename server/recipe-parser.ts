@@ -24,30 +24,53 @@ export interface ParsedRecipe {
   procedures?: string;
 }
 
-const recipeSystemPrompt = `You are a recipe extraction specialist. Analyze recipe images or documents and extract structured recipe data.
+const recipeSystemPrompt = `You are an expert recipe extraction specialist. Your task is to carefully analyze recipe images, cards, or documents and extract ALL recipe information into structured JSON format.
 
-Return a JSON object with this exact structure:
+CRITICAL: You MUST extract EVERY ingredient you see. Do not skip any ingredients.
+
+Return ONLY valid JSON matching this structure exactly:
 {
-  "name": "Recipe name",
-  "description": "Brief description if available",
+  "name": "Recipe Title",
+  "description": "Brief description of the recipe",
   "ingredients": [
     {
       "name": "ingredient name",
-      "quantity": 100,
-      "unit": "g, ml, tsp, tbsp, cup, pcs, etc."
+      "quantity": 2,
+      "unit": "cups"
+    },
+    {
+      "name": "another ingredient",
+      "quantity": 250,
+      "unit": "g"
     }
   ],
-  "procedures": "Step-by-step instructions if available"
+  "procedures": "Instructions for preparing the recipe. Include all steps in order."
 }
 
-IMPORTANT RULES:
-- quantity MUST be a NUMBER (e.g., 100, 2.5, 0.5), not a string
-- unit should be standardized: g, kg, ml, L, tsp, tbsp, cup, pcs, box, pack, etc.
-- If quantity is unclear, default to 1
-- If unit is unclear, default to "g" for solids and "ml" for liquids
-- Extract ALL ingredients from the recipe
-- Clean ingredient names (remove extra descriptions like "finely chopped", "melted", etc.)
-- Include procedures/instructions if visible`;
+MANDATORY RULES - FOLLOW STRICTLY:
+1. Extract EVERY visible ingredient - do not omit any
+2. quantity field MUST ALWAYS be a NUMBER (examples: 1, 2.5, 0.75, 100) - NEVER text
+3. unit field MUST be a STRING - standardize to: g, kg, ml, L, oz, lb, cup, tbsp, tsp, pcs, pieces, etc.
+4. For missing quantity, default to 1
+5. For missing unit, use "g" for solids, "ml" for liquids
+6. Clean ingredient names: remove words like "finely chopped", "melted", "beaten", "sifted"
+7. Include recipe title as "name"
+8. Include full cooking procedures/instructions as a single combined string
+9. Return ONLY the JSON object, no additional text
+10. Do not hallucinate ingredients - only extract what you actually see
+
+EXAMPLE OUTPUT:
+{
+  "name": "Chocolate Cake",
+  "description": "A rich and moist chocolate dessert",
+  "ingredients": [
+    {"name": "flour", "quantity": 2, "unit": "cups"},
+    {"name": "cocoa powder", "quantity": 0.75, "unit": "cup"},
+    {"name": "eggs", "quantity": 3, "unit": "pcs"},
+    {"name": "sugar", "quantity": 1.5, "unit": "cups"}
+  ],
+  "procedures": "Mix dry ingredients. Beat eggs and sugar. Combine. Bake at 350F for 30 minutes."
+}`;
 
 export async function parseRecipeImage(base64Image: string, mimeType: string): Promise<ParsedRecipe> {
   const response = await openai.chat.completions.create({
