@@ -44,7 +44,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRecipeSchema, type Ingredient, type Material } from "@shared/schema";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, Package, ClipboardList, Scale, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, Package, ClipboardList, Scale, RefreshCw, ChevronUp, ChevronDown, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -503,6 +503,13 @@ export default function RecipeForm() {
   const [hasScaled, setHasScaled] = useState(false);
   const [showPanConverter, setShowPanConverter] = useState(false);
   const [panSetup, setPanSetup] = useState("2 trays, 12x18 in");
+
+  const [forecastUnitsPerMonth, setForecastUnitsPerMonth] = useState<string>("100");
+  const [forecastSellingPrice, setForecastSellingPrice] = useState<string>("");
+  const [forecastPackagingCost, setForecastPackagingCost] = useState<string>("1");
+  const [forecastDeliveryCost, setForecastDeliveryCost] = useState<string>("0");
+  const [forecastMarketplaceFee, setForecastMarketplaceFee] = useState<string>("0");
+  const [forecastUtilities, setForecastUtilities] = useState<string>("0");
 
   const { data: ingredients, isLoading: ingredientsLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
@@ -1091,7 +1098,7 @@ export default function RecipeForm() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(validateAndSubmit)}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview" data-testid="tab-overview">
                 <ClipboardList className="h-4 w-4 mr-2" />
                 Overview
@@ -1111,6 +1118,10 @@ export default function RecipeForm() {
               <TabsTrigger value="scaling" data-testid="tab-scaling">
                 <Scale className="h-4 w-4 mr-2" />
                 Scaling
+              </TabsTrigger>
+              <TabsTrigger value="forecast" data-testid="tab-forecast">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Forecast
               </TabsTrigger>
             </TabsList>
 
@@ -2274,6 +2285,217 @@ export default function RecipeForm() {
                   </CardContent>
                 </Card>
               )}
+            </TabsContent>
+
+            <TabsContent value="forecast" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Profit Forecast & Scale Readiness
+                  </CardTitle>
+                  <CardDescription>Project monthly profitability and determine if you're ready to scale</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="space-y-4">
+                      <h4 className="font-semibold text-sm">Sales Assumptions</h4>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="forecast-units">Units Sold Per Month</Label>
+                          <Input
+                            id="forecast-units"
+                            type="number"
+                            min="1"
+                            value={forecastUnitsPerMonth}
+                            onChange={(e) => setForecastUnitsPerMonth(e.target.value)}
+                            placeholder="e.g., 100"
+                            data-testid="input-forecast-units"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="forecast-price">Selling Price per Unit ($)</Label>
+                          <Input
+                            id="forecast-price"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={forecastSellingPrice}
+                            onChange={(e) => setForecastSellingPrice(e.target.value)}
+                            placeholder={sliderPrice.toFixed(2)}
+                            data-testid="input-forecast-price"
+                          />
+                        </div>
+                      </div>
+
+                      <h4 className="font-semibold text-sm pt-2">Cost Assumptions</h4>
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="forecast-packaging">Packaging Cost per Unit ($)</Label>
+                          <Input
+                            id="forecast-packaging"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={forecastPackagingCost}
+                            onChange={(e) => setForecastPackagingCost(e.target.value)}
+                            placeholder="e.g., 1.00"
+                            data-testid="input-forecast-packaging"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="forecast-delivery">Delivery Costs (Monthly, $)</Label>
+                          <Input
+                            id="forecast-delivery"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={forecastDeliveryCost}
+                            onChange={(e) => setForecastDeliveryCost(e.target.value)}
+                            placeholder="e.g., 0"
+                            data-testid="input-forecast-delivery"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="forecast-marketplace">Marketplace Fee (%)</Label>
+                          <Input
+                            id="forecast-marketplace"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={forecastMarketplaceFee}
+                            onChange={(e) => setForecastMarketplaceFee(e.target.value)}
+                            placeholder="e.g., 0"
+                            data-testid="input-forecast-marketplace"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="forecast-utilities">Utilities (Monthly, $)</Label>
+                          <Input
+                            id="forecast-utilities"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={forecastUtilities}
+                            onChange={(e) => setForecastUtilities(e.target.value)}
+                            placeholder="e.g., 0"
+                            data-testid="input-forecast-utilities"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {(() => {
+                      const units = parseFloat(forecastUnitsPerMonth) || 0;
+                      const price = parseFloat(forecastSellingPrice) || sliderPrice || 0;
+                      const foodCost = costPerUnit || 0;
+                      const packaging = parseFloat(forecastPackagingCost) || 0;
+                      const delivery = parseFloat(forecastDeliveryCost) || 0;
+                      const marketplaceFeePercent = parseFloat(forecastMarketplaceFee) || 0;
+                      const utilities = parseFloat(forecastUtilities) || 0;
+
+                      const revenue = units * price;
+                      const directCostsPerUnit = foodCost + packaging;
+                      const directCosts = directCostsPerUnit * units;
+                      const grossProfit = revenue - directCosts;
+                      const marketplaceFeeCost = (revenue * marketplaceFeePercent) / 100;
+                      const totalOperatingExpenses = delivery + marketplaceFeeCost + utilities;
+                      const netProfit = grossProfit - totalOperatingExpenses;
+                      const netMarginPercent = revenue > 0 ? (netProfit / revenue) * 100 : 0;
+
+                      let readinessStatus = "not-ready";
+                      let readinessColor = "bg-red-100 dark:bg-red-950 border-red-200 dark:border-red-800";
+                      let readinessText = "Not Ready";
+                      let readinessMessage = "Margins too low. Increase price or reduce costs.";
+
+                      if (netMarginPercent >= 35) {
+                        readinessStatus = "ready";
+                        readinessColor = "bg-green-100 dark:bg-green-950 border-green-200 dark:border-green-800";
+                        readinessText = "Ready to Scale";
+                        readinessMessage = `At current performance, ${Math.ceil((units * 3) / 30)} units/day generates ₱${(netProfit * 3).toFixed(0)}/month.`;
+                      } else if (netMarginPercent >= 20) {
+                        readinessStatus = "caution";
+                        readinessColor = "bg-yellow-100 dark:bg-yellow-950 border-yellow-200 dark:border-yellow-800";
+                        readinessText = "Caution";
+                        readinessMessage = "Profitable but tight margins. Test higher volumes before scaling.";
+                      }
+
+                      return (
+                        <div className="space-y-4">
+                          <Card className="bg-muted/50 border-0">
+                            <CardContent className="pt-6 space-y-4">
+                              <div className="space-y-2">
+                                <div className="text-sm text-muted-foreground">Monthly Revenue</div>
+                                <div className="text-3xl font-bold text-primary" data-testid="text-forecast-revenue">
+                                  ₱{revenue.toFixed(0)}
+                                </div>
+                              </div>
+
+                              <div className="grid gap-3 md:grid-cols-2">
+                                <div className="p-3 bg-background rounded-lg">
+                                  <div className="text-xs text-muted-foreground">Direct Costs</div>
+                                  <div className="text-lg font-semibold" data-testid="text-forecast-direct-costs">
+                                    ₱{directCosts.toFixed(0)}
+                                  </div>
+                                </div>
+                                <div className="p-3 bg-background rounded-lg">
+                                  <div className="text-xs text-muted-foreground">Gross Profit</div>
+                                  <div className="text-lg font-semibold text-green-600" data-testid="text-forecast-gross-profit">
+                                    ₱{grossProfit.toFixed(0)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2 pt-2 border-t">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Marketplace Fees ({marketplaceFeePercent}%)</span>
+                                  <span>-₱{marketplaceFeeCost.toFixed(0)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Delivery</span>
+                                  <span>-₱{delivery.toFixed(0)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">Utilities</span>
+                                  <span>-₱{utilities.toFixed(0)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold pt-2 border-t">
+                                  <span>Net Profit (Take-Home)</span>
+                                  <span className={netProfit >= 0 ? "text-green-600" : "text-red-600"} data-testid="text-forecast-net-profit">
+                                    ₱{netProfit.toFixed(0)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="pt-2 text-xs text-muted-foreground">
+                                <div>Profit per Unit: ₱{(price - directCostsPerUnit).toFixed(2)}</div>
+                                <div>Net Margin: {netMarginPercent.toFixed(1)}%</div>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Card className={`border ${readinessColor}`}>
+                            <CardContent className="pt-6">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <div className={`h-3 w-3 rounded-full ${readinessStatus === "ready" ? "bg-green-600" : readinessStatus === "caution" ? "bg-yellow-600" : "bg-red-600"}`} />
+                                  <h4 className="font-semibold" data-testid="text-forecast-readiness">
+                                    {readinessText}
+                                  </h4>
+                                </div>
+                                <p className="text-sm" data-testid="text-forecast-message">
+                                  {readinessMessage}
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
 
