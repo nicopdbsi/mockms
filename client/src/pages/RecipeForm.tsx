@@ -1338,14 +1338,6 @@ export default function RecipeForm() {
                       )}
                     />
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowPanConverter(true)}
-                    className="text-sm text-primary hover:underline"
-                    data-testid="link-change-pan-yield"
-                  >
-                    Change using Pan & Yield Converter
-                  </button>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1970,18 +1962,6 @@ export default function RecipeForm() {
             </TabsContent>
 
             <TabsContent value="scaling" className="space-y-4">
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowPanConverter(true)}
-                  data-testid="button-pan-yield-converter"
-                >
-                  Pan & Yield Converter
-                </Button>
-              </div>
-
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Cake Pan Conversion</h3>
                 <CakePanConverter 
