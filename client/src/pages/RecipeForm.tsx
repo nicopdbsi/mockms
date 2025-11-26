@@ -1101,10 +1101,10 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-recipe-form">
-            {recipeId ? "Edit Recipe" : "New Recipe"}
+            {isViewMode ? "View Recipe" : recipeId ? "Edit Recipe" : "New Recipe"}
           </h1>
           <p className="text-muted-foreground" data-testid="text-recipe-form-description">
-            {recipeId ? "Update recipe details, costs, and pricing" : "Create a new recipe with full cost analysis"}
+            {isViewMode ? "Recipe details, costs, and pricing analysis" : recipeId ? "Update recipe details, costs, and pricing" : "Create a new recipe with full cost analysis"}
           </p>
         </div>
       </div>
@@ -1363,16 +1363,18 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                       <CardTitle>Ingredients</CardTitle>
                       <CardDescription>Food items used in this recipe</CardDescription>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addIngredient}
-                      data-testid="button-add-recipe-ingredient"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Ingredient
-                    </Button>
+                    {!isViewMode && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addIngredient}
+                        data-testid="button-add-recipe-ingredient"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Ingredient
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -1530,16 +1532,18 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                       <CardTitle>Packaging & Materials</CardTitle>
                       <CardDescription>Containers, labels, and other materials</CardDescription>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addMaterial}
-                      data-testid="button-add-recipe-material"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Material
-                    </Button>
+                    {!isViewMode && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addMaterial}
+                        data-testid="button-add-recipe-material"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Material
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -1647,16 +1651,18 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                       <CardTitle>Procedures</CardTitle>
                       <CardDescription>Step-by-step instructions for preparing this recipe</CardDescription>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={addProcedure}
-                      data-testid="button-add-procedure"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Procedure
-                    </Button>
+                    {!isViewMode && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addProcedure}
+                        data-testid="button-add-procedure"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Procedure
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -2468,23 +2474,25 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
             </TabsContent>
           </Tabs>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              type="submit"
-              disabled={createMutation.isPending || updateMutation.isPending}
-              data-testid="button-submit-recipe"
-            >
-              {recipeId ? "Update Recipe" : "Create Recipe"}
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setLocation("/recipes")}
-              data-testid="button-cancel-recipe"
-            >
-              Cancel
-            </Button>
-          </div>
+          {!isViewMode && (
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="submit"
+                disabled={createMutation.isPending || updateMutation.isPending}
+                data-testid="button-submit-recipe"
+              >
+                {recipeId ? "Update Recipe" : "Create Recipe"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setLocation("/recipes")}
+                data-testid="button-cancel-recipe"
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
         </form>
       </Form>
 
