@@ -26,7 +26,7 @@ export default function HeroSection() {
         </h1>
         
         <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
-          A subscription-based Kitchen Management System designed to help small food entrepreneurs LAUNCH, MANAGE, and GROW their food business with confidence.
+          A Kitchen Management System helping small food entrepreneurs LAUNCH, MANAGE, and GROW their food business with confidence.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
