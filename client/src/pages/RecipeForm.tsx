@@ -489,6 +489,7 @@ export default function RecipeForm() {
   const [, params] = useRoute("/recipes/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   const recipeId = params?.id === "new" ? null : params?.id;
 
   const [activeTab, setActiveTab] = useState("overview");
