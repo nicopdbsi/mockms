@@ -323,33 +323,18 @@ export default function CakePanConverter({
 
       {/* Conversion Result */}
       <Card>
-        <CardHeader>
-          <CardTitle>Conversion Ratio</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           {originalVolume <= 0 ? (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>Please enter valid dimensions for both pans</AlertDescription>
             </Alert>
           ) : (
-            <div className="flex items-end gap-3">
-              <div className="flex-1">
-                <Label className="text-sm text-muted-foreground">Conversion Factor</Label>
-                <div className="text-4xl font-bold text-primary" data-testid="text-conversion-ratio">
-                  {conversionRatio.toFixed(2)}x
-                </div>
+            <div>
+              <Label className="text-sm text-muted-foreground">Conversion Factor</Label>
+              <div className="text-4xl font-bold text-primary" data-testid="text-conversion-ratio">
+                {conversionRatio.toFixed(2)}x
               </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleCopyRatio}
-                data-testid="button-copy-ratio"
-              >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy
-              </Button>
             </div>
           )}
         </CardContent>
