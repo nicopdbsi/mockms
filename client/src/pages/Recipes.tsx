@@ -39,12 +39,13 @@ export default function Recipes() {
     queryKey: ["/api/recipes"],
   });
 
-  const filteredRecipes = useMemo(() => {
+  const filteredAndSortedRecipes = useMemo(() => {
     if (!recipes) return [];
-    return recipes.filter((recipe) =>
-      recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (recipe.description && recipe.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    return recipes
+      .filter((recipe) =>
+        recipe.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [recipes, searchQuery]);
 
   const deleteMutation = useMutation({
@@ -119,7 +120,7 @@ export default function Recipes() {
                 No recipes yet. Create your first recipe to get started.
               </p>
             </div>
-          ) : filteredRecipes.length === 0 ? (
+          ) : filteredAndSortedRecipes.length === 0 ? (
             <div className="text-center py-12" data-testid="empty-state-search-recipes">
               <p className="text-muted-foreground">
                 No recipes match your search.
@@ -130,20 +131,20 @@ export default function Recipes() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Servings</TableHead>
                   <TableHead>Target Margin</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRecipes.map((recipe) => (
+                {filteredAndSortedRecipes.map((recipe) => (
                   <TableRow key={recipe.id} data-testid={`row-recipe-${recipe.id}`}>
                     <TableCell className="font-medium" data-testid={`text-recipe-name-${recipe.id}`}>
                       {recipe.name}
                     </TableCell>
-                    <TableCell data-testid={`text-recipe-description-${recipe.id}`}>
-                      {recipe.description || "-"}
+                    <TableCell data-testid={`text-recipe-category-${recipe.id}`}>
+                      {recipe.category || "-"}
                     </TableCell>
                     <TableCell data-testid={`text-recipe-servings-${recipe.id}`}>
                       {recipe.servings}

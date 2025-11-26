@@ -54,6 +54,7 @@ import PanYieldConverter from "@/components/PanYieldConverter";
 const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
+  category: z.string().optional(),
   servings: z.number().optional(),
   targetMargin: z.string().min(0, "Target margin must be positive"),
   targetFoodCost: z.string().min(0, "Target food cost must be positive"),
@@ -531,6 +532,7 @@ export default function RecipeForm() {
     defaultValues: {
       name: "",
       description: "",
+      category: "",
       targetMargin: "50",
       targetFoodCost: "30",
       laborCost: "0",
@@ -561,6 +563,7 @@ export default function RecipeForm() {
       form.reset({
         name: recipe.name,
         description: recipe.description || "",
+        category: recipe.category || "",
         targetMargin: recipe.targetMargin,
         targetFoodCost: recipe.targetFoodCost || "30",
         laborCost: recipe.laborCost || "0",
