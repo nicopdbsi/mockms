@@ -517,6 +517,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [hasScaled, setHasScaled] = useState(false);
   const [draggedIngredientIndex, setDraggedIngredientIndex] = useState<number | null>(null);
   const [draggedProcedureIndex, setDraggedProcedureIndex] = useState<number | null>(null);
+  const [draggedMaterialIndex, setDraggedMaterialIndex] = useState<number | null>(null);
   const [showPanConverter, setShowPanConverter] = useState(false);
   const [panSetup, setPanSetup] = useState("2 trays, 12x18 in");
 
@@ -1121,6 +1122,24 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
     setDraggedProcedureIndex(null);
   };
 
+  const handleMaterialDragStart = (index: number) => {
+    setDraggedMaterialIndex(index);
+  };
+
+  const handleMaterialDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleMaterialDrop = (targetIndex: number) => {
+    if (draggedMaterialIndex === null || draggedMaterialIndex === targetIndex) return;
+    const updated = [...selectedMaterials];
+    const draggedItem = updated[draggedMaterialIndex];
+    updated.splice(draggedMaterialIndex, 1);
+    updated.splice(targetIndex, 0, draggedItem);
+    setSelectedMaterials(updated);
+    setDraggedMaterialIndex(null);
+  };
+
   if (ingredientsLoading || materialsLoading || (recipeId && recipeLoading)) {
     return (
       <div className="space-y-6">
@@ -1670,21 +1689,13 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                         return (
                           <div 
                             key={index} 
-                            className="flex gap-2 items-center cursor-move"
+                            className={`flex gap-2 items-center cursor-move p-2 rounded-md ${draggedMaterialIndex === index ? "opacity-50 bg-muted" : ""}`}
                             data-testid={`material-row-${index}`}
                             draggable={!isViewMode}
-                            onDragStart={() => {
-                              const idx = index;
-                              const updated = [...selectedMaterials];
-                              const draggedItem = updated[idx];
-                              updated.splice(idx, 1);
-                              const moveHandler = (targetIdx: number) => {
-                                updated.splice(targetIdx, 0, draggedItem);
-                                setSelectedMaterials(updated);
-                              };
-                              setSelectedMaterials((prev) => prev);
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
+                            onDragStart={() => handleMaterialDragStart(index)}
+                            onDragOver={handleMaterialDragOver}
+                            onDrop={() => handleMaterialDrop(index)}
+                            onDragEnd={() => setDraggedMaterialIndex(null)}
                           >
                             {isViewMode ? (
                               <>
@@ -1789,31 +1800,16 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                   ) : (
                     <div className="space-y-4">
                       {procedureSteps.map((step, index) => (
-                        <div key={index} className="flex gap-2 items-start" data-testid={`procedure-row-${index}`}>
-                          {!isViewMode && (
-                            <div className="flex flex-col">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveProcedure(index, "up")}
-                                disabled={index === 0}
-                                data-testid={`button-move-procedure-up-${index}`}
-                              >
-                                <ChevronUp className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => moveProcedure(index, "down")}
-                                disabled={index === procedureSteps.length - 1}
-                                data-testid={`button-move-procedure-down-${index}`}
-                              >
-                                <ChevronDown className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          )}
+                        <div 
+                          key={index} 
+                          className={`flex gap-2 items-start cursor-move p-3 border rounded-md ${draggedProcedureIndex === index ? "opacity-50 bg-muted" : ""}`}
+                          data-testid={`procedure-row-${index}`}
+                          draggable={!isViewMode}
+                          onDragStart={() => handleProcedureDragStart(index)}
+                          onDragOver={handleProcedureDragOver}
+                          onDrop={() => handleProcedureDrop(index)}
+                          onDragEnd={() => setDraggedProcedureIndex(null)}
+                        >
                           {isViewMode ? (
                             <div className="flex-1 space-y-2">
                               {step.componentName && (
