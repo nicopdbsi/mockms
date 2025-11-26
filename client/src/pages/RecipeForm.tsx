@@ -664,7 +664,6 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
         title: "Success",
         description: "Recipe updated successfully",
       });
-      setLocation("/recipes");
     },
     onError: () => {
       toast({
