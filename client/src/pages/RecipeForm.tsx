@@ -531,11 +531,9 @@ export default function RecipeForm() {
     defaultValues: {
       name: "",
       description: "",
-      servings: undefined,
       targetMargin: "50",
       targetFoodCost: "30",
       laborCost: "0",
-      batchYield: 1,
       procedures: "",
       standardYieldPieces: undefined,
       standardYieldWeightPerPiece: undefined,
@@ -563,11 +561,9 @@ export default function RecipeForm() {
       form.reset({
         name: recipe.name,
         description: recipe.description || "",
-        servings: recipe.servings || undefined,
         targetMargin: recipe.targetMargin,
         targetFoodCost: recipe.targetFoodCost || "30",
         laborCost: recipe.laborCost || "0",
-        batchYield: recipe.batchYield || 1,
         procedures: recipe.procedures || "",
         standardYieldPieces: recipe.standardYieldPieces || undefined,
         standardYieldWeightPerPiece: recipe.standardYieldWeightPerPiece || undefined,
@@ -1157,62 +1153,13 @@ export default function RecipeForm() {
                       </FormItem>
                     )}
                   />
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="servings"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Servings per Batch</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(val === "" ? undefined : Number(val));
-                              }}
-                              data-testid="input-recipe-servings"
-                            />
-                          </FormControl>
-                          <FormDescription>How many servings this recipe makes</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="batchYield"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Batch Yield (Units for Sale)</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              type="number"
-                              min="1"
-                              value={field.value || 1}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              data-testid="input-recipe-batch-yield"
-                            />
-                          </FormControl>
-                          <FormDescription>Number of sellable units from one batch</FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
-                  <div>
-                    <CardTitle>Standard Yield</CardTitle>
-                    <CardDescription>Default batch configuration for scaling and conversions</CardDescription>
-                  </div>
+                  <CardTitle>Customer Portioning</CardTitle>
+                  <CardDescription>Defines how you portion and sell your product</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
@@ -1266,6 +1213,25 @@ export default function RecipeForm() {
                       )}
                     />
                   </div>
+                  <div className="text-sm text-muted-foreground space-y-2 border-t pt-4">
+                    <p className="font-medium text-foreground">Customer Portioning is Used for:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Pricing computation</li>
+                      <li>Labeling</li>
+                      <li>Customer-facing consistency</li>
+                      <li>Profit per item calculation</li>
+                    </ul>
+                    <p className="pt-2"><span className="font-medium">✅ For Example:</span> 24 pandesal, 30g each. This tells BentoHub: One batch produces 24 units, and each unit is marketed as 30g.</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kitchen Production Setup</CardTitle>
+                  <CardDescription>Standard batch configuration for production and scaling</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
                     <FormField
                       control={form.control}
@@ -1309,10 +1275,20 @@ export default function RecipeForm() {
                       )}
                     />
                   </div>
+                  <div className="text-sm text-muted-foreground space-y-2 border-t pt-4">
+                    <p className="font-medium text-foreground">Kitchen Production Setup is Used for:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Baker's Math scaling</li>
+                      <li>Ingredient recalculation</li>
+                      <li>Pan & yield conversion</li>
+                      <li>Production planning</li>
+                    </ul>
+                    <p className="pt-2"><span className="font-medium">✅ For Example:</span> You may sell pandesal as 30g each, but in production: You scale dough at 32g per piece to account for moisture loss. Actual post-bake weight becomes 30g.</p>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setShowPanConverter(true)}
-                    className="text-sm text-primary hover:underline"
+                    className="text-sm text-primary hover:underline mt-4"
                     data-testid="link-change-pan-yield"
                   >
                     Change using Pan & Yield Converter
