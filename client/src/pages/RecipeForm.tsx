@@ -1963,7 +1963,7 @@ export default function RecipeForm() {
 
             <TabsContent value="scaling" className="space-y-4">
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Cake Pan Conversion</h3>
+                <h3 className="text-lg font-semibold">Pan Conversion</h3>
                 <CakePanConverter 
                   selectedIngredients={selectedIngredients}
                   ingredients={ingredients}
