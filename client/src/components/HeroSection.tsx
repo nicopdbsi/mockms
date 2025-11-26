@@ -25,12 +25,8 @@ export default function HeroSection() {
           STOP GUESSING.<br />START EARNING.
         </h1>
         
-        <p className="text-lg md:text-xl text-white/90 mb-4 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-lg md:text-xl text-white/90 mb-10 max-w-2xl mx-auto leading-relaxed">
           A subscription-based Kitchen Management System designed to help small food entrepreneurs LAUNCH, MANAGE, and GROW their food business with confidence.
-        </p>
-
-        <p className="text-base md:text-lg text-white/80 mb-10 max-w-2xl mx-auto">
-          It's like having an executive team inside your kitchen—automating costs, managing inventory, and showing you exactly what to sell.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
