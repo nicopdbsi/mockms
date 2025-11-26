@@ -50,6 +50,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PanYieldConverter from "@/components/PanYieldConverter";
+import { RecipeUploadDialog } from "@/components/RecipeUploadDialog";
+import { Upload } from "lucide-react";
 
 const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
@@ -502,6 +504,7 @@ export default function RecipeForm() {
   const [hasScaled, setHasScaled] = useState(false);
   const [showPanConverter, setShowPanConverter] = useState(false);
   const [panSetup, setPanSetup] = useState("2 trays, 12x18 in");
+  const [showRecipeUploadDialog, setShowRecipeUploadDialog] = useState(false);
 
   const { data: ingredients, isLoading: ingredientsLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
@@ -1055,6 +1058,37 @@ export default function RecipeForm() {
     setProcedureSteps(updated);
   };
 
+  const handleRecipeExtracted = (parsedRecipe: any) => {
+    form.setValue("name", parsedRecipe.name || "");
+    form.setValue("description", parsedRecipe.description || "");
+    form.setValue("procedures", parsedRecipe.procedures || "");
+
+    const newIngredients: Array<{ ingredientId: string; quantity: string; componentName?: string; unit?: string }> = [];
+    
+    if (parsedRecipe.ingredients && Array.isArray(parsedRecipe.ingredients)) {
+      for (const ing of parsedRecipe.ingredients) {
+        const existingIng = ingredients?.find(
+          i => i.name.toLowerCase().trim() === ing.name.toLowerCase().trim()
+        );
+        
+        if (existingIng) {
+          newIngredients.push({
+            ingredientId: existingIng.id,
+            quantity: ing.quantity.toString(),
+            unit: ing.unit || "g",
+            componentName: "Main"
+          });
+        }
+      }
+    }
+
+    setSelectedIngredients(newIngredients);
+    toast({
+      title: "Recipe imported",
+      description: `${parsedRecipe.name} has been imported with ${newIngredients.length} ingredients.`
+    });
+  };
+
   if (ingredientsLoading || materialsLoading || (recipeId && recipeLoading)) {
     return (
       <div className="space-y-6">
@@ -1066,23 +1100,36 @@ export default function RecipeForm() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setLocation("/recipes")}
-          data-testid="button-back"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-recipe-form">
-            {recipeId ? "Edit Recipe" : "New Recipe"}
-          </h1>
-          <p className="text-muted-foreground" data-testid="text-recipe-form-description">
-            {recipeId ? "Update recipe details, costs, and pricing" : "Create a new recipe with full cost analysis"}
-          </p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setLocation("/recipes")}
+            data-testid="button-back"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-recipe-form">
+              {recipeId ? "Edit Recipe" : "New Recipe"}
+            </h1>
+            <p className="text-muted-foreground" data-testid="text-recipe-form-description">
+              {recipeId ? "Update recipe details, costs, and pricing" : "Create a new recipe with full cost analysis"}
+            </p>
+          </div>
         </div>
+        {!recipeId && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowRecipeUploadDialog(true)}
+            data-testid="button-import-recipe"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Import Recipe
+          </Button>
+        )}
       </div>
 
       <Form {...form}>
