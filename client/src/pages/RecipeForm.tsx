@@ -1195,7 +1195,7 @@ export default function RecipeForm() {
                   <CardDescription>Standard batch configuration for production and scaling</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-3">
+                  <div className="grid gap-4 md:grid-cols-4">
                     <FormField
                       control={form.control}
                       name="standardYieldPieces"
@@ -1263,6 +1263,30 @@ export default function RecipeForm() {
                               }}
                               placeholder="e.g., 24"
                               data-testid="input-batch-yield"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="servings"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Serving Size (portions)</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              type="number"
+                              min="1"
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                field.onChange(val === "" ? undefined : Number(val));
+                              }}
+                              placeholder="e.g., 8"
+                              data-testid="input-serving-size"
                             />
                           </FormControl>
                           <FormMessage />
