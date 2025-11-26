@@ -1,8 +1,9 @@
 import OpenAI from "openai";
 import { createRequire } from "module";
+import { Buffer } from "node:buffer";
 const require = createRequire(import.meta.url);
 const pdfParseModule = require("pdf-parse");
-const pdfParse = pdfParseModule.default || pdfParseModule;
+const pdfParse = typeof pdfParseModule === "function" ? pdfParseModule : (pdfParseModule.default || pdfParseModule);
 
 // This is using Replit's AI Integrations service, which provides OpenAI-compatible API access without requiring your own OpenAI API key.
 const openai = new OpenAI({
@@ -90,39 +91,50 @@ export async function parseRecipeImage(base64Image: string, mimeType: string): P
 }
 
 export async function parseRecipePDF(pdfBuffer: Buffer): Promise<ParsedRecipe> {
-  const data = await pdfParse(pdfBuffer);
-  const textContent = data.text;
-
-  if (!textContent || textContent.trim().length === 0) {
-    throw new Error("Could not extract text from PDF. The PDF may be image-based - please convert to an image format.");
-  }
-
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    response_format: { type: "json_object" },
-    max_completion_tokens: 4096,
-    messages: [
-      {
-        role: "system",
-        content: recipeSystemPrompt
-      },
-      {
-        role: "user",
-        content: `Extract the recipe from this PDF text. Include the recipe name, all ingredients with quantities and units, and procedures if visible. Return numeric values for quantities.\n\n${textContent}`
-      }
-    ]
-  });
-
-  const content = response.choices[0]?.message?.content;
-  if (!content) {
-    throw new Error("Failed to parse recipe PDF - no response from AI");
-  }
-
   try {
-    const parsed = JSON.parse(content);
-    return normalizeRecipeData(parsed);
-  } catch {
-    throw new Error("Failed to parse recipe PDF - invalid JSON response");
+    if (typeof pdfParse !== "function") {
+      throw new Error("PDF parser is not available - invalid module import");
+    }
+    
+    const data = await pdfParse(pdfBuffer);
+    const textContent = data.text;
+
+    if (!textContent || textContent.trim().length === 0) {
+      throw new Error("Could not extract text from PDF. The PDF may be image-based - please convert to an image format.");
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      response_format: { type: "json_object" },
+      max_completion_tokens: 4096,
+      messages: [
+        {
+          role: "system",
+          content: recipeSystemPrompt
+        },
+        {
+          role: "user",
+          content: `Extract the recipe from this PDF text. Include the recipe name, all ingredients with quantities and units, and procedures if visible. Return numeric values for quantities.\n\n${textContent}`
+        }
+      ]
+    });
+
+    const content = response.choices[0]?.message?.content;
+    if (!content) {
+      throw new Error("Failed to parse recipe PDF - no response from AI");
+    }
+
+    try {
+      const parsed = JSON.parse(content);
+      return normalizeRecipeData(parsed);
+    } catch {
+      throw new Error("Failed to parse recipe PDF - invalid JSON response");
+    }
+  } catch (error: any) {
+    if (error.message.includes("is not a function")) {
+      throw new Error("PDF parser module error - please try uploading an image instead");
+    }
+    throw error;
   }
 }
 
