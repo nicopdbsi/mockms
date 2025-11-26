@@ -248,6 +248,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = insertMaterialSchema.parse({
         ...req.body,
         userId: req.user!.id,
+        quantity: req.body.quantity ? parseFloat(req.body.quantity) || null : null,
+        pricePerUnit: req.body.pricePerUnit ? parseFloat(req.body.pricePerUnit) || null : null,
+        purchaseAmount: req.body.purchaseAmount ? parseFloat(req.body.purchaseAmount) || null : null,
       });
       const material = await storage.createMaterial(data);
       res.json(material);
@@ -264,7 +267,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const material = await storage.updateMaterial(
         req.params.id,
         req.user!.id,
-        req.body
+        {
+          ...req.body,
+          quantity: req.body.quantity ? parseFloat(req.body.quantity) || null : null,
+          pricePerUnit: req.body.pricePerUnit ? parseFloat(req.body.pricePerUnit) || null : null,
+          purchaseAmount: req.body.purchaseAmount ? parseFloat(req.body.purchaseAmount) || null : null,
+        }
       );
       if (!material) {
         return res.status(404).json({ message: "Material not found" });
