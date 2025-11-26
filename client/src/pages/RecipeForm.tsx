@@ -1530,13 +1530,27 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                         return (
                           <div 
                             key={index} 
-                            className={`flex flex-col gap-1 cursor-move ${draggedIngredientIndex === index ? "opacity-50" : ""}`}
+                            className={`flex flex-col gap-1 cursor-move p-3 border-2 rounded-md transition-colors ${draggedIngredientIndex === index ? "opacity-50 bg-muted" : "border-transparent hover:border-primary/30"}`}
                             data-testid={`ingredient-row-${index}`}
                             draggable={!isViewMode}
                             onDragStart={() => handleIngredientDragStart(index)}
-                            onDragOver={handleIngredientDragOver}
-                            onDrop={() => handleIngredientDrop(index)}
-                            onDragEnd={() => setDraggedIngredientIndex(null)}
+                            onDragOver={(e) => {
+                              handleIngredientDragOver(e);
+                              if (!isViewMode) {
+                                e.currentTarget.classList.add("border-primary", "bg-primary/5");
+                              }
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                            }}
+                            onDrop={(e) => {
+                              handleIngredientDrop(index);
+                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                            }}
+                            onDragEnd={() => {
+                              setDraggedIngredientIndex(null);
+                              (e.currentTarget as HTMLElement).classList.remove("border-primary", "bg-primary/5");
+                            }}
                           >
                             <div className="flex gap-2 items-start">
                               {isViewMode ? (
@@ -1689,13 +1703,27 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                         return (
                           <div 
                             key={index} 
-                            className={`flex gap-2 items-center cursor-move p-2 rounded-md ${draggedMaterialIndex === index ? "opacity-50 bg-muted" : ""}`}
+                            className={`flex gap-2 items-center cursor-move p-3 border-2 rounded-md transition-colors ${draggedMaterialIndex === index ? "opacity-50 bg-muted" : "border-transparent hover:border-primary/30"}`}
                             data-testid={`material-row-${index}`}
                             draggable={!isViewMode}
                             onDragStart={() => handleMaterialDragStart(index)}
-                            onDragOver={handleMaterialDragOver}
-                            onDrop={() => handleMaterialDrop(index)}
-                            onDragEnd={() => setDraggedMaterialIndex(null)}
+                            onDragOver={(e) => {
+                              handleMaterialDragOver(e);
+                              if (!isViewMode) {
+                                e.currentTarget.classList.add("border-primary", "bg-primary/5");
+                              }
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                            }}
+                            onDrop={(e) => {
+                              handleMaterialDrop(index);
+                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                            }}
+                            onDragEnd={() => {
+                              setDraggedMaterialIndex(null);
+                              (e.currentTarget as HTMLElement).classList.remove("border-primary", "bg-primary/5");
+                            }}
                           >
                             {isViewMode ? (
                               <>
@@ -1802,13 +1830,27 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                       {procedureSteps.map((step, index) => (
                         <div 
                           key={index} 
-                          className={`flex gap-2 items-start cursor-move p-3 border rounded-md ${draggedProcedureIndex === index ? "opacity-50 bg-muted" : ""}`}
+                          className={`flex gap-2 items-start cursor-move p-3 border-2 rounded-md transition-colors ${draggedProcedureIndex === index ? "opacity-50 bg-muted" : "border-transparent hover:border-primary/30"}`}
                           data-testid={`procedure-row-${index}`}
                           draggable={!isViewMode}
                           onDragStart={() => handleProcedureDragStart(index)}
-                          onDragOver={handleProcedureDragOver}
-                          onDrop={() => handleProcedureDrop(index)}
-                          onDragEnd={() => setDraggedProcedureIndex(null)}
+                          onDragOver={(e) => {
+                            handleProcedureDragOver(e);
+                            if (!isViewMode) {
+                              e.currentTarget.classList.add("border-primary", "bg-primary/5");
+                            }
+                          }}
+                          onDragLeave={(e) => {
+                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                          }}
+                          onDrop={(e) => {
+                            handleProcedureDrop(index);
+                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                          }}
+                          onDragEnd={() => {
+                            setDraggedProcedureIndex(null);
+                            (e.currentTarget as HTMLElement).classList.remove("border-primary", "bg-primary/5");
+                          }}
                         >
                           {isViewMode ? (
                             <div className="flex-1 space-y-2">

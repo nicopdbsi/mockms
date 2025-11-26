@@ -321,22 +321,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recipe = await storage.createRecipe(data);
       
       if (ingredients && Array.isArray(ingredients)) {
-        for (const ing of ingredients) {
+        for (let i = 0; i < ingredients.length; i++) {
+          const ing = ingredients[i];
           await storage.createRecipeIngredient({
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
             componentName: ing.componentName || null,
+            unit: ing.unit || "g",
+            position: i,
           });
         }
       }
 
       if (materials && Array.isArray(materials)) {
-        for (const mat of materials) {
+        for (let i = 0; i < materials.length; i++) {
+          const mat = materials[i];
           await storage.createRecipeMaterial({
             recipeId: recipe.id,
             materialId: mat.materialId,
             quantity: mat.quantity,
+            position: i,
           });
         }
       }
@@ -366,23 +371,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (ingredients && Array.isArray(ingredients)) {
         await storage.deleteRecipeIngredientsByRecipe(req.params.id);
-        for (const ing of ingredients) {
+        for (let i = 0; i < ingredients.length; i++) {
+          const ing = ingredients[i];
           await storage.createRecipeIngredient({
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
             componentName: ing.componentName || null,
+            unit: ing.unit || "g",
+            position: i,
           });
         }
       }
 
       if (materials && Array.isArray(materials)) {
         await storage.deleteRecipeMaterialsByRecipe(req.params.id);
-        for (const mat of materials) {
+        for (let i = 0; i < materials.length; i++) {
+          const mat = materials[i];
           await storage.createRecipeMaterial({
             recipeId: recipe.id,
             materialId: mat.materialId,
             quantity: mat.quantity,
+            position: i,
           });
         }
       }
