@@ -15,6 +15,21 @@ type UserWithRole = {
   createdAt: string;
 };
 
+// Format date to Philippines time (UTC+8)
+function formatPhilippinesTime(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-PH", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true,
+  });
+}
+
 export default function Admin() {
   const { toast } = useToast();
 
@@ -62,6 +77,7 @@ export default function Admin() {
                   <TableHead>Username</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Business</TableHead>
+                  <TableHead>Registration Date (Philippines Time)</TableHead>
                   <TableHead>Role</TableHead>
                 </TableRow>
               </TableHeader>
@@ -71,6 +87,7 @@ export default function Admin() {
                     <TableCell data-testid={`text-username-${user.id}`}>{user.username}</TableCell>
                     <TableCell data-testid={`text-email-${user.id}`}>{user.email}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{user.businessName || "-"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground" data-testid={`text-registration-date-${user.id}`}>{formatPhilippinesTime(user.createdAt)}</TableCell>
                     <TableCell>
                       <Select
                         value={user.role}
