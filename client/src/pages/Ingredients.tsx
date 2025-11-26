@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { formatCurrency } from "@/lib/currency";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -1021,6 +1023,7 @@ export default function Ingredients() {
   const [pendingDeleteIngredient, setPendingDeleteIngredient] = useState<Ingredient | null>(null);
   const [recipesUsingIngredient, setRecipesUsingIngredient] = useState<Recipe[]>([]);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: ingredients, isLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
@@ -1234,13 +1237,13 @@ export default function Ingredients() {
                       </TableCell>
                       <TableCell>{ingredient.category || "-"}</TableCell>
                       <TableCell className="text-right">
-                        ${parseFloat(ingredient.pricePerGram).toFixed(4)}
+                        {formatCurrency(parseFloat(ingredient.pricePerGram).toFixed(4), user?.currency || "USD")}
                       </TableCell>
                       <TableCell className="text-right">{ingredient.quantity}</TableCell>
                       <TableCell>{ingredient.unit}</TableCell>
                       <TableCell className="text-right">
                         {ingredient.purchaseAmount
-                          ? `$${parseFloat(ingredient.purchaseAmount).toFixed(2)}`
+                          ? formatCurrency(parseFloat(ingredient.purchaseAmount).toFixed(2), user?.currency || "USD")
                           : "-"}
                       </TableCell>
                       <TableCell>{getSupplierName(ingredient.supplierId)}</TableCell>

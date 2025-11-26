@@ -1449,7 +1449,7 @@ export default function RecipeForm() {
                                     </SelectItem>
                                     {sortedIngredients.map((ing) => (
                                       <SelectItem key={ing.id} value={ing.id}>
-                                        {ing.name} {ing.isCountBased ? "(count)" : ""} (${Number(ing.pricePerGram).toFixed(4)}/g)
+                                        {ing.name} {ing.isCountBased ? "(count)" : ""} ({formatCurrency(Number(ing.pricePerGram).toFixed(4), user?.currency || "USD")}/g)
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -1487,7 +1487,7 @@ export default function RecipeForm() {
                                 </div>
                               )}
                               <div className="w-20 text-right text-sm text-muted-foreground pt-2">
-                                ${isNaN(itemCost) ? "0.00" : itemCost.toFixed(2)}
+                                {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
                               </div>
                               <Button
                                 type="button"
@@ -1509,7 +1509,7 @@ export default function RecipeForm() {
                       })}
                       <div className="flex justify-end pt-2 border-t">
                         <div className="text-sm font-medium">
-                          Ingredients Total: <span className="text-primary">${ingredientsCost.toFixed(2)}</span>
+                          Ingredients Total: <span className="text-primary">{formatCurrency(ingredientsCost.toFixed(2), user?.currency || "USD")}</span>
                         </div>
                       </div>
                     </div>
@@ -1592,7 +1592,7 @@ export default function RecipeForm() {
                                   </SelectItem>
                                   {sortedMaterials.map((mat) => (
                                     <SelectItem key={mat.id} value={mat.id}>
-                                      {mat.name} (${Number(mat.pricePerUnit).toFixed(2)}/{mat.unit})
+                                      {mat.name} ({formatCurrency(Number(mat.pricePerUnit).toFixed(2), user?.currency || "USD")}/{mat.unit})
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -1610,7 +1610,7 @@ export default function RecipeForm() {
                               />
                             </div>
                             <div className="w-20 text-right text-sm text-muted-foreground">
-                              ${isNaN(itemCost) ? "0.00" : itemCost.toFixed(2)}
+                              {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
                             </div>
                             <Button
                               type="button"
@@ -1626,7 +1626,7 @@ export default function RecipeForm() {
                       })}
                       <div className="flex justify-end pt-2 border-t">
                         <div className="text-sm font-medium">
-                          Materials Total: <span className="text-primary">${materialsCost.toFixed(2)}</span>
+                          Materials Total: <span className="text-primary">{formatCurrency(materialsCost.toFixed(2), user?.currency || "USD")}</span>
                         </div>
                       </div>
                     </div>

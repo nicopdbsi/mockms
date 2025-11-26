@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { formatCurrency } from "@/lib/currency";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -793,6 +795,7 @@ export default function Materials() {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: materials, isLoading } = useQuery<Material[]>({
     queryKey: ["/api/materials"],
@@ -977,11 +980,11 @@ export default function Materials() {
                       <TableCell className="text-right">{material.quantity}</TableCell>
                       <TableCell>{material.unit}</TableCell>
                       <TableCell className="text-right">
-                        ${parseFloat(material.pricePerUnit).toFixed(2)}
+                        {formatCurrency(parseFloat(material.pricePerUnit).toFixed(2), user?.currency || "USD")}
                       </TableCell>
                       <TableCell className="text-right">
                         {material.purchaseAmount
-                          ? `$${parseFloat(material.purchaseAmount).toFixed(2)}`
+                          ? formatCurrency(parseFloat(material.purchaseAmount).toFixed(2), user?.currency || "USD")
                           : "-"}
                       </TableCell>
                       <TableCell>{getSupplierName(material.supplierId)}</TableCell>
