@@ -6,8 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Trash2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type UserWithRole = {
   id: string;
@@ -56,15 +59,17 @@ function getSortedUsers(users: UserWithRole[], sortConfig: SortConfig): UserWith
     if (aValue === null || aValue === undefined) return 1;
     if (bValue === null || bValue === undefined) return -1;
     
-    if (typeof aValue === "string") {
+    if (typeof aValue === "string" && typeof bValue === "string") {
       return sortConfig.direction === "asc" 
-        ? aValue.localeCompare(bValue as string)
-        : (bValue as string).localeCompare(aValue);
+        ? aValue.localeCompare(bValue)
+        : bValue.localeCompare(aValue);
     }
     
+    const aNum = aValue as any;
+    const bNum = bValue as any;
     return sortConfig.direction === "asc" 
-      ? (aValue < bValue ? -1 : 1)
-      : (bValue < aValue ? -1 : 1);
+      ? (aNum < bNum ? -1 : 1)
+      : (bNum < aNum ? -1 : 1);
   });
   
   return sorted;
@@ -73,6 +78,8 @@ function getSortedUsers(users: UserWithRole[], sortConfig: SortConfig): UserWith
 export default function Admin() {
   const { toast } = useToast();
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newUserData, setNewUserData] = useState({ username: "", email: "", password: "", firstName: "", businessName: "" });
 
   const { data: users, isLoading } = useQuery<UserWithRole[]>({
     queryKey: ["/api/admin/users"],
@@ -103,11 +110,119 @@ export default function Admin() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${userId}`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({ description: "User deleted successfully" });
+    },
+    onError: () => {
+      toast({ description: "Failed to delete user", variant: "destructive" });
+    },
+  });
+
+  const addUserMutation = useMutation({
+    mutationFn: async (data: typeof newUserData) => {
+      const response = await apiRequest("POST", "/api/auth/register", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      setIsAddDialogOpen(false);
+      setNewUserData({ username: "", email: "", password: "", firstName: "", businessName: "" });
+      toast({ description: "User added successfully" });
+    },
+    onError: (error: any) => {
+      toast({ description: error.message || "Failed to add user", variant: "destructive" });
+    },
+  });
+
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-3xl font-bold">Admin Panel</h1>
-        <p className="text-muted-foreground">Manage user roles and permissions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Admin Panel</h1>
+          <p className="text-muted-foreground">Manage user roles and permissions</p>
+        </div>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button data-testid="button-add-user">
+              <Plus className="w-4 h-4 mr-2" />
+              Add User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New User</DialogTitle>
+              <DialogDescription>Create a new user account</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={newUserData.username}
+                  onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                  placeholder="username"
+                  data-testid="input-add-username"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={newUserData.email}
+                  onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                  placeholder="email@example.com"
+                  data-testid="input-add-email"
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={newUserData.password}
+                  onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                  placeholder="••••••••"
+                  data-testid="input-add-password"
+                />
+              </div>
+              <div>
+                <Label htmlFor="firstName">First Name (Optional)</Label>
+                <Input
+                  id="firstName"
+                  value={newUserData.firstName}
+                  onChange={(e) => setNewUserData({ ...newUserData, firstName: e.target.value })}
+                  placeholder="First Name"
+                  data-testid="input-add-first-name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="businessName">Business Name (Optional)</Label>
+                <Input
+                  id="businessName"
+                  value={newUserData.businessName}
+                  onChange={(e) => setNewUserData({ ...newUserData, businessName: e.target.value })}
+                  placeholder="Business Name"
+                  data-testid="input-add-business-name"
+                />
+              </div>
+              <Button 
+                onClick={() => addUserMutation.mutate(newUserData)}
+                disabled={addUserMutation.isPending || !newUserData.username || !newUserData.email || !newUserData.password}
+                className="w-full"
+                data-testid="button-submit-add-user"
+              >
+                {addUserMutation.isPending ? "Adding..." : "Add User"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -198,6 +313,7 @@ export default function Admin() {
                     </Button>
                   </TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -226,6 +342,20 @@ export default function Admin() {
                           <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (window.confirm(`Delete user ${user.username}?`)) {
+                            deleteUserMutation.mutate(user.id);
+                          }
+                        }}
+                        data-testid={`button-delete-user-${user.id}`}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
