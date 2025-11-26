@@ -1547,9 +1547,9 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                               handleIngredientDrop(index);
                               e.currentTarget.classList.remove("border-primary", "bg-primary/5");
                             }}
-                            onDragEnd={() => {
+                            onDragEnd={(e) => {
                               setDraggedIngredientIndex(null);
-                              (e.currentTarget as HTMLElement).classList.remove("border-primary", "bg-primary/5");
+                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
                             }}
                           >
                             <div className="flex gap-2 items-start">
@@ -1720,9 +1720,9 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                               handleMaterialDrop(index);
                               e.currentTarget.classList.remove("border-primary", "bg-primary/5");
                             }}
-                            onDragEnd={() => {
+                            onDragEnd={(e) => {
                               setDraggedMaterialIndex(null);
-                              (e.currentTarget as HTMLElement).classList.remove("border-primary", "bg-primary/5");
+                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
                             }}
                           >
                             {isViewMode ? (
@@ -1847,9 +1847,9 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                             handleProcedureDrop(index);
                             e.currentTarget.classList.remove("border-primary", "bg-primary/5");
                           }}
-                          onDragEnd={() => {
+                          onDragEnd={(e) => {
                             setDraggedProcedureIndex(null);
-                            (e.currentTarget as HTMLElement).classList.remove("border-primary", "bg-primary/5");
+                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
                           }}
                         >
                           {isViewMode ? (
