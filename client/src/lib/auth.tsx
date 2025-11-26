@@ -9,6 +9,8 @@ type User = {
   firstName: string | null;
   businessName: string | null;
   role: string;
+  currency: string;
+  timezone: string;
   createdAt: string;
 };
 

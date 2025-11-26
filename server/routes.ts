@@ -614,6 +614,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User settings routes
+  app.patch("/api/user/settings", requireAuth, async (req, res, next) => {
+    try {
+      const { currency, timezone } = req.body;
+      if (!currency || !timezone) {
+        return res.status(400).json({ message: "Currency and timezone are required" });
+      }
+      const updated = await storage.updateUserSettings(req.user!.id, currency, timezone);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password, ...sanitized } = updated;
+      res.json(sanitized);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/user/credentials", requireAuth, async (req, res, next) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      const hashedPassword = await crypto.hash(password);
+      const updated = await storage.updateUserCredentials(req.user!.id, username, hashedPassword);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password: _, ...sanitized } = updated;
+      res.json(sanitized);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Receipt parsing endpoint
   app.post("/api/parse-receipt", requireAuth, upload.single("file"), async (req, res, next) => {
     try {

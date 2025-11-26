@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, Shield } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, Shield, User, Settings as SettingsIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
 
@@ -160,6 +160,24 @@ function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild data-active={location === "/profile"}>
+                  <Link href="/profile" data-testid="link-profile">
+                    <User />
+                    <span>Profile</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild data-active={location === "/settings"}>
+                  <Link href="/settings" data-testid="link-settings">
+                    <SettingsIcon />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
