@@ -86,7 +86,6 @@ export const recipeIngredients = pgTable("recipe_ingredients", {
   quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
   componentName: text("component_name").default("Main"),
   unit: text("unit").default("g"),
-  position: integer("position").default(0).notNull(),
 });
 
 export const recipeMaterials = pgTable("recipe_materials", {
@@ -94,7 +93,6 @@ export const recipeMaterials = pgTable("recipe_materials", {
   recipeId: varchar("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
   materialId: varchar("material_id").notNull().references(() => materials.id, { onDelete: "cascade" }),
   quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
-  position: integer("position").default(0).notNull(),
 });
 
 export const orders = pgTable("orders", {

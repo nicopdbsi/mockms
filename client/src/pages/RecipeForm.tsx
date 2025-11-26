@@ -515,9 +515,6 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [scalingWeightPerPiece, setScalingWeightPerPiece] = useState<string>("");
   const [scaledIngredients, setScaledIngredients] = useState<ScaledIngredient[]>([]);
   const [hasScaled, setHasScaled] = useState(false);
-  const [draggedIngredientIndex, setDraggedIngredientIndex] = useState<number | null>(null);
-  const [draggedProcedureIndex, setDraggedProcedureIndex] = useState<number | null>(null);
-  const [draggedMaterialIndex, setDraggedMaterialIndex] = useState<number | null>(null);
   const [showPanConverter, setShowPanConverter] = useState(false);
   const [panSetup, setPanSetup] = useState("2 trays, 12x18 in");
 
@@ -1070,24 +1067,6 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
     setSelectedIngredients(updated);
   };
 
-  const handleIngredientDragStart = (index: number) => {
-    setDraggedIngredientIndex(index);
-  };
-
-  const handleIngredientDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleIngredientDrop = (targetIndex: number) => {
-    if (draggedIngredientIndex === null || draggedIngredientIndex === targetIndex) return;
-    const updated = [...selectedIngredients];
-    const draggedItem = updated[draggedIngredientIndex];
-    updated.splice(draggedIngredientIndex, 1);
-    updated.splice(targetIndex, 0, draggedItem);
-    setSelectedIngredients(updated);
-    setDraggedIngredientIndex(null);
-  };
-
   const moveMaterial = (index: number, direction: "up" | "down") => {
     const newIndex = direction === "up" ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= selectedMaterials.length) return;
@@ -1102,42 +1081,6 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
     const updated = [...procedureSteps];
     [updated[index], updated[newIndex]] = [updated[newIndex], updated[index]];
     setProcedureSteps(updated);
-  };
-
-  const handleProcedureDragStart = (index: number) => {
-    setDraggedProcedureIndex(index);
-  };
-
-  const handleProcedureDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleProcedureDrop = (targetIndex: number) => {
-    if (draggedProcedureIndex === null || draggedProcedureIndex === targetIndex) return;
-    const updated = [...procedureSteps];
-    const draggedItem = updated[draggedProcedureIndex];
-    updated.splice(draggedProcedureIndex, 1);
-    updated.splice(targetIndex, 0, draggedItem);
-    setProcedureSteps(updated);
-    setDraggedProcedureIndex(null);
-  };
-
-  const handleMaterialDragStart = (index: number) => {
-    setDraggedMaterialIndex(index);
-  };
-
-  const handleMaterialDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleMaterialDrop = (targetIndex: number) => {
-    if (draggedMaterialIndex === null || draggedMaterialIndex === targetIndex) return;
-    const updated = [...selectedMaterials];
-    const draggedItem = updated[draggedMaterialIndex];
-    updated.splice(draggedMaterialIndex, 1);
-    updated.splice(targetIndex, 0, draggedItem);
-    setSelectedMaterials(updated);
-    setDraggedMaterialIndex(null);
   };
 
   if (ingredientsLoading || materialsLoading || (recipeId && recipeLoading)) {
@@ -1528,31 +1471,32 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                           ? quantityInGrams * parseFloat(selectedIng.pricePerGram)
                           : 0;
                         return (
-                          <div 
-                            key={index} 
-                            className={`flex flex-col gap-1 cursor-move p-3 border-2 rounded-md transition-colors ${draggedIngredientIndex === index ? "opacity-50 bg-muted" : "border-transparent hover:border-primary/30"}`}
-                            data-testid={`ingredient-row-${index}`}
-                            draggable={!isViewMode}
-                            onDragStart={() => handleIngredientDragStart(index)}
-                            onDragOver={(e) => {
-                              handleIngredientDragOver(e);
-                              if (!isViewMode) {
-                                e.currentTarget.classList.add("border-primary", "bg-primary/5");
-                              }
-                            }}
-                            onDragLeave={(e) => {
-                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                            }}
-                            onDrop={(e) => {
-                              handleIngredientDrop(index);
-                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                            }}
-                            onDragEnd={(e) => {
-                              setDraggedIngredientIndex(null);
-                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                            }}
-                          >
+                          <div key={index} className="flex flex-col gap-1" data-testid={`ingredient-row-${index}`}>
                             <div className="flex gap-2 items-start">
+                              {!isViewMode && (
+                                <div className="flex flex-col">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => moveIngredient(index, "up")}
+                                    disabled={index === 0}
+                                    data-testid={`button-move-ingredient-up-${index}`}
+                                  >
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => moveIngredient(index, "down")}
+                                    disabled={index === selectedIngredients.length - 1}
+                                    data-testid={`button-move-ingredient-down-${index}`}
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
                               {isViewMode ? (
                                 <>
                                   {item.componentName && (
@@ -1701,30 +1645,31 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                           ? parseFloat(item.quantity) * parseFloat(selectedMat.pricePerUnit)
                           : 0;
                         return (
-                          <div 
-                            key={index} 
-                            className={`flex gap-2 items-center cursor-move p-3 border-2 rounded-md transition-colors ${draggedMaterialIndex === index ? "opacity-50 bg-muted" : "border-transparent hover:border-primary/30"}`}
-                            data-testid={`material-row-${index}`}
-                            draggable={!isViewMode}
-                            onDragStart={() => handleMaterialDragStart(index)}
-                            onDragOver={(e) => {
-                              handleMaterialDragOver(e);
-                              if (!isViewMode) {
-                                e.currentTarget.classList.add("border-primary", "bg-primary/5");
-                              }
-                            }}
-                            onDragLeave={(e) => {
-                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                            }}
-                            onDrop={(e) => {
-                              handleMaterialDrop(index);
-                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                            }}
-                            onDragEnd={(e) => {
-                              setDraggedMaterialIndex(null);
-                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                            }}
-                          >
+                          <div key={index} className="flex gap-2 items-center" data-testid={`material-row-${index}`}>
+                            {!isViewMode && (
+                              <div className="flex flex-col">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveMaterial(index, "up")}
+                                  disabled={index === 0}
+                                  data-testid={`button-move-material-up-${index}`}
+                                >
+                                  <ChevronUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveMaterial(index, "down")}
+                                  disabled={index === selectedMaterials.length - 1}
+                                  data-testid={`button-move-material-down-${index}`}
+                                >
+                                  <ChevronDown className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
                             {isViewMode ? (
                               <>
                                 <div className="flex-1 text-sm">{selectedMat?.name}</div>
@@ -1828,30 +1773,31 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                   ) : (
                     <div className="space-y-4">
                       {procedureSteps.map((step, index) => (
-                        <div 
-                          key={index} 
-                          className={`flex gap-2 items-start cursor-move p-3 border-2 rounded-md transition-colors ${draggedProcedureIndex === index ? "opacity-50 bg-muted" : "border-transparent hover:border-primary/30"}`}
-                          data-testid={`procedure-row-${index}`}
-                          draggable={!isViewMode}
-                          onDragStart={() => handleProcedureDragStart(index)}
-                          onDragOver={(e) => {
-                            handleProcedureDragOver(e);
-                            if (!isViewMode) {
-                              e.currentTarget.classList.add("border-primary", "bg-primary/5");
-                            }
-                          }}
-                          onDragLeave={(e) => {
-                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                          }}
-                          onDrop={(e) => {
-                            handleProcedureDrop(index);
-                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                          }}
-                          onDragEnd={(e) => {
-                            setDraggedProcedureIndex(null);
-                            e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                          }}
-                        >
+                        <div key={index} className="flex gap-2 items-start" data-testid={`procedure-row-${index}`}>
+                          {!isViewMode && (
+                            <div className="flex flex-col">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveProcedure(index, "up")}
+                                disabled={index === 0}
+                                data-testid={`button-move-procedure-up-${index}`}
+                              >
+                                <ChevronUp className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => moveProcedure(index, "down")}
+                                disabled={index === procedureSteps.length - 1}
+                                data-testid={`button-move-procedure-down-${index}`}
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
                           {isViewMode ? (
                             <div className="flex-1 space-y-2">
                               {step.componentName && (
