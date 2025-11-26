@@ -50,6 +50,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PanYieldConverter from "@/components/PanYieldConverter";
+import CakePanConverter from "@/components/CakePanConverter";
 
 const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
@@ -1969,15 +1970,19 @@ export default function RecipeForm() {
             </TabsContent>
 
             <TabsContent value="scaling" className="space-y-4">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowPanConverter(true)}
-                data-testid="button-pan-yield-converter"
-              >
-                Pan & Yield Converter
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPanConverter(true)}
+                  data-testid="button-pan-yield-converter"
+                >
+                  Pan & Yield Converter
+                </Button>
+              </div>
+
+              <CakePanConverter />
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
