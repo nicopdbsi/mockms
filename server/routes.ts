@@ -328,6 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
             componentName: ing.componentName || null,
+            unit: ing.unit || "g",
             order: index,
           });
         }
@@ -375,6 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ingredientId: ing.ingredientId,
             quantity: ing.quantity,
             componentName: ing.componentName || null,
+            unit: ing.unit || "g",
             order: index,
           });
         }
