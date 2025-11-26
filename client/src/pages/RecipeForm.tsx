@@ -2098,7 +2098,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Pan Conversion</h3>
                 <CakePanConverter 
-                  selectedIngredients={selectedIngredients}
+                  selectedIngredients={selectedIngredients.map(ing => ({ ...ing, unit: ing.unit || "g" }))}
                   ingredients={ingredients}
                   getQuantityInGrams={getQuantityInGrams}
                 />
