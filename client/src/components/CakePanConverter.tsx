@@ -325,57 +325,32 @@ export default function CakePanConverter({
       <Card>
         <CardHeader>
           <CardTitle>Conversion Ratio</CardTitle>
-          <CardDescription>Multiply all ingredient amounts by this ratio</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent>
           {originalVolume <= 0 ? (
             <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>Please enter valid dimensions for both pans</AlertDescription>
             </Alert>
           ) : (
-            <>
-              <div className="flex items-end gap-3">
-                <div className="flex-1">
-                  <Label className="text-sm text-muted-foreground">Conversion Factor</Label>
-                  <div className="text-4xl font-bold text-primary" data-testid="text-conversion-ratio">
-                    {conversionRatio.toFixed(2)}x
-                  </div>
+            <div className="flex items-end gap-3">
+              <div className="flex-1">
+                <Label className="text-sm text-muted-foreground">Conversion Factor</Label>
+                <div className="text-4xl font-bold text-primary" data-testid="text-conversion-ratio">
+                  {conversionRatio.toFixed(2)}x
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={handleCopyRatio}
-                  data-testid="button-copy-ratio"
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy
-                </Button>
               </div>
-
-              <div className="pt-4 border-t space-y-3">
-                <h4 className="font-medium text-sm">How to use:</h4>
-                <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                  <li>
-                    Multiply each ingredient amount by{" "}
-                    <span className="font-semibold text-foreground">{conversionRatio.toFixed(2)}</span>
-                  </li>
-                  {conversionRatio < 1 && <li>Your pan is smaller - you'll need fewer ingredients</li>}
-                  {conversionRatio > 1 && <li>Your pan is larger - you'll need more ingredients</li>}
-                  {conversionRatio === 1 && <li>Your pans are the same size - use the original amounts</li>}
-                  <li>Adjust baking time as needed (usually only slightly longer for larger pans)</li>
-                </ol>
-              </div>
-
-              <Alert className="mt-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Baking time does not scale proportionally. Check your cake often and use a cake tester to ensure
-                  it's done.
-                </AlertDescription>
-              </Alert>
-            </>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleCopyRatio}
+                data-testid="button-copy-ratio"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
