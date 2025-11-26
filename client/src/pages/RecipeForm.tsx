@@ -503,9 +503,6 @@ export default function RecipeForm() {
   const [hasScaled, setHasScaled] = useState(false);
   const [showPanConverter, setShowPanConverter] = useState(false);
   const [panSetup, setPanSetup] = useState("2 trays, 12x18 in");
-  const [converterMode, setConverterMode] = useState<"serving" | "pan">("serving");
-  const [converterDesiredPieces, setConverterDesiredPieces] = useState<string>("");
-  const [converterWeightPerPiece, setConverterWeightPerPiece] = useState<string>("30");
 
   const [forecastUnitsPerMonth, setForecastUnitsPerMonth] = useState<string>("100");
   const [forecastSellingPrice, setForecastSellingPrice] = useState<string>("");
@@ -1972,59 +1969,15 @@ export default function RecipeForm() {
             </TabsContent>
 
             <TabsContent value="scaling" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Serving & Pan Converter</CardTitle>
-                  <CardDescription>Quickly adjust yield by serving size or pan dimensions</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Tabs value={converterMode} onValueChange={(v) => setConverterMode(v as "serving" | "pan")}>
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="serving">By Serving Size</TabsTrigger>
-                      <TabsTrigger value="pan">By Pan Size</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="serving" className="space-y-4 mt-4">
-                      <div className="grid gap-4 md:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="converter-pieces">Desired # of Pieces</Label>
-                          <Input
-                            id="converter-pieces"
-                            type="number"
-                            min="1"
-                            placeholder="e.g., 50"
-                            value={converterDesiredPieces}
-                            onChange={(e) => setConverterDesiredPieces(e.target.value)}
-                            data-testid="input-converter-pieces"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="converter-weight">Weight per Piece (g)</Label>
-                          <Input
-                            id="converter-weight"
-                            type="number"
-                            min="1"
-                            step="0.1"
-                            placeholder="e.g., 30"
-                            value={converterWeightPerPiece}
-                            onChange={(e) => setConverterWeightPerPiece(e.target.value)}
-                            data-testid="input-converter-weight"
-                          />
-                        </div>
-                      </div>
-                      <div className="p-3 bg-muted rounded-lg text-sm">
-                        <div className="text-muted-foreground">Total Weight: {(parseFloat(converterDesiredPieces || "0") * parseFloat(converterWeightPerPiece || "30")).toFixed(0)} g</div>
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="pan" className="space-y-4 mt-4">
-                      <div className="p-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
-                        Pan size conversion is best managed through the Baker's Math Scaling section. Adjust desired pieces and weight per piece above for more control.
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPanConverter(true)}
+                data-testid="button-pan-yield-converter"
+              >
+                Pan & Yield Converter
+              </Button>
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
