@@ -1257,8 +1257,8 @@ export default function Ingredients() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => deleteMutation.mutate(ingredient.id)}
-                            disabled={deleteMutation.isPending}
+                            onClick={() => handleDeleteIngredient(ingredient)}
+                            disabled={checkRecipeUsageMutation.isPending || deleteMutation.isPending}
                             data-testid={`button-delete-ingredient-${ingredient.id}`}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -1295,6 +1295,71 @@ export default function Ingredients() {
         existingIngredients={ingredients || []}
         existingMaterials={[]}
       />
+
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600" />
+              <DialogTitle>Delete Ingredient?</DialogTitle>
+            </div>
+            <DialogDescription>
+              This ingredient is used in {recipesUsingIngredient.length} recipe{recipesUsingIngredient.length !== 1 ? "s" : ""}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {recipesUsingIngredient.length > 0 && (
+            <div className="space-y-3">
+              <div className="text-sm font-medium">Recipes using "{pendingDeleteIngredient?.name}":</div>
+              <div className="space-y-2 max-h-60 overflow-y-auto bg-muted/30 rounded-lg p-3">
+                {recipesUsingIngredient.map((recipe) => (
+                  <div key={recipe.id} className="text-sm flex items-start gap-2">
+                    <div className="text-muted-foreground mt-1">•</div>
+                    <div className="flex-1">
+                      <div className="font-medium">{recipe.name}</div>
+                      {recipe.category && (
+                        <div className="text-xs text-muted-foreground">{recipe.category}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-amber-600 dark:text-amber-500 flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                Deleting this ingredient will remove it from all recipes listed above.
+              </p>
+            </div>
+          )}
+
+          {recipesUsingIngredient.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete "{pendingDeleteIngredient?.name}"?
+            </p>
+          )}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteConfirm(false);
+                setPendingDeleteIngredient(null);
+                setRecipesUsingIngredient([]);
+              }}
+              data-testid="button-cancel-delete"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete Ingredient"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
