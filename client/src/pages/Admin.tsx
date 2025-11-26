@@ -16,13 +16,20 @@ type UserWithRole = {
 };
 
 // Format date to Philippines time (UTC+8)
-function formatPhilippinesTime(dateString: string): string {
+function formatPhilippinesDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleString("en-PH", {
     timeZone: "Asia/Manila",
     year: "numeric",
     month: "short",
     day: "numeric",
+  });
+}
+
+function formatPhilippinesTime(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-PH", {
+    timeZone: "Asia/Manila",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -74,7 +81,8 @@ export default function Admin() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Registration Date (Philippines Time)</TableHead>
+                  <TableHead>Date Confirmed</TableHead>
+                  <TableHead>Time Confirmed</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Business</TableHead>
@@ -84,7 +92,8 @@ export default function Admin() {
               <TableBody>
                 {users?.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="text-sm text-muted-foreground" data-testid={`text-registration-date-${user.id}`}>{formatPhilippinesTime(user.createdAt)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground" data-testid={`text-date-confirmed-${user.id}`}>{formatPhilippinesDate(user.createdAt)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground" data-testid={`text-time-confirmed-${user.id}`}>{formatPhilippinesTime(user.createdAt)}</TableCell>
                     <TableCell data-testid={`text-username-${user.id}`}>{user.username}</TableCell>
                     <TableCell data-testid={`text-email-${user.id}`}>{user.email}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{user.businessName || "-"}</TableCell>
