@@ -1147,59 +1147,80 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Recipe Name *</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="e.g., Chocolate Cake"
-                              data-testid="input-recipe-name"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="e.g., Desserts, Bread"
-                              data-testid="input-recipe-category"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            {...field}
-                            placeholder="Brief description of the recipe"
-                            rows={3}
-                            data-testid="input-recipe-description"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                    {isViewMode ? (
+                      <div>
+                        <FormLabel>Recipe Name *</FormLabel>
+                        <div className="mt-2 p-2 text-sm">{form.getValues("name")}</div>
+                      </div>
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Recipe Name *</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="e.g., Chocolate Cake"
+                                data-testid="input-recipe-name"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     )}
-                  />
+                    {isViewMode ? (
+                      <div>
+                        <FormLabel>Category</FormLabel>
+                        <div className="mt-2 p-2 text-sm">{form.getValues("category") || "-"}</div>
+                      </div>
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="e.g., Desserts, Bread"
+                                data-testid="input-recipe-category"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                  {isViewMode ? (
+                    <div>
+                      <FormLabel>Description</FormLabel>
+                      <div className="mt-2 p-2 text-sm whitespace-pre-wrap">{form.getValues("description") || "-"}</div>
+                    </div>
+                  ) : (
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Brief description of the recipe"
+                              rows={3}
+                              data-testid="input-recipe-description"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </CardContent>
               </Card>
 
@@ -1410,102 +1431,122 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                         return (
                           <div key={index} className="flex flex-col gap-1" data-testid={`ingredient-row-${index}`}>
                             <div className="flex gap-2 items-start">
-                              <div className="flex flex-col">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => moveIngredient(index, "up")}
-                                  disabled={index === 0}
-                                  data-testid={`button-move-ingredient-up-${index}`}
-                                >
-                                  <ChevronUp className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => moveIngredient(index, "down")}
-                                  disabled={index === selectedIngredients.length - 1}
-                                  data-testid={`button-move-ingredient-down-${index}`}
-                                >
-                                  <ChevronDown className="h-4 w-4" />
-                                </Button>
-                              </div>
-                              <div className="w-36">
-                                <Input
-                                  placeholder="Component"
-                                  value={item.componentName || ""}
-                                  onChange={(e) => updateIngredient(index, "componentName", e.target.value)}
-                                  data-testid={`input-component-${index}`}
-                                />
-                              </div>
-                              <div className="flex-1">
-                                <Select
-                                  value={item.ingredientId}
-                                  onValueChange={(value) => updateIngredient(index, "ingredientId", value)}
-                                >
-                                  <SelectTrigger data-testid={`select-ingredient-${index}`}>
-                                    <SelectValue placeholder="Select ingredient" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="__add_new__" data-testid="option-add-new-ingredient">
-                                      <span className="flex items-center gap-2 text-primary">
-                                        <Plus className="h-4 w-4" />
-                                        Add New Ingredient
-                                      </span>
-                                    </SelectItem>
-                                    {sortedIngredients.map((ing) => (
-                                      <SelectItem key={ing.id} value={ing.id}>
-                                        {ing.name} {ing.isCountBased ? "(count)" : ""} ({formatCurrency(Number(ing.pricePerGram).toFixed(4), user?.currency || "USD")}/g)
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="w-20">
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  min="0"
-                                  placeholder="Qty"
-                                  value={item.quantity}
-                                  onChange={(e) => updateIngredient(index, "quantity", e.target.value)}
-                                  data-testid={`input-quantity-${index}`}
-                                />
-                              </div>
-                              {isCountBased ? (
-                                <div className="w-16">
-                                  <Select
-                                    value={currentUnit}
-                                    onValueChange={(value) => updateIngredient(index, "unit", value)}
+                              {!isViewMode && (
+                                <div className="flex flex-col">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => moveIngredient(index, "up")}
+                                    disabled={index === 0}
+                                    data-testid={`button-move-ingredient-up-${index}`}
                                   >
-                                    <SelectTrigger data-testid={`select-unit-${index}`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="g">g</SelectItem>
-                                      <SelectItem value="pcs">pcs</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              ) : (
-                                <div className="w-16 text-sm text-muted-foreground pt-2 text-center">
-                                  g
+                                    <ChevronUp className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => moveIngredient(index, "down")}
+                                    disabled={index === selectedIngredients.length - 1}
+                                    data-testid={`button-move-ingredient-down-${index}`}
+                                  >
+                                    <ChevronDown className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               )}
-                              <div className="w-20 text-right text-sm text-muted-foreground pt-2">
-                                {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => removeIngredient(index)}
-                                data-testid={`button-remove-ingredient-${index}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              {isViewMode ? (
+                                <>
+                                  {item.componentName && (
+                                    <div className="w-36 text-sm font-medium">{item.componentName}</div>
+                                  )}
+                                  <div className="flex-1 text-sm">{selectedIng?.name}</div>
+                                  <div className="w-20 text-sm text-right">{item.quantity} {currentUnit}</div>
+                                  {isCountBased && displayConversion && (
+                                    <div className="text-sm text-muted-foreground">≈ {displayConversion}</div>
+                                  )}
+                                  <div className="w-20 text-right text-sm font-medium">
+                                    {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="w-36">
+                                    <Input
+                                      placeholder="Component"
+                                      value={item.componentName || ""}
+                                      onChange={(e) => updateIngredient(index, "componentName", e.target.value)}
+                                      data-testid={`input-component-${index}`}
+                                    />
+                                  </div>
+                                  <div className="flex-1">
+                                    <Select
+                                      value={item.ingredientId}
+                                      onValueChange={(value) => updateIngredient(index, "ingredientId", value)}
+                                    >
+                                      <SelectTrigger data-testid={`select-ingredient-${index}`}>
+                                        <SelectValue placeholder="Select ingredient" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="__add_new__" data-testid="option-add-new-ingredient">
+                                          <span className="flex items-center gap-2 text-primary">
+                                            <Plus className="h-4 w-4" />
+                                            Add New Ingredient
+                                          </span>
+                                        </SelectItem>
+                                        {sortedIngredients.map((ing) => (
+                                          <SelectItem key={ing.id} value={ing.id}>
+                                            {ing.name} {ing.isCountBased ? "(count)" : ""} ({formatCurrency(Number(ing.pricePerGram).toFixed(4), user?.currency || "USD")}/g)
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="w-20">
+                                    <Input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      placeholder="Qty"
+                                      value={item.quantity}
+                                      onChange={(e) => updateIngredient(index, "quantity", e.target.value)}
+                                      data-testid={`input-quantity-${index}`}
+                                    />
+                                  </div>
+                                  {isCountBased ? (
+                                    <div className="w-16">
+                                      <Select
+                                        value={currentUnit}
+                                        onValueChange={(value) => updateIngredient(index, "unit", value)}
+                                      >
+                                        <SelectTrigger data-testid={`select-unit-${index}`}>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="g">g</SelectItem>
+                                          <SelectItem value="pcs">pcs</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  ) : (
+                                    <div className="w-16 text-sm text-muted-foreground pt-2 text-center">
+                                      g
+                                    </div>
+                                  )}
+                                  <div className="w-20 text-right text-sm text-muted-foreground pt-2">
+                                    {formatCurrency(isNaN(itemCost) ? "0.00" : itemCost.toFixed(2), user?.currency || "USD")}
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeIngredient(index)}
+                                    data-testid={`button-remove-ingredient-${index}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </>
+                              )}
                             </div>
                             {isCountBased && displayConversion && (
                               <div className="ml-20 text-xs text-muted-foreground" data-testid={`conversion-${index}`}>
