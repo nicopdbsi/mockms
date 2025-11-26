@@ -53,7 +53,7 @@ export const materials = pgTable("materials", {
   category: text("category"),
   quantity: numeric("quantity", { precision: 10, scale: 2 }),
   unit: text("unit"),
-  pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }).notNull(),
+  pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
   purchaseAmount: numeric("purchase_amount", { precision: 10, scale: 2 }),
   supplierId: varchar("supplier_id").references(() => suppliers.id, { onDelete: "set null" }),
   notes: text("notes"),

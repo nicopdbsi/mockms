@@ -63,7 +63,7 @@ const materialFormSchema = z.object({
   category: z.string().optional(),
   quantity: z.string().optional(),
   unit: z.string().optional(),
-  pricePerUnit: z.string().min(1, "Price per unit is required"),
+  pricePerUnit: z.string().optional(),
   purchaseAmount: z.string().optional(),
   supplierId: z.string().optional(),
   notes: z.string().optional(),
@@ -621,7 +621,7 @@ function MaterialForm({
               name="pricePerUnit"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Price per Unit *</FormLabel>
+                  <FormLabel>Price per Unit</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
