@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, TrendingUp, Package, ChefHat } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { formatCurrency } from "@/lib/currency";
 
 type AnalyticsOverview = {
   totalRecipes: number;
@@ -14,6 +16,7 @@ type AnalyticsOverview = {
 };
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { data: analytics, isLoading } = useQuery<AnalyticsOverview>({
     queryKey: ["/api/analytics/overview"],
   });
@@ -37,14 +40,14 @@ export default function Dashboard() {
   const stats = [
     {
       title: "Total Revenue",
-      value: `$${analytics?.totalRevenue.toFixed(2) || "0.00"}`,
+      value: formatCurrency(analytics?.totalRevenue || 0, user?.currency || "USD"),
       icon: DollarSign,
       description: `${analytics?.totalOrders || 0} orders`,
       testId: "stat-revenue",
     },
     {
       title: "Total Profit",
-      value: `$${analytics?.totalProfit.toFixed(2) || "0.00"}`,
+      value: formatCurrency(analytics?.totalProfit || 0, user?.currency || "USD"),
       icon: TrendingUp,
       description: `${analytics?.profitMargin || 0}% margin`,
       testId: "stat-profit",
