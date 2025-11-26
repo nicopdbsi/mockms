@@ -79,7 +79,7 @@ export default function Admin() {
   const { toast } = useToast();
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newUserData, setNewUserData] = useState({ username: "", email: "", password: "", firstName: "", businessName: "" });
+  const [newUserData, setNewUserData] = useState({ username: "", email: "", password: "", firstName: "" });
 
   const { data: users, isLoading } = useQuery<UserWithRole[]>({
     queryKey: ["/api/admin/users"],
@@ -132,7 +132,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setIsAddDialogOpen(false);
-      setNewUserData({ username: "", email: "", password: "", firstName: "", businessName: "" });
+      setNewUserData({ username: "", email: "", password: "", firstName: "" });
       toast({ description: "User added successfully" });
     },
     onError: (error: any) => {
@@ -200,16 +200,6 @@ export default function Admin() {
                   onChange={(e) => setNewUserData({ ...newUserData, firstName: e.target.value })}
                   placeholder="First Name"
                   data-testid="input-add-first-name"
-                />
-              </div>
-              <div>
-                <Label htmlFor="businessName">Business Name (Optional)</Label>
-                <Input
-                  id="businessName"
-                  value={newUserData.businessName}
-                  onChange={(e) => setNewUserData({ ...newUserData, businessName: e.target.value })}
-                  placeholder="Business Name"
-                  data-testid="input-add-business-name"
                 />
               </div>
               <Button 

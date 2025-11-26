@@ -15,7 +15,6 @@ export default function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
-  const [businessName, setBusinessName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   if (user) {
@@ -27,7 +26,7 @@ export default function Signup() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await register(username, email, password, firstName || undefined, businessName || undefined);
+      await register(username, email, password, firstName || undefined);
       toast({
         title: "Account created!",
         description: "Welcome to BentoHub. Let's get started!",
@@ -88,17 +87,6 @@ export default function Signup() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 data-testid="input-first-name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name (Optional)</Label>
-              <Input
-                id="businessName"
-                type="text"
-                placeholder="Your Kitchen Name"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                data-testid="input-business-name"
               />
             </div>
             <div className="space-y-2">
