@@ -801,11 +801,11 @@ function IngredientForm({
                   </div>
                   <div>
                     <div className="text-muted-foreground">Cost per Piece</div>
-                    <div className="font-semibold" data-testid="text-cost-per-piece">${countBasedCalculations.costPerPiece}</div>
+                    <div className="font-semibold" data-testid="text-cost-per-piece">{formatCurrency(countBasedCalculations.costPerPiece, user?.currency || "USD")}</div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Cost per Gram</div>
-                    <div className="font-semibold" data-testid="text-cost-per-gram">${countBasedCalculations.costPerGram}</div>
+                    <div className="font-semibold" data-testid="text-cost-per-gram">{formatCurrency(countBasedCalculations.costPerGram, user?.currency || "USD")}</div>
                   </div>
                 </div>
               </div>
@@ -880,7 +880,7 @@ function IngredientForm({
             <div className="rounded-md bg-muted p-3">
               <div className="text-sm text-muted-foreground mb-1">Price per Gram (auto-calculated)</div>
               <div className="text-lg font-semibold" data-testid="text-calculated-price">
-                {calculatedPricePerGram ? `$${calculatedPricePerGram}` : "-"}
+                {calculatedPricePerGram ? formatCurrency(calculatedPricePerGram, user?.currency || "USD") : "-"}
               </div>
             </div>
           </div>

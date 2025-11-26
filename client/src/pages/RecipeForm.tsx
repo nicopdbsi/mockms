@@ -1733,13 +1733,13 @@ export default function RecipeForm() {
                       <div className="flex justify-between items-center py-2 border-b">
                         <span className="text-muted-foreground">Ingredients Cost</span>
                         <span className="font-medium" data-testid="text-ingredients-cost">
-                          ${ingredientsCost.toFixed(2)}
+                          {formatCurrency(ingredientsCost.toFixed(2), user?.currency || "USD")}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b">
                         <span className="text-muted-foreground">Materials & Packaging</span>
                         <span className="font-medium" data-testid="text-materials-cost">
-                          ${materialsCost.toFixed(2)}
+                          {formatCurrency(materialsCost.toFixed(2), user?.currency || "USD")}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b">
@@ -1749,7 +1749,7 @@ export default function RecipeForm() {
                             name="laborCost"
                             render={({ field }) => (
                               <FormItem className="flex items-center justify-between space-y-0">
-                                <FormLabel className="text-muted-foreground">Labor Cost ($)</FormLabel>
+                                <FormLabel className="text-muted-foreground">Labor Cost ({user?.currency || "USD"})</FormLabel>
                                 <FormControl>
                                   <Input
                                     {...field}
@@ -1768,7 +1768,7 @@ export default function RecipeForm() {
                       <div className="flex justify-between items-center py-3 bg-muted rounded-lg px-3">
                         <span className="font-semibold">Total Batch Cost</span>
                         <span className="text-xl font-bold text-primary" data-testid="text-total-batch-cost">
-                          ${totalCost.toFixed(2)}
+                          {formatCurrency(totalCost.toFixed(2), user?.currency || "USD")}
                         </span>
                       </div>
                     </div>
@@ -1785,25 +1785,25 @@ export default function RecipeForm() {
                       <div className="flex justify-between items-center py-2 border-b">
                         <span className="text-muted-foreground">Ingredients per Unit</span>
                         <span className="font-medium">
-                          ${(ingredientsCost / batchYieldValue).toFixed(2)}
+                          {formatCurrency((ingredientsCost / batchYieldValue).toFixed(2), user?.currency || "USD")}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b">
                         <span className="text-muted-foreground">Materials per Unit</span>
                         <span className="font-medium">
-                          ${(materialsCost / batchYieldValue).toFixed(2)}
+                          {formatCurrency((materialsCost / batchYieldValue).toFixed(2), user?.currency || "USD")}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-2 border-b">
                         <span className="text-muted-foreground">Labor per Unit</span>
                         <span className="font-medium">
-                          ${(laborCostValue / batchYieldValue).toFixed(2)}
+                          {formatCurrency((laborCostValue / batchYieldValue).toFixed(2), user?.currency || "USD")}
                         </span>
                       </div>
                       <div className="flex justify-between items-center py-3 bg-muted rounded-lg px-3">
                         <span className="font-semibold">Cost per Unit</span>
                         <span className="text-xl font-bold text-primary" data-testid="text-cost-per-unit">
-                          ${costPerUnit.toFixed(2)}
+                          {formatCurrency(costPerUnit.toFixed(2), user?.currency || "USD")}
                         </span>
                       </div>
                     </div>
@@ -1854,13 +1854,13 @@ export default function RecipeForm() {
                         <div className="p-3 bg-muted rounded-lg">
                           <div className="text-xs text-muted-foreground">Price @ {watchedMargin}% Margin</div>
                           <div className="text-lg font-bold text-primary" data-testid="text-suggested-price-margin">
-                            ${suggestedPriceByMargin.toFixed(2)}
+                            {formatCurrency(suggestedPriceByMargin.toFixed(2), user?.currency || "USD")}
                           </div>
                         </div>
                         <div className="p-3 bg-muted rounded-lg">
                           <div className="text-xs text-muted-foreground">Price @ {watchedFoodCost}% Food Cost</div>
                           <div className="text-lg font-bold text-primary" data-testid="text-suggested-price-food-cost">
-                            ${suggestedPriceByFoodCost.toFixed(2)}
+                            {formatCurrency(suggestedPriceByFoodCost.toFixed(2), user?.currency || "USD")}
                           </div>
                         </div>
                       </div>
@@ -1902,13 +1902,13 @@ export default function RecipeForm() {
                     <div className="text-center">
                       <div className="text-sm text-muted-foreground font-medium">Suggested Retail Price (per unit)</div>
                       <div className="text-3xl font-bold text-primary" data-testid="text-srp-per-unit">
-                        ${sliderPrice.toFixed(2)}
+                        {formatCurrency(sliderPrice.toFixed(2), user?.currency || "USD")}
                       </div>
                     </div>
                     <div className="text-center">
                       <div className="text-sm text-muted-foreground font-medium">Batch SRP ({batchYieldValue} units)</div>
                       <div className="text-3xl font-bold text-primary" data-testid="text-srp-batch">
-                        ${(sliderPrice * batchYieldValue).toFixed(2)}
+                        {formatCurrency((sliderPrice * batchYieldValue).toFixed(2), user?.currency || "USD")}
                       </div>
                     </div>
                   </div>
@@ -1919,7 +1919,7 @@ export default function RecipeForm() {
                         <div className="text-center">
                           <DollarSign className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                           <div className="text-xs text-muted-foreground">Cost per Unit</div>
-                          <div className="text-xl font-bold">${costPerUnit.toFixed(2)}</div>
+                          <div className="text-xl font-bold">{formatCurrency(costPerUnit.toFixed(2), user?.currency || "USD")}</div>
                         </div>
                       </CardContent>
                     </Card>
@@ -1929,7 +1929,7 @@ export default function RecipeForm() {
                           <TrendingUp className="h-8 w-8 mx-auto text-green-600 mb-2" />
                           <div className="text-xs text-muted-foreground">Profit per Unit</div>
                           <div className="text-xl font-bold text-green-600" data-testid="text-slider-profit">
-                            ${sliderProfit.toFixed(2)}
+                            {formatCurrency(sliderProfit.toFixed(2), user?.currency || "USD")}
                           </div>
                         </div>
                       </CardContent>
@@ -1953,13 +1953,13 @@ export default function RecipeForm() {
                       <div className="p-4 bg-muted rounded-lg">
                         <div className="text-sm text-muted-foreground">Total Batch Revenue</div>
                         <div className="text-2xl font-bold">
-                          ${(sliderPrice * batchYieldValue).toFixed(2)}
+                          {formatCurrency((sliderPrice * batchYieldValue).toFixed(2), user?.currency || "USD")}
                         </div>
                       </div>
                       <div className="p-4 bg-muted rounded-lg">
                         <div className="text-sm text-muted-foreground">Total Batch Profit</div>
                         <div className="text-2xl font-bold text-green-600">
-                          ${(sliderProfit * batchYieldValue).toFixed(2)}
+                          {formatCurrency((sliderProfit * batchYieldValue).toFixed(2), user?.currency || "USD")}
                         </div>
                       </div>
                     </div>
