@@ -242,75 +242,65 @@ export default function Admin() {
               <TableHeader>
                 <TableRow>
                   <TableHead>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-auto p-0 hover:bg-transparent"
+                    <div 
                       onClick={() => handleSort("createdAt")}
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-70"
                       data-testid="button-sort-date-confirmed"
                     >
                       Date Confirmed
                       {sortConfig?.key === "createdAt" && (
-                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
                       )}
-                    </Button>
+                    </div>
                   </TableHead>
                   <TableHead>Time Confirmed</TableHead>
                   <TableHead>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-auto p-0 hover:bg-transparent"
+                    <div 
                       onClick={() => handleSort("firstName")}
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-70"
                       data-testid="button-sort-first-name"
                     >
                       First Name
                       {sortConfig?.key === "firstName" && (
-                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
                       )}
-                    </Button>
+                    </div>
                   </TableHead>
                   <TableHead>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-auto p-0 hover:bg-transparent"
+                    <div 
                       onClick={() => handleSort("username")}
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-70"
                       data-testid="button-sort-username"
                     >
                       Username
                       {sortConfig?.key === "username" && (
-                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
                       )}
-                    </Button>
+                    </div>
                   </TableHead>
                   <TableHead>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-auto p-0 hover:bg-transparent"
+                    <div 
                       onClick={() => handleSort("email")}
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-70"
                       data-testid="button-sort-email"
                     >
                       Email
                       {sortConfig?.key === "email" && (
-                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
                       )}
-                    </Button>
+                    </div>
                   </TableHead>
                   <TableHead>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-auto p-0 hover:bg-transparent"
+                    <div 
                       onClick={() => handleSort("businessName")}
+                      className="flex items-center gap-2 cursor-pointer hover:opacity-70"
                       data-testid="button-sort-business"
                     >
                       Business
                       {sortConfig?.key === "businessName" && (
-                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />
+                        sortConfig.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
                       )}
-                    </Button>
+                    </div>
                   </TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Actions</TableHead>
