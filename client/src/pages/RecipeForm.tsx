@@ -99,6 +99,10 @@ type RecipeWithIngredients = {
   laborCost: string | null;
   batchYield: number | null;
   procedures: string | null;
+  standardYieldPieces: number | null;
+  standardYieldWeightPerPiece: number | null;
+  standardPanSize: string | null;
+  standardNumTrays: number | null;
   ingredients: RecipeIngredientWithDetails[];
   materials?: RecipeMaterialWithDetails[];
 };
@@ -2343,6 +2347,12 @@ export default function RecipeForm() {
         flourWeight={Math.round(scalingRequiredFlour) || dominantIngredient?.quantity || 0}
         batchYieldValue={batchYieldValue}
         scaledIngredients={scaledIngredients.length > 0 ? scaledIngredients : bakerPercentages}
+      />
+
+      <RecipeUploadDialog
+        open={showRecipeUploadDialog}
+        onOpenChange={setShowRecipeUploadDialog}
+        onRecipeExtracted={handleRecipeExtracted}
       />
     </div>
   );
