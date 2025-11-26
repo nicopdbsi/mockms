@@ -74,20 +74,20 @@ export default function Admin() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Registration Date (Philippines Time)</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Business</TableHead>
-                  <TableHead>Registration Date (Philippines Time)</TableHead>
                   <TableHead>Role</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users?.map((user) => (
                   <TableRow key={user.id}>
+                    <TableCell className="text-sm text-muted-foreground" data-testid={`text-registration-date-${user.id}`}>{formatPhilippinesTime(user.createdAt)}</TableCell>
                     <TableCell data-testid={`text-username-${user.id}`}>{user.username}</TableCell>
                     <TableCell data-testid={`text-email-${user.id}`}>{user.email}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{user.businessName || "-"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground" data-testid={`text-registration-date-${user.id}`}>{formatPhilippinesTime(user.createdAt)}</TableCell>
                     <TableCell>
                       <Select
                         value={user.role}
