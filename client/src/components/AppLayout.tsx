@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, Shield } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
 
@@ -149,6 +149,17 @@ function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+
+              {user?.role === "admin" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild data-active={location === "/admin"}>
+                    <Link href="/admin" data-testid="link-admin">
+                      <Shield />
+                      <span>Admin</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
