@@ -486,10 +486,15 @@ function AddMaterialDialog({
 const FLOUR_KEYWORDS = ["flour", "harina", "tepung", "atta"];
 
 export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean }) {
-  const [, params] = useRoute("/recipes/:id");
+  const [location] = useLocation();
+  const [, paramsView] = useRoute("/recipes/:id/view");
+  const [, paramsEdit] = useRoute("/recipes/:id");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  const isViewMode = location.includes("/view") || viewOnly;
+  const params = paramsView || paramsEdit;
   const recipeId = params?.id === "new" ? null : params?.id;
 
   const [activeTab, setActiveTab] = useState("overview");
