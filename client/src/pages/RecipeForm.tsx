@@ -63,7 +63,7 @@ const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   batchYield: z.number().optional(),
   procedures: z.string().optional(),
   standardYieldPieces: z.number().optional(),
-  standardYieldWeightPerPiece: z.number().optional(),
+  standardYieldWeightPerPiece: z.union([z.number(), z.undefined(), z.null()]).optional(),
   standardPanSize: z.string().optional(),
   standardNumTrays: z.number().optional(),
 });
