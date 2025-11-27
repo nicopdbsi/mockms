@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, User, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, User, Settings as SettingsIcon, FileText, Users, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
 
@@ -75,11 +75,25 @@ const pantryItems = [
   },
 ];
 
+const reportsItems = [
+  {
+    title: "Users",
+    url: "/reports/users",
+    icon: Users,
+  },
+  {
+    title: "Export",
+    url: "/reports/export",
+    icon: Download,
+  },
+];
+
 function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [pantryOpen, setPantryOpen] = useState(location.startsWith("/pantry"));
   const [libraryOpen, setLibraryOpen] = useState(location.startsWith("/library"));
+  const [reportsOpen, setReportsOpen] = useState(location.startsWith("/reports"));
 
   const getUserInitials = () => {
     if (!user?.username) return "U";
@@ -88,6 +102,8 @@ function AppSidebar() {
 
   const isPantryActive = location.startsWith("/pantry");
   const isLibraryActive = location.startsWith("/library");
+  const isReportsActive = location.startsWith("/reports");
+  const isAdmin = user?.role === "admin";
 
   return (
     <Sidebar>
@@ -172,6 +188,36 @@ function AppSidebar() {
                 </SidebarMenuItem>
               </Collapsible>
 
+              {isAdmin && (
+                <Collapsible open={reportsOpen} onOpenChange={setReportsOpen}>
+                  <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton data-active={isReportsActive} data-testid="button-reports">
+                        <FileText />
+                        <span>Reports</span>
+                        <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${reportsOpen ? "rotate-180" : ""}`} />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <SidebarMenuSub>
+                        {reportsItems.map((item) => {
+                          const isActive = location === item.url;
+                          return (
+                            <SidebarMenuSubItem key={item.title}>
+                              <SidebarMenuSubButton asChild data-active={isActive}>
+                                <Link href={item.url} data-testid={`link-reports-${item.title.toLowerCase()}`}>
+                                  <item.icon className="h-4 w-4" />
+                                  <span>{item.title}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          );
+                        })}
+                      </SidebarMenuSub>
+                    </CollapsibleContent>
+                  </SidebarMenuItem>
+                </Collapsible>
+              )}
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild data-active={location === "/profile"}>
