@@ -312,7 +312,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/recipes/:id", requireAuth, async (req, res, next) => {
     try {
-      const recipe = await storage.getRecipe(req.params.id, req.user!.id);
+      const user = req.user as any;
+      const recipe = await storage.getRecipeWithAccess(
+        req.params.id, 
+        user.id, 
+        user.email, 
+        user.planType, 
+        user.role
+      );
       if (!recipe) {
         return res.status(404).json({ message: "Recipe not found" });
       }

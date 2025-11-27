@@ -66,6 +66,7 @@ export interface IStorage {
   
   getRecipes(userId: string): Promise<Recipe[]>;
   getRecipe(id: string, userId: string): Promise<Recipe | undefined>;
+  getRecipeWithAccess(id: string, userId: string, userEmail?: string, userPlan?: string, userRole?: string): Promise<Recipe | undefined>;
   createRecipe(recipe: InsertRecipe): Promise<Recipe>;
   updateRecipe(id: string, userId: string, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
   deleteRecipe(id: string, userId: string): Promise<boolean>;
@@ -453,6 +454,52 @@ export class DbStorage implements IStorage {
       .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
       .limit(1);
     return result[0];
+  }
+
+  async getRecipeWithAccess(id: string, userId: string, userEmail?: string, userPlan?: string, userRole?: string): Promise<Recipe | undefined> {
+    const result = await db.select().from(recipes)
+      .where(eq(recipes.id, id))
+      .limit(1);
+    
+    const recipe = result[0];
+    if (!recipe) return undefined;
+    
+    // If user owns this recipe, they can access it
+    if (recipe.userId === userId) {
+      return recipe;
+    }
+    
+    // If it's a free recipe and visible, check access control
+    if (recipe.isFreeRecipe && recipe.isVisible) {
+      switch (recipe.accessType) {
+        case "admin":
+          // Only visible to admin users
+          if (userRole === "admin") return recipe;
+          break;
+        
+        case "all":
+          // Visible to everyone
+          return recipe;
+        
+        case "by-plan":
+          // Visible to users with specific plans
+          if (userPlan && recipe.allowedPlans) {
+            const allowedPlans = recipe.allowedPlans.split(",").map(p => p.trim());
+            if (allowedPlans.includes(userPlan)) return recipe;
+          }
+          break;
+        
+        case "selected-users":
+          // Visible to specific email addresses
+          if (userEmail && recipe.allowedUserEmails) {
+            const allowedEmails = recipe.allowedUserEmails.split(",").map(e => e.trim().toLowerCase());
+            if (allowedEmails.includes(userEmail.toLowerCase())) return recipe;
+          }
+          break;
+      }
+    }
+    
+    return undefined;
   }
 
   async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
