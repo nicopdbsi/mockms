@@ -486,16 +486,16 @@ function AddMaterialDialog({
 const FLOUR_KEYWORDS = ["flour", "harina", "tepung", "atta"];
 
 export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean }) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [, paramsView] = useRoute("/recipes/:id/view");
   const [, paramsEdit] = useRoute("/recipes/:id");
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   
   const isViewMode = location.includes("/view") || viewOnly;
   const params = paramsView || paramsEdit;
   const recipeId = params?.id === "new" ? null : params?.id;
+  const isTemplate = location.includes("?template=true") || location.includes("?template=true");
 
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedIngredients, setSelectedIngredients] = useState<
@@ -629,17 +629,23 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
         procedures: serializeProcedures(),
         ingredients: selectedIngredients,
         materials: selectedMaterials,
+        ...(isTemplate && {
+          isFreeRecipe: true,
+          isVisible: true,
+          accessType: "all",
+        }),
       });
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/free-recipes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/overview"] });
       toast({
         title: "Success",
-        description: "Recipe created successfully",
+        description: isTemplate ? "Free recipe template created successfully" : "Recipe created successfully",
       });
-      setLocation("/recipes");
+      setLocation(isTemplate ? "/library/bentohub-library" : "/recipes");
     },
     onError: () => {
       toast({
