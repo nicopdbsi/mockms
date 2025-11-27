@@ -29,6 +29,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useState, useMemo } from "react";
+import { useAuth } from "@/lib/auth";
 
 export default function Recipes() {
   const [, setLocation] = useLocation();
@@ -36,6 +37,7 @@ export default function Recipes() {
   const [activeTab, setActiveTab] = useState<"my-recipes" | "library">("my-recipes");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: recipes, isLoading } = useQuery<Recipe[]>({
     queryKey: ["/api/recipes"],
@@ -88,10 +90,9 @@ export default function Recipes() {
 
   const cloneMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("POST", `/api/recipes/${id}/clone`);
-      return res;
+      return await apiRequest("POST", `/api/recipes/${id}/clone`);
     },
-    onSuccess: (cloned) => {
+    onSuccess: (cloned: Recipe) => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
       toast({
         title: "Success",
@@ -128,13 +129,27 @@ export default function Recipes() {
             Manage your recipes and explore free templates
           </p>
         </div>
-        <Button
-          onClick={() => setLocation("/recipes/new")}
-          data-testid="button-add-recipe"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Recipe
-        </Button>
+        <div className="flex gap-2">
+          {user?.role === "admin" && activeTab === "library" && (
+            <Button
+              onClick={() => setLocation("/recipes/new?template=true")}
+              data-testid="button-create-free-recipe"
+              variant="outline"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Free Recipe
+            </Button>
+          )}
+          {activeTab === "my-recipes" && (
+            <Button
+              onClick={() => setLocation("/recipes/new")}
+              data-testid="button-add-recipe"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Recipe
+            </Button>
+          )}
+        </div>
       </div>
 
       <Card>
