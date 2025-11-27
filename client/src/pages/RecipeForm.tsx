@@ -106,6 +106,10 @@ type RecipeWithIngredients = {
   standardYieldWeightPerPiece?: number | null;
   standardPanSize?: string | null;
   standardNumTrays?: number | null;
+  isFreeRecipe?: boolean;
+  accessType?: string | null;
+  allowedPlans?: string[] | null;
+  allowedUserEmails?: string[] | null;
   ingredients: RecipeIngredientWithDetails[];
   materials?: RecipeMaterialWithDetails[];
 };

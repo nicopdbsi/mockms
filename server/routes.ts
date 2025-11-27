@@ -330,6 +330,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = insertRecipeSchema.parse({
         ...recipeData,
         userId: req.user!.id,
+        targetMargin: recipeData.targetMargin ? parseFloat(recipeData.targetMargin) : "0",
+        targetFoodCost: recipeData.targetFoodCost ? parseFloat(recipeData.targetFoodCost) : null,
+        laborCost: recipeData.laborCost ? parseFloat(recipeData.laborCost) : null,
+        batchYield: recipeData.batchYield ? parseFloat(recipeData.batchYield) : null,
+        servings: recipeData.servings ? parseFloat(recipeData.servings) : 1,
+        standardYieldPieces: recipeData.standardYieldPieces ? parseFloat(recipeData.standardYieldPieces) : null,
+        standardYieldWeightPerPiece: recipeData.standardYieldWeightPerPiece ? parseFloat(recipeData.standardYieldWeightPerPiece) : null,
+        standardNumTrays: recipeData.standardNumTrays ? parseFloat(recipeData.standardNumTrays) : null,
       });
       const recipe = await storage.createRecipe(data);
       

@@ -52,7 +52,7 @@ const libraryItems = [
     url: "/library/my-recipes",
   },
   {
-    title: "BentoHub Library",
+    title: "Bento Library",
     url: "/library/bentohub-library",
   },
 ];
