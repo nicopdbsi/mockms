@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useRoute, useLocation } from "wouter";
-import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
+import { formatCurrency } from "@/lib/currency";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,13 +132,11 @@ function AddIngredientDialog({
   onOpenChange,
   existingIngredients,
   onSuccess,
-  currency = "USD",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingIngredients: Ingredient[];
   onSuccess: (ingredientId: string) => void;
-  currency?: string;
 }) {
   const { toast } = useToast();
   const [name, setName] = useState("");
@@ -191,7 +189,7 @@ function AddIngredientDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !quantity || !purchaseAmount) return;
     createMutation.mutate();
   };
 
@@ -239,7 +237,7 @@ function AddIngredientDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="ingredient-quantity">Quantity</Label>
+              <Label htmlFor="ingredient-quantity">Quantity *</Label>
               <Input
                 id="ingredient-quantity"
                 type="number"
@@ -271,7 +269,7 @@ function AddIngredientDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="ingredient-purchase">Purchase Amount ({getCurrencySymbol(currency)})</Label>
+            <Label htmlFor="ingredient-purchase">Purchase Amount ($) *</Label>
             <Input
               id="ingredient-purchase"
               type="number"
@@ -286,7 +284,7 @@ function AddIngredientDialog({
 
           {calculatedPricePerGram && (
             <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-              Calculated Price: {getCurrencySymbol(currency)}{calculatedPricePerGram}/{unit}
+              Calculated Price: ${calculatedPricePerGram}/{unit}
             </div>
           )}
 
@@ -299,6 +297,8 @@ function AddIngredientDialog({
               disabled={
                 createMutation.isPending ||
                 !name.trim() ||
+                !quantity ||
+                !purchaseAmount ||
                 !!duplicateIngredient
               }
               data-testid="button-save-new-ingredient"
@@ -317,13 +317,11 @@ function AddMaterialDialog({
   onOpenChange,
   existingMaterials,
   onSuccess,
-  currency = "USD",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingMaterials: Material[];
   onSuccess: (materialId: string) => void;
-  currency?: string;
 }) {
   const { toast } = useToast();
   const [name, setName] = useState("");
@@ -371,7 +369,7 @@ function AddMaterialDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !quantity || !purchaseAmount) return;
     createMutation.mutate();
   };
 
@@ -419,7 +417,7 @@ function AddMaterialDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="material-quantity">Quantity</Label>
+              <Label htmlFor="material-quantity">Quantity *</Label>
               <Input
                 id="material-quantity"
                 type="number"
@@ -448,7 +446,7 @@ function AddMaterialDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="material-purchase">Purchase Amount ({getCurrencySymbol(currency)})</Label>
+            <Label htmlFor="material-purchase">Purchase Amount ($) *</Label>
             <Input
               id="material-purchase"
               type="number"
@@ -463,7 +461,7 @@ function AddMaterialDialog({
 
           {calculatedPricePerUnit && (
             <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-              Calculated Price: {getCurrencySymbol(currency)}{calculatedPricePerUnit}/{unit}
+              Calculated Price: ${calculatedPricePerUnit}/{unit}
             </div>
           )}
 
@@ -476,6 +474,8 @@ function AddMaterialDialog({
               disabled={
                 createMutation.isPending ||
                 !name.trim() ||
+                !quantity ||
+                !purchaseAmount ||
                 !!duplicateMaterial
               }
               data-testid="button-save-new-material"
@@ -2780,14 +2780,12 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
         onOpenChange={setShowAddIngredient}
         existingIngredients={ingredients || []}
         onSuccess={handleNewIngredientAdded}
-        currency={user?.currency || "USD"}
       />
       <AddMaterialDialog
         open={showAddMaterial}
         onOpenChange={setShowAddMaterial}
         existingMaterials={materials || []}
         onSuccess={handleNewMaterialAdded}
-        currency={user?.currency || "USD"}
       />
 
       <PanYieldConverter
