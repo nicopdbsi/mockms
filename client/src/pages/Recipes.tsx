@@ -32,12 +32,13 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/lib/auth";
 
 export default function Recipes() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"my-recipes" | "library">("my-recipes");
   const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
+
+  const activeTab = location === "/library/bentohub-library" ? "library" : "my-recipes";
 
   const { data: recipes, isLoading } = useQuery<Recipe[]>({
     queryKey: ["/api/recipes"],
@@ -123,10 +124,10 @@ export default function Recipes() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-library">
-            Library
+            {activeTab === "my-recipes" ? "My Recipes" : "BentoHub Library"}
           </h1>
           <p className="text-muted-foreground" data-testid="text-library-description">
-            Manage your recipes and explore free templates
+            {activeTab === "my-recipes" ? "Manage your recipes and calculate costs" : "Explore free recipe templates"}
           </p>
         </div>
         <div className="flex gap-2">
@@ -168,17 +169,8 @@ export default function Recipes() {
             />
           </div>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "my-recipes" | "library")}>
-            <TabsList>
-              <TabsTrigger value="my-recipes" data-testid="tab-my-recipes">
-                My Recipes
-              </TabsTrigger>
-              <TabsTrigger value="library" data-testid="tab-library">
-                BentoHub Library
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="my-recipes" className="space-y-4">
+          <div className="space-y-4">
+            {activeTab === "my-recipes" && (
               {!myRecipes || myRecipes.length === 0 ? (
                 <div className="text-center py-12" data-testid="empty-state-my-recipes">
                   <p className="text-muted-foreground mb-4">

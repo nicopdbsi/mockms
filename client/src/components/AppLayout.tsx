@@ -40,14 +40,20 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Library",
-    url: "/recipes",
-    icon: UtensilsCrossed,
-  },
-  {
     title: "Analytics",
     url: "/analytics",
     icon: TrendingUp,
+  },
+];
+
+const libraryItems = [
+  {
+    title: "My Recipes",
+    url: "/library/my-recipes",
+  },
+  {
+    title: "BentoHub Library",
+    url: "/library/bentohub-library",
   },
 ];
 
@@ -73,6 +79,7 @@ function AppSidebar() {
   const [location] = useLocation();
   const { user, logout } = useAuth();
   const [pantryOpen, setPantryOpen] = useState(location.startsWith("/pantry"));
+  const [libraryOpen, setLibraryOpen] = useState(location.startsWith("/library"));
 
   const getUserInitials = () => {
     if (!user?.username) return "U";
@@ -80,6 +87,7 @@ function AppSidebar() {
   };
 
   const isPantryActive = location.startsWith("/pantry");
+  const isLibraryActive = location.startsWith("/library");
 
   return (
     <Sidebar>
@@ -93,7 +101,7 @@ function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.slice(0, 2).map((item) => {
+              {menuItems.map((item) => {
                 const isActive = location === item.url;
                 return (
                   <SidebarMenuItem key={item.title}>
@@ -106,6 +114,34 @@ function AppSidebar() {
                   </SidebarMenuItem>
                 );
               })}
+
+              <Collapsible open={libraryOpen} onOpenChange={setLibraryOpen}>
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton data-active={isLibraryActive} data-testid="button-library">
+                      <UtensilsCrossed />
+                      <span>Library</span>
+                      <ChevronDown className={`ml-auto h-4 w-4 transition-transform ${libraryOpen ? "rotate-180" : ""}`} />
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {libraryItems.map((item) => {
+                        const isActive = location === item.url;
+                        return (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton asChild data-active={isActive}>
+                              <Link href={item.url} data-testid={`link-${item.title.toLowerCase().replace(/ /g, "-")}`}>
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
 
               <Collapsible open={pantryOpen} onOpenChange={setPantryOpen}>
                 <SidebarMenuItem>
@@ -136,19 +172,6 @@ function AppSidebar() {
                 </SidebarMenuItem>
               </Collapsible>
 
-              {menuItems.slice(2).map((item) => {
-                const isActive = location === item.url;
-                return (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild data-active={isActive}>
-                      <Link href={item.url} data-testid={`link-${item.title.toLowerCase()}`}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
 
               {user?.role === "admin" && (
                 <SidebarMenuItem>
