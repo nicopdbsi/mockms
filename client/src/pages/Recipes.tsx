@@ -352,7 +352,7 @@ export default function Recipes() {
                       )}
                       {user?.role === "admin" && (
                         <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded">
-                          Access: {recipe.accessType === "only-me" ? "Only Me" : recipe.accessType === "all" ? "All Users" : recipe.accessType === "by-plan" ? "By Plan" : "Selected Users"}
+                          Access: {recipe.accessType === "admin" ? "Admin" : recipe.accessType === "all" ? "All Users" : recipe.accessType === "by-plan" ? "By Plan" : "Selected Users"}
                         </div>
                       )}
                     </CardContent>

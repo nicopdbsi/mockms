@@ -483,7 +483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/free-recipes", requireAuth, async (req, res, next) => {
     try {
       const user = req.user as any;
-      const freeRecipes = await storage.getFreeRecipes(user.id, user.email, user.plan);
+      const freeRecipes = await storage.getFreeRecipes(user.id, user.email, user.plan, user.role);
       res.json(freeRecipes);
     } catch (error) {
       next(error);

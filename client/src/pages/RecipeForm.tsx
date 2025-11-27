@@ -531,7 +531,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [forecastMarketplaceFee, setForecastMarketplaceFee] = useState<string>("0");
   const [forecastUtilities, setForecastUtilities] = useState<string>("0");
 
-  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users" | "only-me">(user?.role === "admin" ? "only-me" : "all");
+  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users" | "admin">(user?.role === "admin" ? "admin" : "all");
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
   const [userEmails, setUserEmails] = useState<string>("");
 
@@ -2646,16 +2646,16 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                   <div className="flex items-center gap-3">
                     <input
                       type="radio"
-                      id="access-only-me"
+                      id="access-admin"
                       name="accessType"
-                      value="only-me"
-                      checked={accessType === "only-me"}
-                      onChange={() => setAccessType("only-me")}
+                      value="admin"
+                      checked={accessType === "admin"}
+                      onChange={() => setAccessType("admin")}
                       className="w-4 h-4"
-                      data-testid="radio-access-only-me"
+                      data-testid="radio-access-admin"
                     />
-                    <label htmlFor="access-only-me" className="text-sm font-medium cursor-pointer">
-                      Only Me (not visible to other users)
+                    <label htmlFor="access-admin" className="text-sm font-medium cursor-pointer">
+                      Admin (only visible to Admin users)
                     </label>
                   </div>
 

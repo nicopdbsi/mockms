@@ -263,7 +263,7 @@ export class DbStorage implements IStorage {
     return result.map(r => r.recipes);
   }
 
-  async getFreeRecipes(userId?: string, userEmail?: string, userPlan?: string): Promise<Recipe[]> {
+  async getFreeRecipes(userId?: string, userEmail?: string, userPlan?: string, userRole?: string): Promise<Recipe[]> {
     const allFreeRecipes = await db.select().from(recipes).where(and(eq(recipes.isFreeRecipe, true), eq(recipes.isVisible, true)));
     
     // If no user info provided, return only "all" access type recipes
@@ -279,9 +279,9 @@ export class DbStorage implements IStorage {
       }
       
       switch (recipe.accessType) {
-        case "only-me":
-          // Only visible to creator
-          return recipe.userId === userId;
+        case "admin":
+          // Only visible to admin users
+          return userRole === "admin";
         
         case "all":
           // Visible to everyone
