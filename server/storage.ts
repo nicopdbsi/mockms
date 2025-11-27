@@ -31,7 +31,7 @@ import {
   materialCategories
 } from "@shared/schema";
 import { db } from "../db/index";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, ilike } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -305,6 +305,20 @@ export class DbStorage implements IStorage {
     });
   }
 
+  async findIngredientByName(userId: string, name: string): Promise<Ingredient | undefined> {
+    const result = await db.select().from(ingredients)
+      .where(and(eq(ingredients.userId, userId), ilike(ingredients.name, name)))
+      .limit(1);
+    return result[0];
+  }
+
+  async findMaterialByName(userId: string, name: string): Promise<Material | undefined> {
+    const result = await db.select().from(materials)
+      .where(and(eq(materials.userId, userId), ilike(materials.name, name)))
+      .limit(1);
+    return result[0];
+  }
+
   async cloneRecipe(recipeId: string, newUserId: string): Promise<Recipe | undefined> {
     const original = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
     if (!original[0]) return undefined;
@@ -317,6 +331,69 @@ export class DbStorage implements IStorage {
       isVisible: true,
       accessType: 'all',
     }).returning();
+    
+    if (!cloned[0]) return undefined;
+    const clonedRecipeId = cloned[0].id;
+    
+    // Fetch original recipe's ingredients with their details
+    const originalIngredients = await this.getRecipeIngredients(recipeId);
+    
+    // Clone each ingredient association
+    for (const recipeIng of originalIngredients) {
+      const originalIngredient = recipeIng.ingredient;
+      
+      // Check if user already has an ingredient with the same name (case-insensitive)
+      let userIngredient = await this.findIngredientByName(newUserId, originalIngredient.name);
+      
+      // If not found, create a copy of the ingredient for this user
+      if (!userIngredient) {
+        const { id: ingId, userId: ingUserId, supplierId, createdAt, ...ingredientData } = originalIngredient;
+        userIngredient = await this.createIngredient({
+          ...ingredientData,
+          userId: newUserId,
+          supplierId: null, // Don't copy supplier reference
+        });
+      }
+      
+      // Create the recipe-ingredient association
+      await this.createRecipeIngredient({
+        recipeId: clonedRecipeId,
+        ingredientId: userIngredient.id,
+        quantity: recipeIng.quantity,
+        componentName: recipeIng.componentName,
+        unit: recipeIng.unit,
+        order: recipeIng.order,
+      });
+    }
+    
+    // Fetch original recipe's materials with their details
+    const originalMaterials = await this.getRecipeMaterials(recipeId);
+    
+    // Clone each material association
+    for (const recipeMat of originalMaterials) {
+      const originalMaterial = recipeMat.material;
+      
+      // Check if user already has a material with the same name (case-insensitive)
+      let userMaterial = await this.findMaterialByName(newUserId, originalMaterial.name);
+      
+      // If not found, create a copy of the material for this user
+      if (!userMaterial) {
+        const { id: matId, userId: matUserId, supplierId, createdAt, ...materialData } = originalMaterial;
+        userMaterial = await this.createMaterial({
+          ...materialData,
+          userId: newUserId,
+          supplierId: null, // Don't copy supplier reference
+        });
+      }
+      
+      // Create the recipe-material association
+      await this.createRecipeMaterial({
+        recipeId: clonedRecipeId,
+        materialId: userMaterial.id,
+        quantity: recipeMat.quantity,
+      });
+    }
+    
     return cloned[0];
   }
 
