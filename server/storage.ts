@@ -323,7 +323,7 @@ export class DbStorage implements IStorage {
   async updateRecipeFreeStatus(id: string, userId: string, isFree: boolean, accessType: string, allowedPlans?: string, allowedUserEmails?: string): Promise<Recipe | undefined> {
     const result = await db.update(recipes)
       .set({ isFreeRecipe: isFree, accessType, allowedPlans, allowedUserEmails })
-      .where(and(eq(recipes.id, id), eq(recipes.userId, userId), eq(recipes.isFreeRecipe, false)))
+      .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
       .returning();
     return result[0];
   }
