@@ -618,6 +618,17 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
       );
       setProcedureSteps(parsedProcedures);
       setPricingMarginSlider(parseFloat(recipe.targetMargin) || 50);
+
+      // Load access control settings for free recipes
+      if (recipe.isFreeRecipe && recipe.accessType) {
+        setAccessType(recipe.accessType as "all" | "by-plan" | "selected-users");
+        if (recipe.accessType === "by-plan" && recipe.allowedPlans) {
+          setSelectedPlans(new Set(recipe.allowedPlans.split(",")));
+        }
+        if (recipe.accessType === "selected-users" && recipe.allowedUserEmails) {
+          setUserEmails(recipe.allowedUserEmails);
+        }
+      }
     }
   }, [recipe, form]);
 
@@ -670,17 +681,30 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
 
   const updateMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await apiRequest("PATCH", `/api/recipes/${recipeId}`, {
+      const payload: any = {
         ...data,
         procedures: serializeProcedures(),
         ingredients: selectedIngredients,
         materials: selectedMaterials,
-      });
+      };
+
+      // Include access control settings if updating a free recipe
+      if (recipe?.isFreeRecipe && user?.role === "admin") {
+        payload.accessType = accessType;
+        if (accessType === "by-plan") {
+          payload.allowedPlans = Array.from(selectedPlans).join(",");
+        } else if (accessType === "selected-users") {
+          payload.allowedUserEmails = userEmails;
+        }
+      }
+
+      const response = await apiRequest("PATCH", `/api/recipes/${recipeId}`, payload);
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/recipes", recipeId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/free-recipes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/overview"] });
       toast({
         title: "Success",
@@ -2609,7 +2633,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
             </TabsContent>
           </Tabs>
 
-          {isTemplate && user?.role === "admin" && !isViewMode && (
+          {(isTemplate || recipe?.isFreeRecipe) && user?.role === "admin" && !isViewMode && (
             <Card className="mt-6">
               <CardHeader>
                 <CardTitle>Access Control</CardTitle>
