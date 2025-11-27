@@ -525,7 +525,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [forecastMarketplaceFee, setForecastMarketplaceFee] = useState<string>("0");
   const [forecastUtilities, setForecastUtilities] = useState<string>("0");
 
-  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users">("all");
+  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users" | "only-me">("all");
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
   const [userEmails, setUserEmails] = useState<string>("");
 
@@ -621,7 +621,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
 
       // Load access control settings for free recipes
       if (recipe.isFreeRecipe && recipe.accessType) {
-        setAccessType(recipe.accessType as "all" | "by-plan" | "selected-users");
+        setAccessType(recipe.accessType as "all" | "by-plan" | "selected-users" | "only-me");
         if (recipe.accessType === "by-plan" && recipe.allowedPlans) {
           setSelectedPlans(new Set(recipe.allowedPlans.split(",")));
         }
@@ -2641,6 +2641,22 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="access-only-me"
+                      name="accessType"
+                      value="only-me"
+                      checked={accessType === "only-me"}
+                      onChange={() => setAccessType("only-me")}
+                      className="w-4 h-4"
+                      data-testid="radio-access-only-me"
+                    />
+                    <label htmlFor="access-only-me" className="text-sm font-medium cursor-pointer">
+                      Only Me (not visible to other users)
+                    </label>
+                  </div>
+
                   <div className="flex items-center gap-3">
                     <input
                       type="radio"
