@@ -525,7 +525,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [forecastMarketplaceFee, setForecastMarketplaceFee] = useState<string>("0");
   const [forecastUtilities, setForecastUtilities] = useState<string>("0");
 
-  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users">("all");
+  const [accessType, setAccessType] = useState<"all" | "only-me" | "by-plan" | "selected-users">("all");
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
   const [userEmails, setUserEmails] = useState<string>("");
 
@@ -2630,6 +2630,22 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                     />
                     <label htmlFor="access-all" className="text-sm font-medium cursor-pointer">
                       All users
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="access-only-me"
+                      name="accessType"
+                      value="only-me"
+                      checked={accessType === "only-me"}
+                      onChange={() => setAccessType("only-me")}
+                      className="w-4 h-4"
+                      data-testid="radio-access-only-me"
+                    />
+                    <label htmlFor="access-only-me" className="text-sm font-medium cursor-pointer">
+                      Only me
                     </label>
                   </div>
 
