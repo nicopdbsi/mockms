@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   businessName: text("business_name"),
   role: text("role").notNull().default("regular"),
+  plan: text("plan").default("Hobby").notNull(),
   currency: text("currency").default("USD").notNull(),
   timezone: text("timezone").default("UTC").notNull(),
   status: text("status").default("active").notNull(),

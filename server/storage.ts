@@ -263,9 +263,46 @@ export class DbStorage implements IStorage {
     return result.map(r => r.recipes);
   }
 
-  async getFreeRecipes(userEmail?: string, userRole?: string): Promise<Recipe[]> {
-    let query = db.select().from(recipes).where(and(eq(recipes.isFreeRecipe, true), eq(recipes.isVisible, true)));
-    return query;
+  async getFreeRecipes(userId?: string, userEmail?: string, userPlan?: string): Promise<Recipe[]> {
+    const allFreeRecipes = await db.select().from(recipes).where(and(eq(recipes.isFreeRecipe, true), eq(recipes.isVisible, true)));
+    
+    // If no user info provided, return only "all" access type recipes
+    if (!userId) {
+      return allFreeRecipes.filter(r => r.accessType === "all");
+    }
+    
+    // Filter recipes based on access controls
+    return allFreeRecipes.filter(recipe => {
+      // Own recipes (created by this user)
+      if (recipe.userId === userId) {
+        return true;
+      }
+      
+      switch (recipe.accessType) {
+        case "only-me":
+          // Only visible to creator
+          return recipe.userId === userId;
+        
+        case "all":
+          // Visible to everyone
+          return true;
+        
+        case "by-plan":
+          // Visible to users with specific plans
+          if (!userPlan || !recipe.allowedPlans) return false;
+          const allowedPlans = recipe.allowedPlans.split(",").map(p => p.trim());
+          return allowedPlans.includes(userPlan);
+        
+        case "selected-users":
+          // Visible to specific email addresses
+          if (!userEmail || !recipe.allowedUserEmails) return false;
+          const allowedEmails = recipe.allowedUserEmails.split(",").map(e => e.trim().toLowerCase());
+          return allowedEmails.includes(userEmail.toLowerCase());
+        
+        default:
+          return false;
+      }
+    });
   }
 
   async cloneRecipe(recipeId: string, newUserId: string): Promise<Recipe | undefined> {
