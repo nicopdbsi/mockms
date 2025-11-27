@@ -40,7 +40,7 @@ const menuItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Recipes",
+    title: "Library",
     url: "/recipes",
     icon: UtensilsCrossed,
   },
