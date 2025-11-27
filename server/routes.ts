@@ -326,12 +326,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/recipes", requireAuth, async (req, res, next) => {
     try {
-      const { ingredients, materials, ...recipeData } = req.body;
+      const { ingredients, materials, accessType, allowedPlans, allowedUserEmails, ...recipeData } = req.body;
       const data = insertRecipeSchema.parse({
         ...recipeData,
         userId: req.user!.id,
       });
       const recipe = await storage.createRecipe(data);
+      
+      // Update access control settings if provided and user is admin creating a free recipe
+      if (accessType && recipe.isFreeRecipe && (req.user as any).role === "admin") {
+        await storage.updateRecipeFreeStatus(
+          recipe.id,
+          req.user!.id,
+          true,
+          accessType,
+          allowedPlans,
+          allowedUserEmails
+        );
+      }
       
       if (ingredients && Array.isArray(ingredients)) {
         for (let index = 0; index < ingredients.length; index++) {
