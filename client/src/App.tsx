@@ -17,6 +17,8 @@ import Suppliers from "@/pages/Suppliers";
 import Analytics from "@/pages/Analytics";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
+import ReportsUsers from "@/pages/ReportsUsers";
+import ReportsExport from "@/pages/ReportsExport";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -81,6 +83,16 @@ function Router() {
       <Route path="/settings">
         <AppLayout>
           <Settings />
+        </AppLayout>
+      </Route>
+      <Route path="/reports/users">
+        <AppLayout>
+          <ReportsUsers />
+        </AppLayout>
+      </Route>
+      <Route path="/reports/export">
+        <AppLayout>
+          <ReportsExport />
         </AppLayout>
       </Route>
       <Route component={NotFound} />
