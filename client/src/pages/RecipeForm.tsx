@@ -53,6 +53,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import PanYieldConverter from "@/components/PanYieldConverter";
 import CakePanConverter from "@/components/CakePanConverter";
+import { IngredientCombobox } from "@/components/IngredientCombobox";
+import { MaterialCombobox } from "@/components/MaterialCombobox";
 
 const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
@@ -627,10 +629,16 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
       if (recipe.isFreeRecipe && recipe.accessType) {
         setAccessType(recipe.accessType as "all" | "by-plan" | "selected-users" | "only-me");
         if (recipe.accessType === "by-plan" && recipe.allowedPlans) {
-          setSelectedPlans(new Set(recipe.allowedPlans.split(",")));
+          const plans = Array.isArray(recipe.allowedPlans) 
+            ? recipe.allowedPlans 
+            : (recipe.allowedPlans as string).split(",");
+          setSelectedPlans(new Set(plans));
         }
         if (recipe.accessType === "selected-users" && recipe.allowedUserEmails) {
-          setUserEmails(recipe.allowedUserEmails);
+          const emails = Array.isArray(recipe.allowedUserEmails) 
+            ? recipe.allowedUserEmails.join(",") 
+            : recipe.allowedUserEmails;
+          setUserEmails(emails);
         }
       }
     }
@@ -766,7 +774,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
       const material = materials.find((m) => m.id === item.materialId);
       if (!material) return sum;
       const quantity = parseFloat(item.quantity);
-      const pricePerUnit = parseFloat(material.pricePerUnit);
+      const pricePerUnit = parseFloat(material.pricePerUnit || "0");
       if (isNaN(quantity) || isNaN(pricePerUnit)) return sum;
       return sum + pricePerUnit * quantity;
     }, 0);
@@ -1568,27 +1576,13 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                                     />
                                   </div>
                                   <div className="flex-1">
-                                    <Select
+                                    <IngredientCombobox
+                                      ingredients={sortedIngredients}
                                       value={item.ingredientId}
-                                      onValueChange={(value) => updateIngredient(index, "ingredientId", value)}
-                                    >
-                                      <SelectTrigger data-testid={`select-ingredient-${index}`}>
-                                        <SelectValue placeholder="Select ingredient" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="__add_new__" data-testid="option-add-new-ingredient">
-                                          <span className="flex items-center gap-2 text-primary">
-                                            <Plus className="h-4 w-4" />
-                                            Add New Ingredient
-                                          </span>
-                                        </SelectItem>
-                                        {sortedIngredients.map((ing) => (
-                                          <SelectItem key={ing.id} value={ing.id}>
-                                            {ing.name} {ing.isCountBased ? "(count)" : ""} ({formatCurrency(Number(ing.pricePerGram).toFixed(4), user?.currency || "USD")}/g)
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                      onValueChange={(value: string) => updateIngredient(index, "ingredientId", value)}
+                                      currency={user?.currency || "USD"}
+                                      testId={`select-ingredient-${index}`}
+                                    />
                                   </div>
                                   <div className="w-20">
                                     <Input
@@ -1688,7 +1682,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                       {selectedMaterials.map((item, index) => {
                         const selectedMat = materials?.find((m) => m.id === item.materialId);
                         const itemCost = selectedMat
-                          ? parseFloat(item.quantity) * parseFloat(selectedMat.pricePerUnit)
+                          ? parseFloat(item.quantity) * parseFloat(selectedMat.pricePerUnit || "0")
                           : 0;
                         return (
                           <div key={index} className="flex gap-2 items-center" data-testid={`material-row-${index}`}>
@@ -1727,27 +1721,13 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                             ) : (
                               <>
                                 <div className="flex-1">
-                                  <Select
+                                  <MaterialCombobox
+                                    materials={sortedMaterials}
                                     value={item.materialId}
-                                    onValueChange={(value) => updateMaterial(index, "materialId", value)}
-                                  >
-                                    <SelectTrigger data-testid={`select-material-${index}`}>
-                                      <SelectValue placeholder="Select material" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="__add_new__">
-                                        <span className="flex items-center gap-2 text-primary">
-                                          <Plus className="h-4 w-4" />
-                                          Add New Material
-                                        </span>
-                                      </SelectItem>
-                                      {sortedMaterials.map((mat) => (
-                                        <SelectItem key={mat.id} value={mat.id}>
-                                          {mat.name} ({formatCurrency(Number(mat.pricePerUnit).toFixed(2), user?.currency || "USD")}/{mat.unit})
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
+                                    onValueChange={(value: string) => updateMaterial(index, "materialId", value)}
+                                    currency={user?.currency || "USD"}
+                                    testId={`select-material-${index}`}
+                                  />
                                 </div>
                                 <div className="w-28">
                                   <Input
