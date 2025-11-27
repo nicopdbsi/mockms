@@ -328,15 +328,26 @@ export default function Recipes() {
                         </div>
                       )}
                       {user?.role !== "admin" && (
-                        <Button
-                          onClick={() => cloneMutation.mutate(recipe.id)}
-                          disabled={cloneMutation.isPending}
-                          className="w-full mt-4"
-                          data-testid={`button-clone-recipe-${recipe.id}`}
-                        >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Use this Recipe
-                        </Button>
+                        <div className="space-y-2 pt-2">
+                          <Button
+                            onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
+                            variant="outline"
+                            className="w-full"
+                            data-testid={`button-view-free-recipe-${recipe.id}`}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View Details
+                          </Button>
+                          <Button
+                            onClick={() => cloneMutation.mutate(recipe.id)}
+                            disabled={cloneMutation.isPending}
+                            className="w-full"
+                            data-testid={`button-clone-recipe-${recipe.id}`}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Use this Recipe
+                          </Button>
+                        </div>
                       )}
                       {user?.role === "admin" && (
                         <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded">
