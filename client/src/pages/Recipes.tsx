@@ -73,7 +73,6 @@ export default function Recipes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/free-recipes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/overview"] });
       setDeleteId(null);
       toast({
@@ -265,90 +264,48 @@ export default function Recipes() {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Yield</TableHead>
-                    <TableHead>Target Margin</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredFreeRecipes.map((recipe) => (
-                    <TableRow key={recipe.id} data-testid={`row-free-recipe-${recipe.id}`}>
-                      <TableCell className="font-medium" data-testid={`text-free-recipe-name-${recipe.id}`}>
-                        {recipe.name}
-                      </TableCell>
-                      <TableCell data-testid={`text-free-recipe-category-${recipe.id}`}>
-                        {recipe.category || "-"}
-                      </TableCell>
-                      <TableCell data-testid={`text-free-recipe-yield-${recipe.id}`}>
-                        {recipe.batchYield} units
-                      </TableCell>
-                      <TableCell data-testid={`text-free-recipe-margin-${recipe.id}`}>
-                        <Badge variant="secondary">
-                          {Number(recipe.targetMargin).toFixed(0)}%
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {user?.role === "admin" ? (
-                            <>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
-                                title="View recipe"
-                                data-testid={`button-view-free-recipe-${recipe.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setLocation(`/recipes/${recipe.id}`)}
-                                data-testid={`button-edit-free-recipe-${recipe.id}`}
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setDeleteId(recipe.id)}
-                                data-testid={`button-delete-free-recipe-${recipe.id}`}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
-                                title="View recipe"
-                                data-testid={`button-view-free-recipe-${recipe.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                onClick={() => cloneMutation.mutate(recipe.id)}
-                                disabled={cloneMutation.isPending}
-                                data-testid={`button-clone-recipe-${recipe.id}`}
-                              >
-                                <Copy className="h-4 w-4 mr-2" />
-                                Use this Recipe
-                              </Button>
-                            </>
-                          )}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredFreeRecipes.map((recipe) => (
+                  <Card key={recipe.id} data-testid={`card-free-recipe-${recipe.id}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <CardTitle className="text-base">{recipe.name}</CardTitle>
+                          <Badge className="mt-2" variant="outline">
+                            FREE TEMPLATE
+                          </Badge>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {recipe.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {recipe.description}
+                        </p>
+                      )}
+                      {recipe.category && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Category: </span>
+                          <span>{recipe.category}</span>
+                        </div>
+                      )}
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Yield: </span>
+                        <span>{recipe.batchYield} units</span>
+                      </div>
+                      <Button
+                        onClick={() => cloneMutation.mutate(recipe.id)}
+                        disabled={cloneMutation.isPending}
+                        className="w-full mt-4"
+                        data-testid={`button-clone-recipe-${recipe.id}`}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Use this Recipe
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )
           )}
         </CardContent>
