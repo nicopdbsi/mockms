@@ -327,17 +327,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/recipes", requireAuth, async (req, res, next) => {
     try {
       const { ingredients, materials, accessType, allowedPlans, allowedUserEmails, ...recipeData } = req.body;
+      
+      // Parse numeric fields properly - ensure they are strings for numeric columns
+      const parseNumericField = (val: any, defaultVal: string | null): string | null => {
+        if (val === undefined || val === null || val === "") return defaultVal;
+        const num = parseFloat(val);
+        return isNaN(num) ? defaultVal : num.toString();
+      };
+      
+      const parseIntField = (val: any, defaultVal: number | null): number | null => {
+        if (val === undefined || val === null || val === "") return defaultVal;
+        const num = parseInt(val);
+        return isNaN(num) ? defaultVal : num;
+      };
+      
       const data = insertRecipeSchema.parse({
         ...recipeData,
         userId: req.user!.id,
-        targetMargin: recipeData.targetMargin ? parseFloat(recipeData.targetMargin) : "0",
-        targetFoodCost: recipeData.targetFoodCost ? parseFloat(recipeData.targetFoodCost) : null,
-        laborCost: recipeData.laborCost ? parseFloat(recipeData.laborCost) : null,
-        batchYield: recipeData.batchYield ? parseFloat(recipeData.batchYield) : null,
-        servings: recipeData.servings ? parseFloat(recipeData.servings) : 1,
-        standardYieldPieces: recipeData.standardYieldPieces ? parseFloat(recipeData.standardYieldPieces) : null,
-        standardYieldWeightPerPiece: recipeData.standardYieldWeightPerPiece ? parseFloat(recipeData.standardYieldWeightPerPiece) : null,
-        standardNumTrays: recipeData.standardNumTrays ? parseFloat(recipeData.standardNumTrays) : null,
+        targetMargin: parseNumericField(recipeData.targetMargin, "0"),
+        targetFoodCost: parseNumericField(recipeData.targetFoodCost, "30"),
+        laborCost: parseNumericField(recipeData.laborCost, "0"),
+        batchYield: parseIntField(recipeData.batchYield, 1),
+        servings: parseIntField(recipeData.servings, 1),
+        standardYieldPieces: parseIntField(recipeData.standardYieldPieces, null),
+        standardYieldWeightPerPiece: parseNumericField(recipeData.standardYieldWeightPerPiece, null),
+        standardNumTrays: parseIntField(recipeData.standardNumTrays, null),
       });
       const recipe = await storage.createRecipe(data);
       
@@ -354,12 +368,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       if (ingredients && Array.isArray(ingredients)) {
-        for (let index = 0; index < ingredients.length; index++) {
-          const ing = ingredients[index];
+        // Filter out empty ingredient rows (no ingredientId selected)
+        const validIngredients = ingredients.filter((ing: any) => ing.ingredientId && ing.ingredientId.trim() !== "");
+        for (let index = 0; index < validIngredients.length; index++) {
+          const ing = validIngredients[index];
           await storage.createRecipeIngredient({
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
-            quantity: ing.quantity,
+            quantity: ing.quantity || "0",
             componentName: ing.componentName || null,
             unit: ing.unit || "g",
             order: index,
@@ -368,11 +384,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (materials && Array.isArray(materials)) {
-        for (const mat of materials) {
+        // Filter out empty material rows (no materialId selected)
+        const validMaterials = materials.filter((mat: any) => mat.materialId && mat.materialId.trim() !== "");
+        for (const mat of validMaterials) {
           await storage.createRecipeMaterial({
             recipeId: recipe.id,
             materialId: mat.materialId,
-            quantity: mat.quantity,
+            quantity: mat.quantity || "0",
           });
         }
       }
@@ -414,12 +432,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (ingredients && Array.isArray(ingredients)) {
         await storage.deleteRecipeIngredientsByRecipe(req.params.id);
-        for (let index = 0; index < ingredients.length; index++) {
-          const ing = ingredients[index];
+        // Filter out empty ingredient rows (no ingredientId selected)
+        const validIngredients = ingredients.filter((ing: any) => ing.ingredientId && ing.ingredientId.trim() !== "");
+        for (let index = 0; index < validIngredients.length; index++) {
+          const ing = validIngredients[index];
           await storage.createRecipeIngredient({
             recipeId: recipe.id,
             ingredientId: ing.ingredientId,
-            quantity: ing.quantity,
+            quantity: ing.quantity || "0",
             componentName: ing.componentName || null,
             unit: ing.unit || "g",
             order: index,
@@ -429,11 +449,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (materials && Array.isArray(materials)) {
         await storage.deleteRecipeMaterialsByRecipe(req.params.id);
-        for (const mat of materials) {
+        // Filter out empty material rows (no materialId selected)
+        const validMaterials = materials.filter((mat: any) => mat.materialId && mat.materialId.trim() !== "");
+        for (const mat of validMaterials) {
           await storage.createRecipeMaterial({
             recipeId: recipe.id,
             materialId: mat.materialId,
-            quantity: mat.quantity,
+            quantity: mat.quantity || "0",
           });
         }
       }

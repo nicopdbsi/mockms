@@ -1592,6 +1592,12 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                                       placeholder="Qty"
                                       value={item.quantity}
                                       onChange={(e) => updateIngredient(index, "quantity", e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          addIngredient();
+                                        }
+                                      }}
                                       data-testid={`input-quantity-${index}`}
                                     />
                                   </div>
@@ -1737,6 +1743,12 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                                     placeholder="Qty"
                                     value={item.quantity}
                                     onChange={(e) => updateMaterial(index, "quantity", e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        addMaterial();
+                                      }
+                                    }}
                                     data-testid={`input-material-quantity-${index}`}
                                   />
                                 </div>
@@ -1843,9 +1855,15 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                               </div>
                               <div className="flex-1">
                                 <Textarea
-                                  placeholder="Step instructions..."
+                                  placeholder="Step instructions... (Ctrl+Enter to add new step)"
                                   value={step.text}
                                   onChange={(e) => updateProcedure(index, "text", e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                                      e.preventDefault();
+                                      addProcedure();
+                                    }
+                                  }}
                                   rows={2}
                                   data-testid={`input-procedure-text-${index}`}
                                 />
