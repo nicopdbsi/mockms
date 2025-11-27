@@ -370,7 +370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/recipes/:id", requireAuth, async (req, res, next) => {
     try {
-      const { ingredients, materials, ...recipeData } = req.body;
+      const { ingredients, materials, accessType, allowedPlans, allowedUserEmails, ...recipeData } = req.body;
       const recipe = await storage.updateRecipe(
         req.params.id,
         req.user!.id,
@@ -378,6 +378,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       if (!recipe) {
         return res.status(404).json({ message: "Recipe not found" });
+      }
+
+      // Update access control settings if provided and user is admin
+      if (accessType && recipe.isFreeRecipe && (req.user as any).role === "admin") {
+        await storage.updateRecipeFreeStatus(
+          req.params.id,
+          req.user!.id,
+          true,
+          accessType,
+          allowedPlans,
+          allowedUserEmails
+        );
       }
 
       if (ingredients && Array.isArray(ingredients)) {
