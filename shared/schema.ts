@@ -78,6 +78,11 @@ export const recipes = pgTable("recipes", {
   standardYieldWeightPerPiece: numeric("standard_yield_weight_per_piece", { precision: 10, scale: 2 }),
   standardPanSize: text("standard_pan_size"),
   standardNumTrays: integer("standard_num_trays"),
+  isFreeRecipe: boolean("is_free_recipe").default(false).notNull(),
+  isVisible: boolean("is_visible").default(true).notNull(),
+  accessType: text("access_type").default("all"),
+  allowedPlans: text("allowed_plans"),
+  allowedUserEmails: text("allowed_user_emails"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
