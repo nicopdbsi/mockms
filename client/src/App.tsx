@@ -36,12 +36,32 @@ function Router() {
           <Recipes />
         </AppLayout>
       )} />
+      <Route path="/library/my-recipes" component={() => (
+        <AppLayout>
+          <Recipes />
+        </AppLayout>
+      )} />
+      <Route path="/library/bentohub-library" component={() => (
+        <AppLayout>
+          <Recipes />
+        </AppLayout>
+      )} />
       <Route path="/recipes/:id/view">
         <AppLayout>
           <RecipeForm viewOnly={true} />
         </AppLayout>
       </Route>
       <Route path="/recipes/:id">
+        <AppLayout>
+          <RecipeForm />
+        </AppLayout>
+      </Route>
+      <Route path="/library/:id/view">
+        <AppLayout>
+          <RecipeForm viewOnly={true} />
+        </AppLayout>
+      </Route>
+      <Route path="/library/:id">
         <AppLayout>
           <RecipeForm />
         </AppLayout>
