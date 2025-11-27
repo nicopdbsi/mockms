@@ -525,7 +525,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [forecastMarketplaceFee, setForecastMarketplaceFee] = useState<string>("0");
   const [forecastUtilities, setForecastUtilities] = useState<string>("0");
 
-  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users" | "only-me">("all");
+  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users" | "only-me">(user?.role === "admin" ? "only-me" : "all");
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
   const [userEmails, setUserEmails] = useState<string>("");
 
