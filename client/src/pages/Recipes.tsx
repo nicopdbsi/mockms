@@ -126,7 +126,7 @@ export default function Recipes() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-library">
-            {activeTab === "my-recipes" ? "My Recipes" : "BentoHub Library"}
+            {activeTab === "my-recipes" ? "My Recipes" : "Bento Library"}
           </h1>
           <p className="text-muted-foreground" data-testid="text-library-description">
             {activeTab === "my-recipes" ? "Manage your recipes and calculate costs" : "Explore free recipe templates"}
