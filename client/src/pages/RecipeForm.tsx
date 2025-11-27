@@ -495,7 +495,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const isViewMode = location.includes("/view") || viewOnly;
   const params = paramsView || paramsEdit;
   const recipeId = params?.id === "new" ? null : params?.id;
-  const isTemplate = location.includes("?template=true") || location.includes("?template=true");
+  const isTemplate = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("template") === "true";
 
   const [activeTab, setActiveTab] = useState("overview");
   const [selectedIngredients, setSelectedIngredients] = useState<
