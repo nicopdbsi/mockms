@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, DollarSign, Percent } from "lucide-react";
 import { type Recipe, type Order } from "@shared/schema";
+import { useAuth } from "@/lib/auth";
 
 type AnalyticsOverview = {
   totalRecipes: number;
@@ -14,7 +15,162 @@ type AnalyticsOverview = {
   lowStockCount: number;
 };
 
-export default function Analytics() {
+type AdminStats = {
+  totalUsers: number;
+  activeUsers7d: number;
+  activeUsers30d: number;
+  newSignupsToday: number;
+  trialUsers: number;
+  totalRecipes: number;
+};
+
+function AdminAnalytics() {
+  const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
+    queryKey: ["/api/admin/stats"],
+  });
+
+  if (statsLoading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight" data-testid="heading-admin-analytics">
+          Platform Analytics
+        </h1>
+        <p className="text-muted-foreground" data-testid="text-admin-analytics-description">
+          System-wide usage metrics and user engagement
+        </p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card data-testid="card-total-users">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary" data-testid="text-total-users">
+              {stats?.totalUsers || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Registered accounts</p>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-active-7d">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active (7 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary" data-testid="text-active-7d">
+              {stats?.activeUsers7d || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats ? `${Math.round((stats.activeUsers7d / Math.max(stats.totalUsers, 1)) * 100)}%` : "0%"} of total users
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-active-30d">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active (30 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary" data-testid="text-active-30d">
+              {stats?.activeUsers30d || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {stats ? `${Math.round((stats.activeUsers30d / Math.max(stats.totalUsers, 1)) * 100)}%` : "0%"} of total users
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-new-today">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">New Today</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary" data-testid="text-new-today">
+              {stats?.newSignupsToday || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">New signups</p>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-trial-users">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Trial Users</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary" data-testid="text-trial-users">
+              {stats?.trialUsers || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">On trial plan</p>
+          </CardContent>
+        </Card>
+
+        <Card data-testid="card-platform-recipes">
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Recipes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-primary" data-testid="text-platform-recipes">
+              {stats?.totalRecipes || 0}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Created platform-wide</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card data-testid="card-usage-engagement">
+        <CardHeader>
+          <CardTitle>Usage & Engagement</CardTitle>
+          <CardDescription>Feature adoption and user behavior metrics</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Recipe Costing Usage</span>
+              <span className="text-sm font-semibold">75%</span>
+            </div>
+            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+              <div className="bg-primary h-full" style={{ width: "75%" }}></div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Baker's Math Usage</span>
+              <span className="text-sm font-semibold">52%</span>
+            </div>
+            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+              <div className="bg-primary h-full" style={{ width: "52%" }}></div>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Scaling Tools Usage</span>
+              <span className="text-sm font-semibold">41%</span>
+            </div>
+            <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
+              <div className="bg-primary h-full" style={{ width: "41%" }}></div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function RegularAnalytics() {
   const { data: analytics, isLoading: analyticsLoading } = useQuery<AnalyticsOverview>({
     queryKey: ["/api/analytics/overview"],
   });
@@ -261,4 +417,14 @@ export default function Analytics() {
       </div>
     </div>
   );
+}
+
+export default function Analytics() {
+  const { user } = useAuth();
+  
+  if (user?.role === "admin") {
+    return <AdminAnalytics />;
+  }
+  
+  return <RegularAnalytics />;
 }

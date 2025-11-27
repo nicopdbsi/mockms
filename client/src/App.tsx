@@ -15,7 +15,6 @@ import Ingredients from "@/pages/Ingredients";
 import Materials from "@/pages/Materials";
 import Suppliers from "@/pages/Suppliers";
 import Analytics from "@/pages/Analytics";
-import Admin from "@/pages/Admin";
 import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/not-found";
@@ -72,11 +71,6 @@ function Router() {
       <Route path="/analytics">
         <AppLayout>
           <Analytics />
-        </AppLayout>
-      </Route>
-      <Route path="/admin">
-        <AppLayout>
-          <Admin />
         </AppLayout>
       </Route>
       <Route path="/profile">
