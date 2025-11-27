@@ -627,7 +627,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
 
       // Load access control settings for free recipes
       if (recipe.isFreeRecipe && recipe.accessType) {
-        setAccessType(recipe.accessType as "all" | "by-plan" | "selected-users" | "admin");
+        setAccessType(recipe.accessType as "all" | "by-plan" | "selected-users" | "only-me");
         if (recipe.accessType === "by-plan" && recipe.allowedPlans) {
           const plans = Array.isArray(recipe.allowedPlans) 
             ? recipe.allowedPlans 
