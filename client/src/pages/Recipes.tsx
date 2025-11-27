@@ -169,149 +169,145 @@ export default function Recipes() {
             />
           </div>
 
-          <div className="space-y-4">
-            {activeTab === "my-recipes" && (
-              {!myRecipes || myRecipes.length === 0 ? (
-                <div className="text-center py-12" data-testid="empty-state-my-recipes">
-                  <p className="text-muted-foreground mb-4">
-                    No recipes yet. Create your first recipe to get started.
-                  </p>
-                  <Button onClick={() => setLocation("/recipes/new")}>
-                    Create Recipe
-                  </Button>
-                  {freeRecipes && freeRecipes.length > 0 && (
-                    <div className="mt-6">
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Or start with a free BentoHub template
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => setActiveTab("library")}
-                      >
-                        Browse Templates
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Servings</TableHead>
-                      <TableHead>Target Margin</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+          {activeTab === "my-recipes" ? (
+            !myRecipes || myRecipes.length === 0 ? (
+              <div className="text-center py-12" data-testid="empty-state-my-recipes">
+                <p className="text-muted-foreground mb-4">
+                  No recipes yet. Create your first recipe to get started.
+                </p>
+                <Button onClick={() => setLocation("/recipes/new")}>
+                  Create Recipe
+                </Button>
+                {freeRecipes && freeRecipes.length > 0 && (
+                  <div className="mt-6">
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Or start with a free BentoHub template
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => setLocation("/library/bentohub-library")}
+                    >
+                      Browse Templates
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Servings</TableHead>
+                    <TableHead>Target Margin</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {myRecipes.map((recipe) => (
+                    <TableRow key={recipe.id} data-testid={`row-recipe-${recipe.id}`}>
+                      <TableCell className="font-medium" data-testid={`text-recipe-name-${recipe.id}`}>
+                        {recipe.name}
+                      </TableCell>
+                      <TableCell data-testid={`text-recipe-category-${recipe.id}`}>
+                        {recipe.category || "-"}
+                      </TableCell>
+                      <TableCell data-testid={`text-recipe-servings-${recipe.id}`}>
+                        {recipe.servings}
+                      </TableCell>
+                      <TableCell data-testid={`text-recipe-margin-${recipe.id}`}>
+                        <Badge variant="secondary">
+                          {Number(recipe.targetMargin).toFixed(0)}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
+                            title="View recipe"
+                            data-testid={`button-view-recipe-${recipe.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setLocation(`/recipes/${recipe.id}`)}
+                            data-testid={`button-edit-recipe-${recipe.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setDeleteId(recipe.id)}
+                            data-testid={`button-delete-recipe-${recipe.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {myRecipes.map((recipe) => (
-                      <TableRow key={recipe.id} data-testid={`row-recipe-${recipe.id}`}>
-                        <TableCell className="font-medium" data-testid={`text-recipe-name-${recipe.id}`}>
-                          {recipe.name}
-                        </TableCell>
-                        <TableCell data-testid={`text-recipe-category-${recipe.id}`}>
-                          {recipe.category || "-"}
-                        </TableCell>
-                        <TableCell data-testid={`text-recipe-servings-${recipe.id}`}>
-                          {recipe.servings}
-                        </TableCell>
-                        <TableCell data-testid={`text-recipe-margin-${recipe.id}`}>
-                          <Badge variant="secondary">
-                            {Number(recipe.targetMargin).toFixed(0)}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
-                              title="View recipe"
-                              data-testid={`button-view-recipe-${recipe.id}`}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setLocation(`/recipes/${recipe.id}`)}
-                              data-testid={`button-edit-recipe-${recipe.id}`}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => setDeleteId(recipe.id)}
-                              data-testid={`button-delete-recipe-${recipe.id}`}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </TabsContent>
-
-            <TabsContent value="library" className="space-y-4">
-              {freeLoading ? (
-                <Skeleton className="h-96 w-full" />
-              ) : !filteredFreeRecipes || filteredFreeRecipes.length === 0 ? (
-                <div className="text-center py-12" data-testid="empty-state-free-recipes">
-                  <p className="text-muted-foreground">
-                    No free recipes available yet.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredFreeRecipes.map((recipe) => (
-                    <Card key={recipe.id} data-testid={`card-free-recipe-${recipe.id}`}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex-1">
-                            <CardTitle className="text-base">{recipe.name}</CardTitle>
-                            <Badge className="mt-2" variant="outline">
-                              FREE TEMPLATE
-                            </Badge>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {recipe.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {recipe.description}
-                          </p>
-                        )}
-                        {recipe.category && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Category: </span>
-                            <span>{recipe.category}</span>
-                          </div>
-                        )}
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Yield: </span>
-                          <span>{recipe.batchYield} units</span>
-                        </div>
-                        <Button
-                          onClick={() => cloneMutation.mutate(recipe.id)}
-                          disabled={cloneMutation.isPending}
-                          className="w-full mt-4"
-                          data-testid={`button-clone-recipe-${recipe.id}`}
-                        >
-                          <Copy className="h-4 w-4 mr-2" />
-                          Use this Recipe
-                        </Button>
-                      </CardContent>
-                    </Card>
                   ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+                </TableBody>
+              </Table>
+            )
+          ) : (
+            freeLoading ? (
+              <Skeleton className="h-96 w-full" />
+            ) : !filteredFreeRecipes || filteredFreeRecipes.length === 0 ? (
+              <div className="text-center py-12" data-testid="empty-state-free-recipes">
+                <p className="text-muted-foreground">
+                  No free recipes available yet.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {filteredFreeRecipes.map((recipe) => (
+                  <Card key={recipe.id} data-testid={`card-free-recipe-${recipe.id}`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <CardTitle className="text-base">{recipe.name}</CardTitle>
+                          <Badge className="mt-2" variant="outline">
+                            FREE TEMPLATE
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {recipe.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {recipe.description}
+                        </p>
+                      )}
+                      {recipe.category && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Category: </span>
+                          <span>{recipe.category}</span>
+                        </div>
+                      )}
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">Yield: </span>
+                        <span>{recipe.batchYield} units</span>
+                      </div>
+                      <Button
+                        onClick={() => cloneMutation.mutate(recipe.id)}
+                        disabled={cloneMutation.isPending}
+                        className="w-full mt-4"
+                        data-testid={`button-clone-recipe-${recipe.id}`}
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Use this Recipe
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )
+          )}
         </CardContent>
       </Card>
 
