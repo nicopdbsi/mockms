@@ -627,14 +627,16 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
 
       // Load access control settings for free recipes
       if (recipe.isFreeRecipe && recipe.accessType) {
-        setAccessType(recipe.accessType as "all" | "by-plan" | "selected-users" | "only-me");
-        if (recipe.accessType === "by-plan" && recipe.allowedPlans) {
+        // Convert old "only-me" to new "admin" for backwards compatibility
+        const accessTypeValue = recipe.accessType === "only-me" ? "admin" : recipe.accessType;
+        setAccessType(accessTypeValue as "all" | "by-plan" | "selected-users" | "admin");
+        if (accessTypeValue === "by-plan" && recipe.allowedPlans) {
           const plans = Array.isArray(recipe.allowedPlans) 
             ? recipe.allowedPlans 
             : (recipe.allowedPlans as string).split(",");
           setSelectedPlans(new Set(plans));
         }
-        if (recipe.accessType === "selected-users" && recipe.allowedUserEmails) {
+        if (accessTypeValue === "selected-users" && recipe.allowedUserEmails) {
           const emails = Array.isArray(recipe.allowedUserEmails) 
             ? recipe.allowedUserEmails.join(",") 
             : recipe.allowedUserEmails;
