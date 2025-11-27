@@ -73,6 +73,7 @@ export default function Recipes() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/free-recipes"] });
       queryClient.invalidateQueries({ queryKey: ["/api/analytics/overview"] });
       setDeleteId(null);
       toast({
@@ -275,6 +276,37 @@ export default function Recipes() {
                             FREE TEMPLATE
                           </Badge>
                         </div>
+                        {user?.role === "admin" && (
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
+                              title="View recipe"
+                              data-testid={`button-view-free-recipe-${recipe.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setLocation(`/recipes/${recipe.id}`)}
+                              title="Edit recipe"
+                              data-testid={`button-edit-free-recipe-${recipe.id}`}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setDeleteId(recipe.id)}
+                              title="Delete recipe"
+                              data-testid={`button-delete-free-recipe-${recipe.id}`}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
@@ -293,15 +325,17 @@ export default function Recipes() {
                         <span className="text-muted-foreground">Yield: </span>
                         <span>{recipe.batchYield} units</span>
                       </div>
-                      <Button
-                        onClick={() => cloneMutation.mutate(recipe.id)}
-                        disabled={cloneMutation.isPending}
-                        className="w-full mt-4"
-                        data-testid={`button-clone-recipe-${recipe.id}`}
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Use this Recipe
-                      </Button>
+                      {user?.role !== "admin" && (
+                        <Button
+                          onClick={() => cloneMutation.mutate(recipe.id)}
+                          disabled={cloneMutation.isPending}
+                          className="w-full mt-4"
+                          data-testid={`button-clone-recipe-${recipe.id}`}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Use this Recipe
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
