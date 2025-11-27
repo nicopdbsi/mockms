@@ -92,7 +92,8 @@ export default function Recipes() {
 
   const cloneMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("POST", `/api/recipes/${id}/clone`);
+      const response = await apiRequest("POST", `/api/recipes/${id}/clone`);
+      return await response.json() as Recipe;
     },
     onSuccess: (cloned: Recipe) => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
