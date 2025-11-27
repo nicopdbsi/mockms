@@ -156,6 +156,44 @@ export class DbStorage implements IStorage {
     return result[0];
   }
 
+  async updateLastLogin(id: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateUserStatus(id: string, status: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ status })
+      .where(eq(users.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getAdminStats(): Promise<any> {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const allUsers = await db.select().from(users);
+    const activeUsers7d = allUsers.filter(u => u.lastLogin && new Date(u.lastLogin) > sevenDaysAgo).length;
+    const activeUsers30d = allUsers.filter(u => u.lastLogin && new Date(u.lastLogin) > thirtyDaysAgo).length;
+    const newSignupsToday = allUsers.filter(u => new Date(u.createdAt) > todayStart).length;
+    const totalRecipes = await db.select({ count: sql`count(*)` }).from(recipes);
+    
+    return {
+      totalUsers: allUsers.length,
+      activeUsers7d,
+      activeUsers30d,
+      newSignupsToday,
+      trialUsers: allUsers.filter(u => u.role === 'beta_tester').length,
+      totalRecipes: Number(totalRecipes[0]?.count || 0),
+    };
+  }
+
   async getSuppliers(userId: string): Promise<Supplier[]> {
     return db.select().from(suppliers).where(eq(suppliers.userId, userId)).orderBy(desc(suppliers.createdAt));
   }

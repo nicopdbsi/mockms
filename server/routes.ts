@@ -91,8 +91,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!user) {
         return res.status(401).json({ message: info?.message || "Login failed" });
       }
-      req.login(user, (err) => {
+      req.login(user, async (err) => {
         if (err) return next(err);
+        try {
+          await storage.updateLastLogin((user as any).id);
+        } catch (e) {
+          console.error("Failed to update last login:", e);
+        }
         const { password, ...userWithoutPassword } = user as any;
         res.json({ user: userWithoutPassword });
       });
@@ -588,6 +593,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
+  app.get("/api/admin/stats", requireAdminRole, async (req, res, next) => {
+    try {
+      const stats = await storage.getAdminStats();
+      res.json(stats);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get("/api/admin/users", requireAdminRole, async (req, res, next) => {
     try {
       const allUsers = await storage.getAllUsers();
@@ -623,6 +637,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/admin/users/:id/status", requireAdminRole, async (req, res, next) => {
+    try {
+      const { status } = req.body;
+      if (!["active", "inactive", "suspended"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      const updated = await storage.updateUserStatus(req.params.id, status);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password, ...sanitized } = updated;
+      res.json(sanitized);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/admin/export/users", requireAdminRole, async (req, res, next) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      const csv = [
+        "ID,Username,Email,Name,Business,Role,Status,Created,Last Login",
+        ...allUsers.map(u => 
+          `"${u.id}","${u.username}","${u.email}","${u.firstName || ''}","${u.businessName || ''}","${u.role}","${u.status}","${u.createdAt}","${u.lastLogin || ''}"`
+        )
+      ].join("\n");
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=users.csv");
+      res.send(csv);
     } catch (error) {
       next(error);
     }
