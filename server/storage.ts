@@ -257,27 +257,46 @@ export class DbStorage implements IStorage {
   }
 
   async getRecipesByIngredient(ingredientId: string, userId: string): Promise<Recipe[]> {
-    const result = await db.select({
-      id: recipes.id,
-      userId: recipes.userId,
-      name: recipes.name,
-      description: recipes.description,
-      category: recipes.category,
-      servings: recipes.servings,
-      targetMargin: recipes.targetMargin,
-      targetFoodCost: recipes.targetFoodCost,
-      laborCost: recipes.laborCost,
-      batchYield: recipes.batchYield,
-      procedures: recipes.procedures,
-      standardYieldPieces: recipes.standardYieldPieces,
-      standardYieldWeightPerPiece: recipes.standardYieldWeightPerPiece,
-      standardPanSize: recipes.standardPanSize,
-      standardNumTrays: recipes.standardNumTrays,
-      createdAt: recipes.createdAt,
-    }).from(recipes)
+    const result = await db.select().from(recipes)
       .innerJoin(recipeIngredients, eq(recipes.id, recipeIngredients.recipeId))
       .where(and(eq(recipeIngredients.ingredientId, ingredientId), eq(recipes.userId, userId)));
-    return result;
+    return result.map(r => r.recipes);
+  }
+
+  async getFreeRecipes(userEmail?: string, userRole?: string): Promise<Recipe[]> {
+    let query = db.select().from(recipes).where(and(eq(recipes.isFreeRecipe, true), eq(recipes.isVisible, true)));
+    return query;
+  }
+
+  async cloneRecipe(recipeId: string, newUserId: string): Promise<Recipe | undefined> {
+    const original = await db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+    if (!original[0]) return undefined;
+    
+    const { id, userId, isFreeRecipe, isVisible, accessType, allowedPlans, allowedUserEmails, ...data } = original[0];
+    const cloned = await db.insert(recipes).values({
+      ...data,
+      userId: newUserId,
+      isFreeRecipe: false,
+      isVisible: true,
+      accessType: 'all',
+    }).returning();
+    return cloned[0];
+  }
+
+  async updateRecipeFreeStatus(id: string, userId: string, isFree: boolean, accessType: string, allowedPlans?: string, allowedUserEmails?: string): Promise<Recipe | undefined> {
+    const result = await db.update(recipes)
+      .set({ isFreeRecipe: isFree, accessType, allowedPlans, allowedUserEmails })
+      .where(and(eq(recipes.id, id), eq(recipes.userId, userId), eq(recipes.isFreeRecipe, false)))
+      .returning();
+    return result[0];
+  }
+
+  async toggleRecipeVisibility(id: string, userId: string, isVisible: boolean): Promise<Recipe | undefined> {
+    const result = await db.update(recipes)
+      .set({ isVisible })
+      .where(and(eq(recipes.id, id), eq(recipes.userId, userId), eq(recipes.isFreeRecipe, true)))
+      .returning();
+    return result[0];
   }
 
   async getMaterials(userId: string): Promise<Material[]> {
