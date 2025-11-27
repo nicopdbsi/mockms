@@ -525,6 +525,10 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [forecastMarketplaceFee, setForecastMarketplaceFee] = useState<string>("0");
   const [forecastUtilities, setForecastUtilities] = useState<string>("0");
 
+  const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users">("all");
+  const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
+  const [userEmails, setUserEmails] = useState<string>("");
+
   const { data: ingredients, isLoading: ingredientsLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
   });
@@ -624,17 +628,25 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
 
   const createMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const response = await apiRequest("POST", "/api/recipes", {
+      const payload: any = {
         ...data,
         procedures: serializeProcedures(),
         ingredients: selectedIngredients,
         materials: selectedMaterials,
-        ...(isTemplate && {
-          isFreeRecipe: true,
-          isVisible: true,
-          accessType: "all",
-        }),
-      });
+      };
+
+      if (isTemplate) {
+        payload.isFreeRecipe = true;
+        payload.isVisible = true;
+        payload.accessType = accessType;
+        if (accessType === "by-plan") {
+          payload.allowedPlans = Array.from(selectedPlans).join(",");
+        } else if (accessType === "selected-users") {
+          payload.allowedUserEmails = userEmails;
+        }
+      }
+
+      const response = await apiRequest("POST", "/api/recipes", payload);
       return response.json();
     },
     onSuccess: () => {
@@ -2596,6 +2608,108 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
               </Card>
             </TabsContent>
           </Tabs>
+
+          {isTemplate && user?.role === "admin" && !isViewMode && (
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Access Control</CardTitle>
+                <CardDescription>Who can use this recipe template?</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      id="access-all"
+                      name="accessType"
+                      value="all"
+                      checked={accessType === "all"}
+                      onChange={() => setAccessType("all")}
+                      className="w-4 h-4"
+                      data-testid="radio-access-all"
+                    />
+                    <label htmlFor="access-all" className="text-sm font-medium cursor-pointer">
+                      All users
+                    </label>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        id="access-by-plan"
+                        name="accessType"
+                        value="by-plan"
+                        checked={accessType === "by-plan"}
+                        onChange={() => setAccessType("by-plan")}
+                        className="w-4 h-4"
+                        data-testid="radio-access-by-plan"
+                      />
+                      <label htmlFor="access-by-plan" className="text-sm font-medium cursor-pointer">
+                        By plan
+                      </label>
+                    </div>
+                    {accessType === "by-plan" && (
+                      <div className="ml-7 space-y-2">
+                        {["Hobby", "Starter", "Pro"].map((plan) => (
+                          <div key={plan} className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id={`plan-${plan.toLowerCase()}`}
+                              checked={selectedPlans.has(plan)}
+                              onChange={(e) => {
+                                const newPlans = new Set(selectedPlans);
+                                if (e.target.checked) {
+                                  newPlans.add(plan);
+                                } else {
+                                  newPlans.delete(plan);
+                                }
+                                setSelectedPlans(newPlans);
+                              }}
+                              className="w-4 h-4"
+                              data-testid={`checkbox-plan-${plan.toLowerCase()}`}
+                            />
+                            <label htmlFor={`plan-${plan.toLowerCase()}`} className="text-sm cursor-pointer">
+                              {plan}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        id="access-selected-users"
+                        name="accessType"
+                        value="selected-users"
+                        checked={accessType === "selected-users"}
+                        onChange={() => setAccessType("selected-users")}
+                        className="w-4 h-4"
+                        data-testid="radio-access-selected-users"
+                      />
+                      <label htmlFor="access-selected-users" className="text-sm font-medium cursor-pointer">
+                        Selected users
+                      </label>
+                    </div>
+                    {accessType === "selected-users" && (
+                      <div className="ml-7">
+                        <textarea
+                          placeholder="Enter email addresses, one per line or comma-separated"
+                          value={userEmails}
+                          onChange={(e) => setUserEmails(e.target.value)}
+                          className="w-full min-h-24 p-2 border rounded-md text-sm"
+                          data-testid="textarea-selected-emails"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {!isViewMode && (
             <div className="flex gap-3 pt-4">
