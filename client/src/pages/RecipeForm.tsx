@@ -2763,7 +2763,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setLocation("/recipes")}
+                onClick={() => setLocation(recipe?.isFreeRecipe ? "/library/bentohub-library" : "/recipes")}
                 data-testid="button-cancel-recipe"
               >
                 Cancel
