@@ -14,6 +14,8 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("regular"),
   currency: text("currency").default("USD").notNull(),
   timezone: text("timezone").default("UTC").notNull(),
+  status: text("status").default("active").notNull(),
+  lastLogin: timestamp("last_login"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
