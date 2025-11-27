@@ -426,6 +426,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/free-recipes", requireAuth, async (req, res, next) => {
+    try {
+      const freeRecipes = await storage.getFreeRecipes();
+      res.json(freeRecipes);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/recipes/:id/clone", requireAuth, async (req, res, next) => {
+    try {
+      const cloned = await storage.cloneRecipe(req.params.id, req.user!.id);
+      if (!cloned) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      res.json(cloned);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/recipes/:id/free", requireAuth, async (req, res, next) => {
+    try {
+      const { isFree, accessType, allowedPlans, allowedUserEmails } = req.body;
+      const updated = await storage.updateRecipeFreeStatus(
+        req.params.id,
+        req.user!.id,
+        isFree,
+        accessType,
+        allowedPlans,
+        allowedUserEmails
+      );
+      if (!updated) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/recipes/:id/visibility", requireAuth, async (req, res, next) => {
+    try {
+      const { isVisible } = req.body;
+      const updated = await storage.toggleRecipeVisibility(req.params.id, req.user!.id, isVisible);
+      if (!updated) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   // Orders routes
   app.get("/api/orders", requireAuth, async (req, res, next) => {
     try {
