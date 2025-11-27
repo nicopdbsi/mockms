@@ -321,10 +321,12 @@ export default function Recipes() {
                           <span>{recipe.category}</span>
                         </div>
                       )}
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Yield: </span>
-                        <span>{recipe.batchYield} units</span>
-                      </div>
+                      {recipe.batchYield && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Yield: </span>
+                          <span>{recipe.batchYield} units</span>
+                        </div>
+                      )}
                       {user?.role !== "admin" && (
                         <Button
                           onClick={() => cloneMutation.mutate(recipe.id)}
@@ -335,6 +337,11 @@ export default function Recipes() {
                           <Copy className="h-4 w-4 mr-2" />
                           Use this Recipe
                         </Button>
+                      )}
+                      {user?.role === "admin" && (
+                        <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted rounded">
+                          Access: {recipe.accessType === "only-me" ? "Only Me" : recipe.accessType === "all" ? "All Users" : recipe.accessType === "by-plan" ? "By Plan" : "Selected Users"}
+                        </div>
                       )}
                     </CardContent>
                   </Card>
