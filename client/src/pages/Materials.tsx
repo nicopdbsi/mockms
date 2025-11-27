@@ -859,7 +859,7 @@ export default function Materials() {
       case "unit":
         return direction * (a.unit || "").localeCompare(b.unit || "");
       case "pricePerUnit":
-        return direction * (parseFloat(a.pricePerUnit) - parseFloat(b.pricePerUnit));
+        return direction * (parseFloat(a.pricePerUnit || "0") - parseFloat(b.pricePerUnit || "0"));
       case "purchaseAmount":
         return direction * ((parseFloat(a.purchaseAmount || "0")) - (parseFloat(b.purchaseAmount || "0")));
       case "supplier":
@@ -994,7 +994,7 @@ export default function Materials() {
                       <TableCell className="text-right">{material.quantity}</TableCell>
                       <TableCell>{material.unit}</TableCell>
                       <TableCell className="text-right">
-                        {formatCurrency(parseFloat(material.pricePerUnit).toFixed(2), user?.currency || "USD")}
+                        {formatCurrency(parseFloat(material.pricePerUnit || "0").toFixed(2), user?.currency || "USD")}
                       </TableCell>
                       <TableCell className="text-right">
                         {material.purchaseAmount
