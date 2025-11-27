@@ -4,7 +4,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DollarSign, TrendingUp, Package, ChefHat } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { formatCurrency } from "@/lib/currency";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 type AnalyticsOverview = {
   totalRecipes: number;
@@ -49,91 +48,46 @@ function AdminDashboard() {
         <p className="text-muted-foreground">Platform overview and system health</p>
       </div>
 
-      <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="dashboard" data-testid="tab-dashboard">Dashboard</TabsTrigger>
-          <TabsTrigger value="analytics" data-testid="tab-analytics">Analytics</TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {statsLoading ? (
+            <>
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+              <Skeleton className="h-24" />
+            </>
+          ) : stats ? (
+            <>
+              <StatCard label="Total Users" value={stats.totalUsers} data-testid="stat-total-users" />
+              <StatCard label="Active (7 Days)" value={stats.activeUsers7d} subtext={`${Math.round((stats.activeUsers7d / Math.max(stats.totalUsers, 1)) * 100)}%`} />
+              <StatCard label="Active (30 Days)" value={stats.activeUsers30d} subtext={`${Math.round((stats.activeUsers30d / Math.max(stats.totalUsers, 1)) * 100)}%`} />
+              <StatCard label="New Today" value={stats.newSignupsToday} />
+              <StatCard label="Trial Users" value={stats.trialUsers} />
+              <StatCard label="Total Recipes" value={stats.totalRecipes} />
+            </>
+          ) : null}
+        </div>
 
-        <TabsContent value="dashboard" className="space-y-6 mt-6">
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {statsLoading ? (
-              <>
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-                <Skeleton className="h-24" />
-              </>
-            ) : stats ? (
-              <>
-                <StatCard label="Total Users" value={stats.totalUsers} data-testid="stat-total-users" />
-                <StatCard label="Active (7 Days)" value={stats.activeUsers7d} subtext={`${Math.round((stats.activeUsers7d / Math.max(stats.totalUsers, 1)) * 100)}%`} />
-                <StatCard label="Active (30 Days)" value={stats.activeUsers30d} subtext={`${Math.round((stats.activeUsers30d / Math.max(stats.totalUsers, 1)) * 100)}%`} />
-                <StatCard label="New Today" value={stats.newSignupsToday} />
-                <StatCard label="Trial Users" value={stats.trialUsers} />
-                <StatCard label="Total Recipes" value={stats.totalRecipes} />
-              </>
-            ) : null}
-          </div>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>System Health</CardTitle>
-              <CardDescription>Overall system status and metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
-                <span className="text-sm font-medium">System Status</span>
-                <span className="text-sm font-semibold text-green-600 dark:text-green-400">Healthy</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <span className="text-sm font-medium">Database</span>
-                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">Connected</span>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-6 mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Usage & Engagement</CardTitle>
-              <CardDescription>Feature adoption and user behavior metrics</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Recipe Costing Usage</span>
-                  <span className="text-sm font-semibold">75%</span>
-                </div>
-                <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full" style={{ width: "75%" }}></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Baker's Math Usage</span>
-                  <span className="text-sm font-semibold">52%</span>
-                </div>
-                <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full" style={{ width: "52%" }}></div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Scaling Tools Usage</span>
-                  <span className="text-sm font-semibold">41%</span>
-                </div>
-                <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
-                  <div className="bg-primary h-full" style={{ width: "41%" }}></div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        <Card>
+          <CardHeader>
+            <CardTitle>System Health</CardTitle>
+            <CardDescription>Overall system status and metrics</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between items-center p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
+              <span className="text-sm font-medium">System Status</span>
+              <span className="text-sm font-semibold text-green-600 dark:text-green-400">Healthy</span>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <span className="text-sm font-medium">Database</span>
+              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">Connected</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
