@@ -1161,13 +1161,6 @@ export default function Ingredients() {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => setShowCategoryManagement(true)}
-              data-testid="button-manage-categories"
-            >
-              Manage Categories
-            </Button>
-            <Button
-              variant="outline"
               onClick={() => setShowStarterPackImport(true)}
               data-testid="button-import-starter-pack"
             >
