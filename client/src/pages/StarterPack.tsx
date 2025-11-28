@@ -552,25 +552,12 @@ function StarterPackContent() {
                       ) : (
                         <Select
                           value={ingredientForm.category}
-                          onValueChange={(v) => {
-                            if (v === "__add_new__") {
-                              setAddingIngredientCategory(true);
-                            } else {
-                              setIngredientForm({ ...ingredientForm, category: v });
-                            }
-                          }}
+                          onValueChange={(v) => setIngredientForm({ ...ingredientForm, category: v })}
                         >
                           <SelectTrigger data-testid="select-ingredient-category">
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="__add_new__" className="text-primary font-medium">
-                              <span className="flex items-center gap-2">
-                                <FolderPlus className="h-4 w-4" />
-                                Add New Category...
-                              </span>
-                            </SelectItem>
-                            <Separator className="my-1" />
                             {allIngredientCategories.map((cat) => (
                               <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                             ))}
