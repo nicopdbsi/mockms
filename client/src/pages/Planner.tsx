@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/lib/auth";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, isToday, parseISO } from "date-fns";
@@ -27,7 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, ChevronLeft, ChevronRight, Calendar, Clock, Trash2, Edit2, CheckCircle, XCircle, PlayCircle } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Calendar, Clock, Trash2, Edit2, CheckCircle, XCircle, PlayCircle, Eye } from "lucide-react";
 import type { Recipe, PlannerEntry } from "@shared/schema";
 
 type PlannerEntryWithRecipe = PlannerEntry & { recipe: Recipe };
@@ -49,6 +50,7 @@ const statusLabels: Record<string, string> = {
 export default function Planner() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<PlannerEntryWithRecipe | undefined>();
@@ -446,21 +448,35 @@ export default function Planner() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="recipe">Recipe</Label>
-                <Select
-                  value={formData.recipeId}
-                  onValueChange={(value) => setFormData({ ...formData, recipeId: value })}
-                >
-                  <SelectTrigger data-testid="select-recipe">
-                    <SelectValue placeholder="Select a recipe" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sortedRecipes.map((recipe) => (
-                      <SelectItem key={recipe.id} value={recipe.id}>
-                        {recipe.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Select
+                      value={formData.recipeId}
+                      onValueChange={(value) => setFormData({ ...formData, recipeId: value })}
+                    >
+                      <SelectTrigger data-testid="select-recipe">
+                        <SelectValue placeholder="Select a recipe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sortedRecipes.map((recipe) => (
+                          <SelectItem key={recipe.id} value={recipe.id}>
+                            {recipe.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {formData.recipeId && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => navigate(`/recipes/${formData.recipeId}`)}
+                      data-testid="button-view-recipe"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
