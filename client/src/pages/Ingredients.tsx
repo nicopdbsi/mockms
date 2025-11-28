@@ -1025,6 +1025,8 @@ export default function Ingredients() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [pendingDeleteIngredient, setPendingDeleteIngredient] = useState<Ingredient | null>(null);
   const [recipesUsingIngredient, setRecipesUsingIngredient] = useState<Recipe[]>([]);
+  const [showCategoryManagement, setShowCategoryManagement] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<IngredientCategory | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -1034,6 +1036,10 @@ export default function Ingredients() {
 
   const { data: suppliers } = useQuery<Supplier[]>({
     queryKey: ["/api/suppliers"],
+  });
+
+  const { data: customCategories } = useQuery<IngredientCategory[]>({
+    queryKey: ["/api/ingredient-categories"],
   });
 
   const getSupplierName = (supplierId: string | null) => {
@@ -1153,6 +1159,13 @@ export default function Ingredients() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowCategoryManagement(true)}
+              data-testid="button-manage-categories"
+            >
+              Manage Categories
+            </Button>
             <Button
               variant="outline"
               onClick={() => setShowStarterPackImport(true)}
@@ -1315,6 +1328,50 @@ export default function Ingredients() {
         onOpenChange={setShowStarterPackImport}
         type="ingredients"
       />
+
+      <Dialog open={showCategoryManagement} onOpenChange={setShowCategoryManagement}>
+        <DialogContent className="max-w-md max-h-96 overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Manage Categories</DialogTitle>
+            <DialogDescription>Edit or delete your custom ingredient categories.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            {customCategories && customCategories.length > 0 ? (
+              customCategories.map((category) => (
+                <div key={category.id} className="flex items-center justify-between p-3 border rounded-md">
+                  <span>{category.name}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingCategory(category);
+                    }}
+                    data-testid={`button-edit-category-${category.id}`}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No custom categories yet. Create one from the Add Ingredient form.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {editingCategory && (
+        <EditCategoryDialog
+          category={editingCategory}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setEditingCategory(null);
+          }}
+          onSuccess={() => {
+            setEditingCategory(null);
+            queryClient.invalidateQueries({ queryKey: ["/api/ingredient-categories"] });
+          }}
+        />
+      )}
 
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <DialogContent className="max-w-md">
