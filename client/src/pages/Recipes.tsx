@@ -36,7 +36,7 @@ export default function Recipes() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [viewMode, setViewMode] = useState<"list" | "thumbnail">("list");
+  const [viewMode, setViewMode] = useState<"list" | "thumbnail">("thumbnail");
   const { toast } = useToast();
   const { user } = useAuth();
 
