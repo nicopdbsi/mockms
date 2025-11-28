@@ -839,10 +839,29 @@ export class DbStorage implements IStorage {
   }
 
   async updateStarterIngredientCategory(id: string, name: string): Promise<StarterIngredientCategory | undefined> {
+    // Get the old category name first
+    const oldCategory = await db.select().from(starterIngredientCategories)
+      .where(eq(starterIngredientCategories.id, id));
+    
+    if (!oldCategory || oldCategory.length === 0) {
+      return undefined;
+    }
+
+    const oldName = oldCategory[0].name;
+
+    // Update the category
     const result = await db.update(starterIngredientCategories)
       .set({ name })
       .where(eq(starterIngredientCategories.id, id))
       .returning();
+
+    // Cascade update to all starter ingredients with the old category name
+    if (oldName !== name) {
+      await db.update(starterIngredients)
+        .set({ category: name })
+        .where(eq(starterIngredients.category, oldName));
+    }
+
     return result[0];
   }
 
@@ -863,10 +882,29 @@ export class DbStorage implements IStorage {
   }
 
   async updateStarterMaterialCategory(id: string, name: string): Promise<StarterMaterialCategory | undefined> {
+    // Get the old category name first
+    const oldCategory = await db.select().from(starterMaterialCategories)
+      .where(eq(starterMaterialCategories.id, id));
+    
+    if (!oldCategory || oldCategory.length === 0) {
+      return undefined;
+    }
+
+    const oldName = oldCategory[0].name;
+
+    // Update the category
     const result = await db.update(starterMaterialCategories)
       .set({ name })
       .where(eq(starterMaterialCategories.id, id))
       .returning();
+
+    // Cascade update to all starter materials with the old category name
+    if (oldName !== name) {
+      await db.update(starterMaterials)
+        .set({ category: name })
+        .where(eq(starterMaterials.category, oldName));
+    }
+
     return result[0];
   }
 
