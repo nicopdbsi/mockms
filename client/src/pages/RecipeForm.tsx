@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useRoute, useLocation } from "wouter";
@@ -46,7 +46,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertRecipeSchema, type Ingredient, type Material } from "@shared/schema";
 import { z } from "zod";
-import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, Package, ClipboardList, Scale, RefreshCw, ChevronUp, ChevronDown, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle, DollarSign, Calculator, TrendingUp, Package, ClipboardList, Scale, RefreshCw, ChevronUp, ChevronDown, BarChart3, Upload, ImageIcon, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -61,6 +61,7 @@ const formSchema = insertRecipeSchema.omit({ userId: true }).extend({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
   category: z.string().optional(),
+  coverImage: z.string().optional(),
   servings: z.number().optional(),
   targetMargin: z.string().min(0, "Target margin must be positive"),
   targetFoodCost: z.string().min(0, "Target food cost must be positive"),
@@ -99,6 +100,7 @@ type RecipeWithIngredients = {
   name: string;
   description: string | null;
   category?: string | null;
+  coverImage?: string | null;
   servings: number;
   targetMargin: string;
   targetFoodCost: string | null;
@@ -536,6 +538,8 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [accessType, setAccessType] = useState<"all" | "by-plan" | "selected-users" | "admin">(user?.role === "admin" ? "admin" : "all");
   const [selectedPlans, setSelectedPlans] = useState<Set<string>>(new Set());
   const [userEmails, setUserEmails] = useState<string>("");
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   const { data: ingredients, isLoading: ingredientsLoading } = useQuery<Ingredient[]>({
     queryKey: ["/api/ingredients"],
@@ -566,6 +570,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
       name: "",
       description: "",
       category: "",
+      coverImage: "",
       servings: undefined,
       targetMargin: "50",
       targetFoodCost: "30",
@@ -599,6 +604,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
         name: recipe.name,
         description: recipe.description || "",
         category: recipe.category || "",
+        coverImage: recipe.coverImage || "",
         servings: recipe.servings || undefined,
         targetMargin: recipe.targetMargin,
         targetFoodCost: recipe.targetFoodCost || "30",
@@ -647,6 +653,58 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
       }
     }
   }, [recipe, form]);
+
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload a JPG or PNG image.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("coverImage", file);
+
+      const response = await fetch("/api/recipes/cover-image", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const { url } = await response.json();
+      form.setValue("coverImage", url);
+      toast({
+        title: "Cover image uploaded",
+        description: "Image has been resized to 90x90px.",
+      });
+    } catch (error) {
+      toast({
+        title: "Upload failed",
+        description: "Failed to upload cover image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploadingCover(false);
+      if (coverInputRef.current) {
+        coverInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveCoverImage = () => {
+    form.setValue("coverImage", "");
+  };
 
   const serializeProcedures = (): string => {
     if (procedureSteps.length === 0) return "";
@@ -1294,6 +1352,86 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                       )}
                     />
                   )}
+
+                  {/* Cover Image Upload */}
+                  <div className="pt-4">
+                    <FormLabel>Cover Image</FormLabel>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Upload a cover photo for your recipe (JPG or PNG). Images will be resized to 90x90px.
+                    </p>
+                    {isViewMode ? (
+                      <div className="mt-2">
+                        {form.getValues("coverImage") ? (
+                          <img
+                            src={form.getValues("coverImage") || ""}
+                            alt="Recipe cover"
+                            className="w-[90px] h-[90px] object-cover rounded-md border"
+                            data-testid="img-cover-preview"
+                          />
+                        ) : (
+                          <div className="text-sm text-muted-foreground">No cover image</div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-start gap-4">
+                        {form.watch("coverImage") ? (
+                          <div className="relative">
+                            <img
+                              src={form.watch("coverImage") || ""}
+                              alt="Recipe cover"
+                              className="w-[90px] h-[90px] object-cover rounded-md border"
+                              data-testid="img-cover-preview"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="destructive"
+                              className="absolute -top-2 -right-2 h-6 w-6"
+                              onClick={handleRemoveCoverImage}
+                              data-testid="button-remove-cover"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div
+                            className="w-[90px] h-[90px] border-2 border-dashed rounded-md flex items-center justify-center bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => coverInputRef.current?.click()}
+                            data-testid="button-upload-cover"
+                          >
+                            {isUploadingCover ? (
+                              <div className="text-sm text-muted-foreground">Uploading...</div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                                <ImageIcon className="h-6 w-6" />
+                                <span className="text-xs">Add</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <input
+                          ref={coverInputRef}
+                          type="file"
+                          accept=".jpg,.jpeg,.png"
+                          className="hidden"
+                          onChange={handleCoverImageUpload}
+                          data-testid="input-cover-image"
+                        />
+                        {!form.watch("coverImage") && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => coverInputRef.current?.click()}
+                            disabled={isUploadingCover}
+                            data-testid="button-upload-cover-alt"
+                          >
+                            <Upload className="h-4 w-4 mr-2" />
+                            {isUploadingCover ? "Uploading..." : "Upload Image"}
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
 

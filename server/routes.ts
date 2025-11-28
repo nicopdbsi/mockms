@@ -4,6 +4,9 @@ import { storage } from "./storage";
 import { setupAuth, crypto } from "./auth";
 import passport from "passport";
 import multer from "multer";
+import sharp from "sharp";
+import path from "path";
+import fs from "fs";
 import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema, insertStarterIngredientSchema, insertStarterMaterialSchema, insertStarterIngredientCategorySchema, insertStarterMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
 import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
@@ -17,6 +20,19 @@ const upload = multer({
       cb(null, true);
     } else {
       cb(new Error('Invalid file type. Allowed: PNG, JPG, PDF, CSV'));
+    }
+  }
+});
+
+const coverImageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit for cover images
+  fileFilter: (_req, file, cb) => {
+    const allowedMimes = ['image/png', 'image/jpeg', 'image/jpg'];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type. Only JPG and PNG images are allowed.'));
     }
   }
 });
@@ -483,6 +499,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.json({ message: "Recipe deleted" });
     } catch (error) {
+      next(error);
+    }
+  });
+
+  // Recipe cover image upload
+  app.post("/api/recipes/cover-image", requireAuth, coverImageUpload.single('coverImage'), async (req, res, next) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      const uploadsDir = path.join(process.cwd(), 'uploads', 'recipe-covers');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+      const ext = '.jpg';
+      const filename = `cover-${uniqueSuffix}${ext}`;
+      const filepath = path.join(uploadsDir, filename);
+
+      await sharp(req.file.buffer)
+        .resize(90, 90, {
+          fit: 'cover',
+          position: 'center'
+        })
+        .jpeg({ quality: 85 })
+        .toFile(filepath);
+
+      const imageUrl = `/uploads/recipe-covers/${filename}`;
+      res.json({ url: imageUrl });
+    } catch (error) {
+      console.error('Cover image upload error:', error);
       next(error);
     }
   });
