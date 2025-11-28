@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type Recipe } from "@shared/schema";
-import { Plus, Pencil, Trash2, Search, Eye, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Eye, Copy, Grid, List } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -36,6 +36,7 @@ export default function Recipes() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [viewMode, setViewMode] = useState<"list" | "thumbnail">("list");
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -169,15 +170,39 @@ export default function Recipes() {
           <CardTitle>Recipes</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search recipes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-              data-testid="input-search-recipes"
-            />
+          <div className="flex gap-2 items-end">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search recipes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+                data-testid="input-search-recipes"
+              />
+            </div>
+            {activeTab === "my-recipes" && (myRecipes && myRecipes.length > 0) && (
+              <div className="flex gap-1">
+                <Button
+                  size="icon"
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  onClick={() => setViewMode("list")}
+                  title="List view"
+                  data-testid="button-view-list"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant={viewMode === "thumbnail" ? "default" : "ghost"}
+                  onClick={() => setViewMode("thumbnail")}
+                  title="Thumbnail view"
+                  data-testid="button-view-thumbnail"
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {activeTab === "my-recipes" ? (
@@ -203,7 +228,7 @@ export default function Recipes() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : viewMode === "list" ? (
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -264,6 +289,69 @@ export default function Recipes() {
                   ))}
                 </TableBody>
               </Table>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {myRecipes.map((recipe) => (
+                  <Card key={recipe.id} data-testid={`card-recipe-${recipe.id}`} className="hover-elevate cursor-pointer overflow-hidden">
+                    {recipe.coverImage && (
+                      <div className="relative w-full h-40 bg-muted overflow-hidden">
+                        <img
+                          src={recipe.coverImage}
+                          alt={recipe.name}
+                          className="w-full h-full object-cover"
+                          data-testid={`img-recipe-cover-${recipe.id}`}
+                        />
+                      </div>
+                    )}
+                    <CardHeader className={recipe.coverImage ? "pb-3" : ""}>
+                      <CardTitle className="text-sm line-clamp-2">{recipe.name}</CardTitle>
+                      {recipe.category && (
+                        <Badge variant="outline" className="w-fit text-xs mt-2">
+                          {recipe.category}
+                        </Badge>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="text-xs text-muted-foreground">
+                        <div>Servings: {recipe.servings}</div>
+                        <div>Margin: <Badge variant="secondary" className="ml-1">{Number(recipe.targetMargin).toFixed(0)}%</Badge></div>
+                      </div>
+                      <div className="flex gap-1 pt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setLocation(`/recipes/${recipe.id}/view`)}
+                          data-testid={`button-view-recipe-thumbnail-${recipe.id}`}
+                        >
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setLocation(`/recipes/${recipe.id}`)}
+                          data-testid={`button-edit-recipe-thumbnail-${recipe.id}`}
+                        >
+                          <Pencil className="h-3 w-3 mr-1" />
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => setDeleteId(recipe.id)}
+                          data-testid={`button-delete-recipe-thumbnail-${recipe.id}`}
+                        >
+                          <Trash2 className="h-3 w-3 mr-1" />
+                          Delete
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )
           ) : (
             freeLoading ? (
