@@ -103,22 +103,22 @@ function StarterPackContent() {
   const [ingredientCategoryName, setIngredientCategoryName] = useState("");
   const [materialCategoryName, setMaterialCategoryName] = useState("");
   
-  // Combine default and custom categories, plus any existing categories from data
+  // Get categories from database or use defaults
   const allIngredientCategories = useMemo(() => {
-    const existingCategories = starterIngredients
-      ?.map(i => i.category)
-      .filter((c): c is string => !!c && !DEFAULT_INGREDIENT_CATEGORIES.includes(c) && !customIngredientCategories.includes(c)) || [];
-    const combined = [...DEFAULT_INGREDIENT_CATEGORIES, ...customIngredientCategories, ...existingCategories];
+    const dbCategories = starterIngredientCategories?.map(c => c.name) || [];
+    const combined = dbCategories.length > 0 
+      ? dbCategories 
+      : DEFAULT_INGREDIENT_CATEGORIES;
     return Array.from(new Set(combined)).sort();
-  }, [starterIngredients, customIngredientCategories]);
+  }, [starterIngredientCategories]);
   
   const allMaterialCategories = useMemo(() => {
-    const existingCategories = starterMaterials
-      ?.map(m => m.category)
-      .filter((c): c is string => !!c && !DEFAULT_MATERIAL_CATEGORIES.includes(c) && !customMaterialCategories.includes(c)) || [];
-    const combined = [...DEFAULT_MATERIAL_CATEGORIES, ...customMaterialCategories, ...existingCategories];
+    const dbCategories = starterMaterialCategories?.map(c => c.name) || [];
+    const combined = dbCategories.length > 0 
+      ? dbCategories 
+      : DEFAULT_MATERIAL_CATEGORIES;
     return Array.from(new Set(combined)).sort();
-  }, [starterMaterials, customMaterialCategories]);
+  }, [starterMaterialCategories]);
 
   // Ingredient mutations
   const createIngredientMutation = useMutation({
