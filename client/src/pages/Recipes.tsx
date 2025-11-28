@@ -28,17 +28,25 @@ import { Plus, Pencil, Trash2, Search, Eye, Copy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 
 export default function Recipes() {
   const [location, setLocation] = useLocation();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const { toast } = useToast();
   const { user } = useAuth();
 
   const activeTab = location === "/library/bentohub-library" ? "library" : "my-recipes";
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const { data: recipes, isLoading } = useQuery<Recipe[]>({
     queryKey: ["/api/recipes"],
@@ -46,6 +54,7 @@ export default function Recipes() {
 
   const { data: freeRecipes, isLoading: freeLoading } = useQuery<Recipe[]>({
     queryKey: ["/api/free-recipes"],
+    staleTime: 5 * 60 * 1000,
   });
 
   const myRecipes = useMemo(() => {
@@ -53,19 +62,19 @@ export default function Recipes() {
     return recipes
       .filter((r) => !r.isFreeRecipe)
       .filter((recipe) =>
-        recipe.name.toLowerCase().includes(searchQuery.toLowerCase())
+        recipe.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [recipes, searchQuery]);
+  }, [recipes, debouncedSearch]);
 
   const filteredFreeRecipes = useMemo(() => {
     if (!freeRecipes) return [];
     return freeRecipes
       .filter((recipe) =>
-        recipe.name.toLowerCase().includes(searchQuery.toLowerCase())
+        recipe.name.toLowerCase().includes(debouncedSearch.toLowerCase())
       )
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [freeRecipes, searchQuery]);
+  }, [freeRecipes, debouncedSearch]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {

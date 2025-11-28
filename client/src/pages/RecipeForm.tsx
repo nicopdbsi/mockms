@@ -907,11 +907,14 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
     return pieces * weight;
   }, [scalingDesiredPieces, scalingWeightPerPiece]);
 
-  const scalingFlourFactor = useMemo(() => {
-    const totalBakersPercent = bakerPercentages.reduce((sum, i) => sum + i.bakerPercentage, 0);
-    if (totalBakersPercent <= 0) return 0;
-    return 100 / totalBakersPercent;
+  const totalBakerPercentage = useMemo(() => {
+    return bakerPercentages.reduce((sum, i) => sum + i.bakerPercentage, 0);
   }, [bakerPercentages]);
+
+  const scalingFlourFactor = useMemo(() => {
+    if (totalBakerPercentage <= 0) return 0;
+    return 100 / totalBakerPercentage;
+  }, [totalBakerPercentage]);
 
   const scalingRequiredFlour = useMemo(() => {
     return scalingFlourFactor * scalingDesiredTotalWeight;
@@ -1023,6 +1026,14 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
     if (marginValue >= 100 || marginValue < 0) return 0;
     return scaledCostPerPiece / (1 - marginValue / 100);
   }, [scaledCostPerPiece, watchedMargin]);
+
+  const scaledTotalBakerPercentage = useMemo(() => {
+    return scaledIngredients.reduce((sum, i) => sum + i.bakerPercentage, 0);
+  }, [scaledIngredients]);
+
+  const scaledTotalIngredientCost = useMemo(() => {
+    return scaledIngredients.reduce((sum, i) => sum + i.newCost, 0);
+  }, [scaledIngredients]);
 
   const validateAndSubmit = (data: FormData) => {
     const recipeName = form.getValues("name");
@@ -2312,7 +2323,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                           <TableRow className="font-bold bg-muted">
                             <TableCell>Total</TableCell>
                             <TableCell className="text-right">
-                              {bakerPercentages.reduce((sum, i) => sum + i.bakerPercentage, 0).toFixed(1)}%
+                              {totalBakerPercentage.toFixed(1)}%
                             </TableCell>
                             <TableCell className="text-right">
                               {originalTotalDoughWeight.toFixed(1)}
@@ -2379,7 +2390,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                         <TableRow className="font-bold bg-muted">
                           <TableCell>Total</TableCell>
                           <TableCell className="text-right">
-                            {scaledIngredients.reduce((sum, i) => sum + i.bakerPercentage, 0).toFixed(1)}%
+                            {scaledTotalBakerPercentage.toFixed(1)}%
                           </TableCell>
                           <TableCell className="text-right">
                             {originalTotalDoughWeight.toFixed(1)}
@@ -2388,7 +2399,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                             {scalingDesiredTotalWeight.toFixed(1)}
                           </TableCell>
                           <TableCell className="text-right">
-                            ${scaledIngredients.reduce((sum, i) => sum + i.newCost, 0).toFixed(2)}
+                            ${scaledTotalIngredientCost.toFixed(2)}
                           </TableCell>
                         </TableRow>
                       </TableBody>
