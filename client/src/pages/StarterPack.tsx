@@ -1,4 +1,4 @@
-import { useState, useMemo, memo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -77,38 +76,6 @@ function StarterPackContent() {
     purchaseAmount: "",
     notes: "",
   });
-  
-  // Memoized count-based calculations for ingredient
-  const ingredientCountBasedCalculations = useMemo(() => {
-    if (!ingredientForm.isCountBased) return null;
-    const pieces = parseFloat(ingredientForm.piecesPerPurchaseUnit || "0");
-    const weightPer = parseFloat(ingredientForm.weightPerPiece || "0");
-    const purchaseAmt = parseFloat(ingredientForm.purchaseAmount || "0");
-    
-    if (pieces > 0 && weightPer > 0 && purchaseAmt > 0) {
-      const totalGrams = pieces * weightPer;
-      const costPerGram = purchaseAmt / totalGrams;
-      const costPerPiece = purchaseAmt / pieces;
-      return {
-        totalGrams: totalGrams.toFixed(2),
-        costPerGram: costPerGram.toFixed(4),
-        costPerPiece: costPerPiece.toFixed(2),
-      };
-    }
-    return null;
-  }, [ingredientForm.isCountBased, ingredientForm.piecesPerPurchaseUnit, ingredientForm.weightPerPiece, ingredientForm.purchaseAmount]);
-  
-  const ingredientCalculatedPricePerGram = useMemo(() => {
-    if (ingredientForm.isCountBased && ingredientCountBasedCalculations) {
-      return ingredientCountBasedCalculations.costPerGram;
-    }
-    const qty = parseFloat(ingredientForm.quantity || "0");
-    const amount = parseFloat(ingredientForm.purchaseAmount || "0");
-    if (qty > 0 && amount > 0) {
-      return (amount / qty).toFixed(4);
-    }
-    return null;
-  }, [ingredientForm.isCountBased, ingredientCountBasedCalculations, ingredientForm.quantity, ingredientForm.purchaseAmount]);
 
   // Queries
   const { data: starterIngredients, isLoading: ingredientsLoading } = useQuery<StarterIngredient[]>({
@@ -431,26 +398,18 @@ function StarterPackContent() {
   };
 
   const handleIngredientSubmit = () => {
-    let pricePerGram: string;
-    let quantity = ingredientForm.quantity || "0";
-    
-    if (ingredientForm.isCountBased) {
-      const pieces = parseFloat(ingredientForm.piecesPerPurchaseUnit || "0");
-      const weightPer = parseFloat(ingredientForm.weightPerPiece || "0");
-      const purchaseAmt = parseFloat(ingredientForm.purchaseAmount || "0");
-      const totalGrams = pieces * weightPer;
-      pricePerGram = (purchaseAmt / totalGrams).toFixed(4);
-      quantity = totalGrams.toString();
-    } else {
-      pricePerGram = (parseFloat(ingredientForm.purchaseAmount || "0") / parseFloat(ingredientForm.quantity || "0")).toFixed(4);
-    }
+    // Calculate price per gram from quantity and purchase amount
+    const pricePerGram = 
+      ingredientForm.quantity && ingredientForm.purchaseAmount
+        ? String(parseFloat(ingredientForm.purchaseAmount) / parseFloat(ingredientForm.quantity))
+        : ingredientForm.pricePerGram;
 
     const data = {
       name: ingredientForm.name,
       category: ingredientForm.category || null,
       pricePerGram,
-      quantity,
-      unit: ingredientForm.isCountBased ? "g" : ingredientForm.unit || null,
+      quantity: ingredientForm.quantity || "0",
+      unit: ingredientForm.unit || null,
       purchaseAmount: ingredientForm.purchaseAmount || null,
       isCountBased: ingredientForm.isCountBased,
       purchaseUnit: ingredientForm.isCountBased ? ingredientForm.purchaseUnit : null,
@@ -663,78 +622,52 @@ function StarterPackContent() {
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
                       <p className="text-sm text-muted-foreground">Price per Gram (auto-calculated)</p>
-                      <p className="text-lg font-semibold" data-testid="text-price-per-gram">
-                        {ingredientCalculatedPricePerGram
-                          ? formatCurrency(parseFloat(ingredientCalculatedPricePerGram), currency)
+                      <p className="text-lg font-semibold">
+                        {ingredientForm.quantity && ingredientForm.purchaseAmount
+                          ? formatCurrency(parseFloat(ingredientForm.purchaseAmount) / parseFloat(ingredientForm.quantity), currency)
                           : "−"}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col gap-1">
-                        <Label htmlFor="ing-count-based" className="cursor-pointer font-medium">Count-Based Ingredient</Label>
-                        <p className="text-xs text-muted-foreground">For items like eggs, bought by tray but used by weight in recipes</p>
-                      </div>
-                      <Switch
+                    <div className="flex items-center gap-2">
+                      <Checkbox
                         id="ing-count-based"
                         checked={ingredientForm.isCountBased}
-                        onCheckedChange={(checked) => setIngredientForm({ ...ingredientForm, isCountBased: checked })}
-                        data-testid="switch-count-based"
+                        onCheckedChange={(checked) => setIngredientForm({ ...ingredientForm, isCountBased: checked as boolean })}
+                        data-testid="checkbox-count-based"
                       />
+                      <Label htmlFor="ing-count-based" className="cursor-pointer">Count-based ingredient (e.g., eggs)</Label>
                     </div>
                     {ingredientForm.isCountBased && (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="ing-purchase-unit">Purchase Unit *</Label>
-                            <Input
-                              id="ing-purchase-unit"
-                              value={ingredientForm.purchaseUnit}
-                              onChange={(e) => setIngredientForm({ ...ingredientForm, purchaseUnit: e.target.value })}
-                              placeholder="e.g., tray, dozen, box"
-                              data-testid="input-purchase-unit"
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="ing-pieces-per-unit">Pieces per Unit *</Label>
-                            <Input
-                              id="ing-pieces-per-unit"
-                              type="number"
-                              step="1"
-                              value={ingredientForm.piecesPerPurchaseUnit}
-                              onChange={(e) => setIngredientForm({ ...ingredientForm, piecesPerPurchaseUnit: e.target.value })}
-                              placeholder="e.g., 30 eggs per tray"
-                              data-testid="input-pieces-per-unit"
-                            />
-                          </div>
+                      <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                        <div>
+                          <Label className="text-xs">Purchase Unit</Label>
+                          <Input
+                            value={ingredientForm.purchaseUnit}
+                            onChange={(e) => setIngredientForm({ ...ingredientForm, purchaseUnit: e.target.value })}
+                            placeholder="tray"
+                            data-testid="input-purchase-unit"
+                          />
                         </div>
                         <div>
-                          <Label htmlFor="ing-weight-per-piece">Average Weight per Piece (g) *</Label>
+                          <Label className="text-xs">Pcs per Unit</Label>
                           <Input
-                            id="ing-weight-per-piece"
                             type="number"
-                            step="0.1"
+                            value={ingredientForm.piecesPerPurchaseUnit}
+                            onChange={(e) => setIngredientForm({ ...ingredientForm, piecesPerPurchaseUnit: e.target.value })}
+                            placeholder="30"
+                            data-testid="input-pieces-per-unit"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Weight/pc (g)</Label>
+                          <Input
+                            type="number"
                             value={ingredientForm.weightPerPiece}
                             onChange={(e) => setIngredientForm({ ...ingredientForm, weightPerPiece: e.target.value })}
-                            placeholder="e.g., 55g per egg"
+                            placeholder="55"
                             data-testid="input-weight-per-piece"
                           />
                         </div>
-                        {ingredientCountBasedCalculations && (
-                          <div className="p-3 bg-muted rounded-lg space-y-2">
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Total Grams:</span>
-                              <span className="font-semibold" data-testid="text-total-grams">{ingredientCountBasedCalculations.totalGrams}g</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Cost per Gram:</span>
-                              <span className="font-semibold" data-testid="text-cost-per-gram">{formatCurrency(parseFloat(ingredientCountBasedCalculations.costPerGram), currency)}</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span className="text-sm text-muted-foreground">Cost per Piece:</span>
-                              <span className="font-semibold" data-testid="text-cost-per-piece">{formatCurrency(parseFloat(ingredientCountBasedCalculations.costPerPiece), currency)}</span>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
