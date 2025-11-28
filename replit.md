@@ -82,6 +82,7 @@ Preferred communication style: Simple, everyday language.
 - Recipes table: Dish definitions with servings, target margin, target food cost, and cost calculations
 - RecipeIngredients table: Junction table linking recipes to ingredients with quantities
 - Orders table: Production records linking recipes to actual revenue/cost
+- PlannerEntries table: Production scheduling with date/time, batch quantity, status tracking
 
 **Data Relationships**:
 - All entities (except users) have `userId` foreign key for multi-tenancy
@@ -249,3 +250,21 @@ Preferred communication style: Simple, everyday language.
   - POST `/api/starter-pack/import` (imports selected items to user's pantry)
   - POST `/api/onboarding/complete` (marks onboarding as complete)
 - Located in: `client/src/pages/StarterPack.tsx`, `client/src/components/OnboardingWizard.tsx`, `client/src/components/StarterPackImportDialog.tsx`
+
+**Production Planner** (Recipe Scheduling):
+- Database table: `planner_entries` with userId, recipeId, scheduledStart, batchQuantity, status, notes
+- Calendar-based monthly view showing scheduled recipes
+- Status tracking: planned → in_progress → completed (or cancelled)
+- Features:
+  - Click on any calendar date to schedule a recipe
+  - Pick recipe from user's recipe list
+  - Set date, time, and number of batches
+  - Add optional notes for each scheduled item
+  - Quick status updates via dropdown on schedule list
+  - Edit or delete scheduled items
+- API endpoints:
+  - GET `/api/planner` with optional ?start= and ?end= date filters
+  - POST `/api/planner` to create new schedule entries
+  - PATCH `/api/planner/:id` to update schedule entries
+  - DELETE `/api/planner/:id` to remove schedule entries
+- Located in: `client/src/pages/Planner.tsx`

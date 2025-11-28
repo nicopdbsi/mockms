@@ -171,6 +171,29 @@ export const starterMaterialCategories = pgTable("starter_material_categories", 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Planner entries for scheduling recipes
+export const plannerEntries = pgTable("planner_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  recipeId: varchar("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+  scheduledStart: timestamp("scheduled_start", { withTimezone: true }).notNull(),
+  batchQuantity: integer("batch_quantity").default(1).notNull(),
+  status: text("status").default("planned").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const plannerEntriesRelations = relations(plannerEntries, ({ one }) => ({
+  user: one(users, {
+    fields: [plannerEntries.userId],
+    references: [users.id],
+  }),
+  recipe: one(recipes, {
+    fields: [plannerEntries.recipeId],
+    references: [recipes.id],
+  }),
+}));
+
 export const ingredientCategoriesRelations = relations(ingredientCategories, ({ one }) => ({
   user: one(users, {
     fields: [ingredientCategories.userId],
@@ -201,6 +224,7 @@ export const insertStarterIngredientSchema = createInsertSchema(starterIngredien
 export const insertStarterMaterialSchema = createInsertSchema(starterMaterials).omit({ id: true, createdAt: true });
 export const insertStarterIngredientCategorySchema = createInsertSchema(starterIngredientCategories).omit({ id: true, createdAt: true });
 export const insertStarterMaterialCategorySchema = createInsertSchema(starterMaterialCategories).omit({ id: true, createdAt: true });
+export const insertPlannerEntrySchema = createInsertSchema(plannerEntries).omit({ id: true, createdAt: true });
 
 // Type exports
 export type User = typeof users.$inferSelect;
@@ -231,3 +255,5 @@ export type StarterIngredientCategory = typeof starterIngredientCategories.$infe
 export type InsertStarterIngredientCategory = z.infer<typeof insertStarterIngredientCategorySchema>;
 export type StarterMaterialCategory = typeof starterMaterialCategories.$inferSelect;
 export type InsertStarterMaterialCategory = z.infer<typeof insertStarterMaterialCategorySchema>;
+export type PlannerEntry = typeof plannerEntries.$inferSelect;
+export type InsertPlannerEntry = z.infer<typeof insertPlannerEntrySchema>;

@@ -27,6 +27,8 @@ import {
   type InsertStarterIngredientCategory,
   type StarterMaterialCategory,
   type InsertStarterMaterialCategory,
+  type PlannerEntry,
+  type InsertPlannerEntry,
   users,
   suppliers,
   ingredients,
@@ -40,10 +42,11 @@ import {
   starterIngredients,
   starterMaterials,
   starterIngredientCategories,
-  starterMaterialCategories
+  starterMaterialCategories,
+  plannerEntries
 } from "@shared/schema";
 import { db } from "../db/index";
-import { eq, and, desc, sql, ilike } from "drizzle-orm";
+import { eq, and, desc, sql, ilike, gte, lte, asc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -137,6 +140,13 @@ export interface IStorage {
   // Onboarding
   completeOnboarding(userId: string): Promise<User | undefined>;
   markStarterPackImported(userId: string): Promise<User | undefined>;
+  
+  // Planner
+  getPlannerEntries(userId: string, start?: Date, end?: Date): Promise<(PlannerEntry & { recipe: Recipe })[]>;
+  getPlannerEntry(id: string, userId: string): Promise<PlannerEntry | undefined>;
+  createPlannerEntry(entry: InsertPlannerEntry): Promise<PlannerEntry>;
+  updatePlannerEntry(id: string, userId: string, entry: Partial<InsertPlannerEntry>): Promise<PlannerEntry | undefined>;
+  deletePlannerEntry(id: string, userId: string): Promise<boolean>;
 }
 
 export class DbStorage implements IStorage {
@@ -911,6 +921,64 @@ export class DbStorage implements IStorage {
   async deleteStarterMaterialCategory(id: string): Promise<boolean> {
     const result = await db.delete(starterMaterialCategories)
       .where(eq(starterMaterialCategories.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Planner Methods
+  async getPlannerEntries(userId: string, start?: Date, end?: Date): Promise<(PlannerEntry & { recipe: Recipe })[]> {
+    const conditions = [eq(plannerEntries.userId, userId)];
+    
+    if (start) {
+      conditions.push(gte(plannerEntries.scheduledStart, start));
+    }
+    if (end) {
+      conditions.push(lte(plannerEntries.scheduledStart, end));
+    }
+
+    const result = await db
+      .select({
+        id: plannerEntries.id,
+        userId: plannerEntries.userId,
+        recipeId: plannerEntries.recipeId,
+        scheduledStart: plannerEntries.scheduledStart,
+        batchQuantity: plannerEntries.batchQuantity,
+        status: plannerEntries.status,
+        notes: plannerEntries.notes,
+        createdAt: plannerEntries.createdAt,
+        recipe: recipes,
+      })
+      .from(plannerEntries)
+      .innerJoin(recipes, eq(plannerEntries.recipeId, recipes.id))
+      .where(and(...conditions))
+      .orderBy(asc(plannerEntries.scheduledStart));
+
+    return result;
+  }
+
+  async getPlannerEntry(id: string, userId: string): Promise<PlannerEntry | undefined> {
+    const result = await db.select().from(plannerEntries)
+      .where(and(eq(plannerEntries.id, id), eq(plannerEntries.userId, userId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async createPlannerEntry(entry: InsertPlannerEntry): Promise<PlannerEntry> {
+    const result = await db.insert(plannerEntries).values(entry).returning();
+    return result[0];
+  }
+
+  async updatePlannerEntry(id: string, userId: string, entry: Partial<InsertPlannerEntry>): Promise<PlannerEntry | undefined> {
+    const result = await db.update(plannerEntries)
+      .set(entry)
+      .where(and(eq(plannerEntries.id, id), eq(plannerEntries.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  async deletePlannerEntry(id: string, userId: string): Promise<boolean> {
+    const result = await db.delete(plannerEntries)
+      .where(and(eq(plannerEntries.id, id), eq(plannerEntries.userId, userId)))
       .returning();
     return result.length > 0;
   }

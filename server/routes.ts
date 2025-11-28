@@ -7,7 +7,7 @@ import multer from "multer";
 import sharp from "sharp";
 import path from "path";
 import fs from "fs";
-import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema, insertStarterIngredientSchema, insertStarterMaterialSchema, insertStarterIngredientCategorySchema, insertStarterMaterialCategorySchema } from "@shared/schema";
+import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema, insertStarterIngredientSchema, insertStarterMaterialSchema, insertStarterIngredientCategorySchema, insertStarterMaterialCategorySchema, insertPlannerEntrySchema } from "@shared/schema";
 import { z } from "zod";
 import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
 
@@ -1135,6 +1135,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const { password, ...sanitized } = updated;
       res.json(sanitized);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Planner routes
+  app.get("/api/planner", requireAuth, async (req, res, next) => {
+    try {
+      const { start, end } = req.query;
+      const startDate = start ? new Date(start as string) : undefined;
+      const endDate = end ? new Date(end as string) : undefined;
+      
+      const entries = await storage.getPlannerEntries(req.user!.id, startDate, endDate);
+      res.json(entries);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/planner", requireAuth, async (req, res, next) => {
+    try {
+      // Convert scheduledStart string to Date if needed
+      const body = {
+        ...req.body,
+        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : undefined,
+      };
+      
+      const schema = insertPlannerEntrySchema.omit({ userId: true });
+      const data = schema.parse(body);
+      
+      // Verify the recipe belongs to the user
+      const recipe = await storage.getRecipe(data.recipeId, req.user!.id);
+      if (!recipe) {
+        return res.status(403).json({ message: "Recipe not found or access denied" });
+      }
+      
+      const entry = await storage.createPlannerEntry({
+        ...data,
+        userId: req.user!.id,
+      });
+      res.status(201).json(entry);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/planner/:id", requireAuth, async (req, res, next) => {
+    try {
+      // Convert scheduledStart string to Date if provided
+      const body = {
+        ...req.body,
+        scheduledStart: req.body.scheduledStart ? new Date(req.body.scheduledStart) : undefined,
+      };
+      
+      const schema = insertPlannerEntrySchema.partial().omit({ userId: true });
+      const data = schema.parse(body);
+      
+      // If recipeId is being updated, verify the new recipe belongs to the user
+      if (data.recipeId) {
+        const recipe = await storage.getRecipe(data.recipeId, req.user!.id);
+        if (!recipe) {
+          return res.status(403).json({ message: "Recipe not found or access denied" });
+        }
+      }
+      
+      const entry = await storage.updatePlannerEntry(req.params.id, req.user!.id, data);
+      if (!entry) {
+        return res.status(404).json({ message: "Planner entry not found" });
+      }
+      res.json(entry);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/planner/:id", requireAuth, async (req, res, next) => {
+    try {
+      const deleted = await storage.deletePlannerEntry(req.params.id, req.user!.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Planner entry not found" });
+      }
+      res.status(204).end();
     } catch (error) {
       next(error);
     }

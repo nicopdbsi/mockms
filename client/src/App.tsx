@@ -20,6 +20,7 @@ import Settings from "@/pages/Settings";
 import ReportsUsers from "@/pages/ReportsUsers";
 import ReportsExport from "@/pages/ReportsExport";
 import StarterPack from "@/pages/StarterPack";
+import Planner from "@/pages/Planner";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -71,6 +72,7 @@ function Router() {
       <Route path="/pantry/ingredients" component={Ingredients} />
       <Route path="/pantry/materials" component={Materials} />
       <Route path="/pantry/suppliers" component={Suppliers} />
+      <Route path="/planner" component={Planner} />
       <Route path="/analytics">
         <AppLayout>
           <Analytics />

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, User, Settings as SettingsIcon, FileText, Users, Download, Gift } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, User, Settings as SettingsIcon, FileText, Users, Download, Gift, CalendarDays } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OnboardingWizard } from "@/components/OnboardingWizard";
 import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
@@ -39,6 +39,11 @@ const menuItems = [
     title: "Dashboard",
     url: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Planner",
+    url: "/planner",
+    icon: CalendarDays,
   },
   {
     title: "Analytics",
