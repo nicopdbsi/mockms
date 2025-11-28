@@ -15,8 +15,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash2, Package, Wrench, Gift, FolderPlus } from "lucide-react";
-import { type StarterIngredient, type StarterMaterial } from "@shared/schema";
+import { Plus, Pencil, Trash2, Package, Wrench, Gift, FolderPlus, Tags } from "lucide-react";
+import { type StarterIngredient, type StarterMaterial, type StarterIngredientCategory, type StarterMaterialCategory } from "@shared/schema";
 import { formatCurrency } from "@/lib/currency";
 import { useAuth } from "@/lib/auth";
 
@@ -85,6 +85,23 @@ function StarterPackContent() {
   const { data: starterMaterials, isLoading: materialsLoading } = useQuery<StarterMaterial[]>({
     queryKey: ["/api/starter-pack/materials"],
   });
+
+  // Category queries
+  const { data: starterIngredientCategories, isLoading: ingredientCategoriesLoading } = useQuery<StarterIngredientCategory[]>({
+    queryKey: ["/api/starter-pack/categories/ingredients"],
+  });
+
+  const { data: starterMaterialCategories, isLoading: materialCategoriesLoading } = useQuery<StarterMaterialCategory[]>({
+    queryKey: ["/api/starter-pack/categories/materials"],
+  });
+
+  // Category state
+  const [ingredientCategoryDialogOpen, setIngredientCategoryDialogOpen] = useState(false);
+  const [materialCategoryDialogOpen, setMaterialCategoryDialogOpen] = useState(false);
+  const [editingIngredientCategory, setEditingIngredientCategory] = useState<StarterIngredientCategory | null>(null);
+  const [editingMaterialCategory, setEditingMaterialCategory] = useState<StarterMaterialCategory | null>(null);
+  const [ingredientCategoryName, setIngredientCategoryName] = useState("");
+  const [materialCategoryName, setMaterialCategoryName] = useState("");
   
   // Combine default and custom categories, plus any existing categories from data
   const allIngredientCategories = useMemo(() => {
@@ -194,6 +211,99 @@ function StarterPackContent() {
     },
     onError: () => {
       toast({ title: "Error", description: "Failed to delete material", variant: "destructive" });
+    },
+  });
+
+  // Category mutations
+  const createIngredientCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const res = await apiRequest("POST", "/api/starter-pack/categories/ingredients", { name });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/ingredients"] });
+      setIngredientCategoryDialogOpen(false);
+      setIngredientCategoryName("");
+      toast({ title: "Success", description: "Ingredient category created" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create category", variant: "destructive" });
+    },
+  });
+
+  const updateIngredientCategoryMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const res = await apiRequest("PATCH", `/api/starter-pack/categories/ingredients/${id}`, { name });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/ingredients"] });
+      setIngredientCategoryDialogOpen(false);
+      setEditingIngredientCategory(null);
+      setIngredientCategoryName("");
+      toast({ title: "Success", description: "Ingredient category updated" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update category", variant: "destructive" });
+    },
+  });
+
+  const deleteIngredientCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/starter-pack/categories/ingredients/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/ingredients"] });
+      toast({ title: "Success", description: "Ingredient category deleted" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
+    },
+  });
+
+  const createMaterialCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const res = await apiRequest("POST", "/api/starter-pack/categories/materials", { name });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/materials"] });
+      setMaterialCategoryDialogOpen(false);
+      setMaterialCategoryName("");
+      toast({ title: "Success", description: "Material category created" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create category", variant: "destructive" });
+    },
+  });
+
+  const updateMaterialCategoryMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const res = await apiRequest("PATCH", `/api/starter-pack/categories/materials/${id}`, { name });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/materials"] });
+      setMaterialCategoryDialogOpen(false);
+      setEditingMaterialCategory(null);
+      setMaterialCategoryName("");
+      toast({ title: "Success", description: "Material category updated" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to update category", variant: "destructive" });
+    },
+  });
+
+  const deleteMaterialCategoryMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/starter-pack/categories/materials/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/materials"] });
+      toast({ title: "Success", description: "Material category deleted" });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to delete category", variant: "destructive" });
     },
   });
 
@@ -352,6 +462,12 @@ function StarterPackContent() {
             <Wrench className="h-4 w-4 mr-2" />
             Materials ({starterMaterials?.length || 0})
           </TabsTrigger>
+          {user?.role === 'admin' && (
+            <TabsTrigger value="categories" data-testid="tab-categories">
+              <Tags className="h-4 w-4 mr-2" />
+              Categories
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="ingredients" className="space-y-4">
@@ -896,6 +1012,276 @@ function StarterPackContent() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {user?.role === 'admin' && (
+        <TabsContent value="categories" className="space-y-4">
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Ingredient Categories */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Ingredient Categories
+                  </CardTitle>
+                  <CardDescription>Categories for starter ingredients</CardDescription>
+                </div>
+                <Dialog open={ingredientCategoryDialogOpen} onOpenChange={(open) => {
+                  setIngredientCategoryDialogOpen(open);
+                  if (!open) {
+                    setEditingIngredientCategory(null);
+                    setIngredientCategoryName("");
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" data-testid="button-add-ingredient-category">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Category
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>{editingIngredientCategory ? "Edit" : "Add"} Ingredient Category</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="ing-category-name">Category Name *</Label>
+                        <Input
+                          id="ing-category-name"
+                          value={ingredientCategoryName}
+                          onChange={(e) => setIngredientCategoryName(e.target.value)}
+                          placeholder="e.g., Baking Essentials"
+                          data-testid="input-ingredient-category-name"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button
+                        onClick={() => {
+                          if (!ingredientCategoryName.trim()) return;
+                          if (editingIngredientCategory) {
+                            updateIngredientCategoryMutation.mutate({ id: editingIngredientCategory.id, name: ingredientCategoryName.trim() });
+                          } else {
+                            createIngredientCategoryMutation.mutate(ingredientCategoryName.trim());
+                          }
+                        }}
+                        disabled={!ingredientCategoryName.trim() || createIngredientCategoryMutation.isPending || updateIngredientCategoryMutation.isPending}
+                        data-testid="button-save-ingredient-category"
+                      >
+                        {editingIngredientCategory ? "Update" : "Create"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {ingredientCategoriesLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : starterIngredientCategories && starterIngredientCategories.length > 0 ? (
+                  <div className="space-y-2">
+                    {starterIngredientCategories.map((category) => (
+                      <div
+                        key={category.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                        data-testid={`category-ingredient-${category.id}`}
+                      >
+                        <span className="font-medium">{category.name}</span>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingIngredientCategory(category);
+                              setIngredientCategoryName(category.name);
+                              setIngredientCategoryDialogOpen(true);
+                            }}
+                            data-testid={`button-edit-ingredient-category-${category.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                data-testid={`button-delete-ingredient-category-${category.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Ingredient Category</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{category.name}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteIngredientCategoryMutation.mutate(category.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Tags className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>No ingredient categories yet.</p>
+                    <p className="text-sm">Add categories to organize starter ingredients.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Material Categories */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wrench className="h-5 w-5" />
+                    Material Categories
+                  </CardTitle>
+                  <CardDescription>Categories for starter materials</CardDescription>
+                </div>
+                <Dialog open={materialCategoryDialogOpen} onOpenChange={(open) => {
+                  setMaterialCategoryDialogOpen(open);
+                  if (!open) {
+                    setEditingMaterialCategory(null);
+                    setMaterialCategoryName("");
+                  }
+                }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" data-testid="button-add-material-category">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Category
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>{editingMaterialCategory ? "Edit" : "Add"} Material Category</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="mat-category-name">Category Name *</Label>
+                        <Input
+                          id="mat-category-name"
+                          value={materialCategoryName}
+                          onChange={(e) => setMaterialCategoryName(e.target.value)}
+                          placeholder="e.g., Baking Equipment"
+                          data-testid="input-material-category-name"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <Button
+                        onClick={() => {
+                          if (!materialCategoryName.trim()) return;
+                          if (editingMaterialCategory) {
+                            updateMaterialCategoryMutation.mutate({ id: editingMaterialCategory.id, name: materialCategoryName.trim() });
+                          } else {
+                            createMaterialCategoryMutation.mutate(materialCategoryName.trim());
+                          }
+                        }}
+                        disabled={!materialCategoryName.trim() || createMaterialCategoryMutation.isPending || updateMaterialCategoryMutation.isPending}
+                        data-testid="button-save-material-category"
+                      >
+                        {editingMaterialCategory ? "Update" : "Create"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                {materialCategoriesLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : starterMaterialCategories && starterMaterialCategories.length > 0 ? (
+                  <div className="space-y-2">
+                    {starterMaterialCategories.map((category) => (
+                      <div
+                        key={category.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                        data-testid={`category-material-${category.id}`}
+                      >
+                        <span className="font-medium">{category.name}</span>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingMaterialCategory(category);
+                              setMaterialCategoryName(category.name);
+                              setMaterialCategoryDialogOpen(true);
+                            }}
+                            data-testid={`button-edit-material-category-${category.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                data-testid={`button-delete-material-category-${category.id}`}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Material Category</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{category.name}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteMaterialCategoryMutation.mutate(category.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Tags className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>No material categories yet.</p>
+                    <p className="text-sm">Add categories to organize starter materials.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        )}
       </Tabs>
     </div>
   );
