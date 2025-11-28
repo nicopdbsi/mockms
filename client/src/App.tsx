@@ -19,6 +19,7 @@ import Profile from "@/pages/Profile";
 import Settings from "@/pages/Settings";
 import ReportsUsers from "@/pages/ReportsUsers";
 import ReportsExport from "@/pages/ReportsExport";
+import StarterPack from "@/pages/StarterPack";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -95,6 +96,7 @@ function Router() {
           <ReportsExport />
         </AppLayout>
       </Route>
+      <Route path="/reports/starter-pack" component={StarterPack} />
       <Route component={NotFound} />
     </Switch>
   );

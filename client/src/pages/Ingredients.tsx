@@ -32,7 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Package, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Info, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Info, AlertCircle, Gift } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -53,6 +53,7 @@ import {
 import type { Ingredient, Supplier, IngredientCategory } from "@shared/schema";
 import { AppLayout } from "@/components/AppLayout";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { StarterPackImportDialog } from "@/components/StarterPackImportDialog";
 
 const defaultCategories = [
   "Produce",
@@ -1017,6 +1018,7 @@ export default function Ingredients() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [showStarterPackImport, setShowStarterPackImport] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -1153,11 +1155,19 @@ export default function Ingredients() {
           <div className="flex gap-2">
             <Button
               variant="outline"
+              onClick={() => setShowStarterPackImport(true)}
+              data-testid="button-import-starter-pack"
+            >
+              <Gift className="h-4 w-4 mr-2" />
+              Import from Bento
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setShowReceiptUpload(true)}
               data-testid="button-upload-receipt"
             >
               <Upload className="h-4 w-4 mr-2" />
-              Import
+              Import Receipt
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
@@ -1298,6 +1308,12 @@ export default function Ingredients() {
         }}
         existingIngredients={ingredients || []}
         existingMaterials={[]}
+      />
+
+      <StarterPackImportDialog
+        open={showStarterPackImport}
+        onOpenChange={setShowStarterPackImport}
+        type="ingredients"
       />
 
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

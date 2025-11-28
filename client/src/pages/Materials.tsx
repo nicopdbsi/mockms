@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Wrench, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Wrench, Upload, Search, AlertTriangle, ArrowUpDown, ArrowUp, ArrowDown, Gift } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,6 +47,7 @@ import {
 import type { Material, Supplier, MaterialCategory } from "@shared/schema";
 import { AppLayout } from "@/components/AppLayout";
 import { ReceiptUpload } from "@/components/ReceiptUpload";
+import { StarterPackImportDialog } from "@/components/StarterPackImportDialog";
 
 const defaultCategories = [
   "Packaging",
@@ -805,6 +806,7 @@ export default function Materials() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | undefined>();
   const [showReceiptUpload, setShowReceiptUpload] = useState(false);
+  const [showStarterPackImport, setShowStarterPackImport] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
@@ -907,11 +909,19 @@ export default function Materials() {
           <div className="flex gap-2">
             <Button
               variant="outline"
+              onClick={() => setShowStarterPackImport(true)}
+              data-testid="button-import-starter-pack"
+            >
+              <Gift className="h-4 w-4 mr-2" />
+              Import from Bento
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setShowReceiptUpload(true)}
               data-testid="button-upload-receipt"
             >
               <Upload className="h-4 w-4 mr-2" />
-              Import
+              Import Receipt
             </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
@@ -1052,6 +1062,12 @@ export default function Materials() {
         }}
         existingIngredients={[]}
         existingMaterials={materials || []}
+      />
+
+      <StarterPackImportDialog
+        open={showStarterPackImport}
+        onOpenChange={setShowStarterPackImport}
+        type="materials"
       />
     </AppLayout>
   );

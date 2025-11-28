@@ -11,6 +11,8 @@ type User = {
   role: string;
   currency: string;
   timezone: string;
+  hasCompletedOnboarding: boolean;
+  starterPackImportedAt: string | null;
   createdAt: string;
 };
 
@@ -20,6 +22,7 @@ type AuthContextType = {
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string, firstName?: string, businessName?: string) => Promise<void>;
   logout: () => Promise<void>;
+  refetchUser: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -81,6 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const refetchUser = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -95,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout: async () => {
           await logoutMutation.mutateAsync();
         },
+        refetchUser,
       }}
     >
       {children}

@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/collapsible";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, User, Settings as SettingsIcon, FileText, Users, Download } from "lucide-react";
+import { LayoutDashboard, Package, TrendingUp, LogOut, ChevronDown, Building2, Wrench, Warehouse, UtensilsCrossed, User, Settings as SettingsIcon, FileText, Users, Download, Gift } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OnboardingWizard } from "@/components/OnboardingWizard";
 import bentoLogo from "@assets/BentoHubLogo_1764103927788.png";
 
 interface AppLayoutProps {
@@ -80,6 +81,11 @@ const reportsItems = [
     title: "Users",
     url: "/reports/users",
     icon: Users,
+  },
+  {
+    title: "Starter Pack",
+    url: "/reports/starter-pack",
+    icon: Gift,
   },
   {
     title: "Export",
@@ -310,6 +316,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           </main>
         </div>
       </div>
+      <OnboardingWizard />
     </SidebarProvider>
   );
 }

@@ -227,3 +227,19 @@ Preferred communication style: Simple, everyday language.
 - Duplicate detection with case-insensitive matching
 - Warning messages and disabled save buttons when duplicates detected
 - Inline "Add New Supplier" option within Ingredient and Material forms
+
+**Bento Starter Pack** (Admin-managed templates):
+- Separate database tables: `starter_ingredients`, `starter_materials` (no userId)
+- Admin-only CRUD management at `/reports/starter-pack`
+- Users can import starter items:
+  - Via "Import from Bento" button in Ingredients and Materials pages
+  - Via OnboardingWizard modal on first login
+- Import creates user-owned copies with pricing data intact
+- Duplicate detection prevents importing items that already exist in user's pantry
+- Onboarding tracking fields on users: `hasCompletedOnboarding`, `starterPackImportedAt`
+- API endpoints:
+  - GET/POST/PATCH/DELETE `/api/starter-pack/ingredients` (admin only for mutations)
+  - GET/POST/PATCH/DELETE `/api/starter-pack/materials` (admin only for mutations)
+  - POST `/api/starter-pack/import` (imports selected items to user's pantry)
+  - POST `/api/onboarding/complete` (marks onboarding as complete)
+- Located in: `client/src/pages/StarterPack.tsx`, `client/src/components/OnboardingWizard.tsx`, `client/src/components/StarterPackImportDialog.tsx`

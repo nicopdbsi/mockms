@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, crypto } from "./auth";
 import passport from "passport";
 import multer from "multer";
-import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema } from "@shared/schema";
+import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema, insertStarterIngredientSchema, insertStarterMaterialSchema } from "@shared/schema";
 import { z } from "zod";
 import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
 
@@ -854,6 +854,139 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Receipt parsing error:", error);
       res.status(500).json({ message: error.message || "Failed to parse receipt" });
+    }
+  });
+
+  // =============================================
+  // BENTO STARTER PACK ROUTES
+  // =============================================
+
+  // Starter Ingredients (Admin CRUD)
+  app.get("/api/starter-pack/ingredients", requireAuth, async (req, res, next) => {
+    try {
+      const items = await storage.getStarterIngredients();
+      res.json(items);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/starter-pack/ingredients", requireAdminRole, async (req, res, next) => {
+    try {
+      const data = insertStarterIngredientSchema.parse(req.body);
+      const item = await storage.createStarterIngredient(data);
+      res.status(201).json(item);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/starter-pack/ingredients/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const updated = await storage.updateStarterIngredient(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Starter ingredient not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/starter-pack/ingredients/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteStarterIngredient(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Starter ingredient not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Starter Materials (Admin CRUD)
+  app.get("/api/starter-pack/materials", requireAuth, async (req, res, next) => {
+    try {
+      const items = await storage.getStarterMaterials();
+      res.json(items);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/starter-pack/materials", requireAdminRole, async (req, res, next) => {
+    try {
+      const data = insertStarterMaterialSchema.parse(req.body);
+      const item = await storage.createStarterMaterial(data);
+      res.status(201).json(item);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/starter-pack/materials/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const updated = await storage.updateStarterMaterial(req.params.id, req.body);
+      if (!updated) {
+        return res.status(404).json({ message: "Starter material not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/starter-pack/materials/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteStarterMaterial(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Starter material not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Import starter pack to user's inventory
+  app.post("/api/starter-pack/import", requireAuth, async (req, res, next) => {
+    try {
+      const { ingredientIds, materialIds } = req.body;
+      
+      if (!Array.isArray(ingredientIds) || !Array.isArray(materialIds)) {
+        return res.status(400).json({ message: "ingredientIds and materialIds must be arrays" });
+      }
+
+      const result = await storage.importStarterPack(
+        req.user!.id,
+        ingredientIds,
+        materialIds
+      );
+
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Onboarding routes
+  app.post("/api/onboarding/complete", requireAuth, async (req, res, next) => {
+    try {
+      const updated = await storage.completeOnboarding(req.user!.id);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      const { password, ...sanitized } = updated;
+      res.json(sanitized);
+    } catch (error) {
+      next(error);
     }
   });
 

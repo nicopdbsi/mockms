@@ -19,6 +19,10 @@ import {
   type InsertIngredientCategory,
   type MaterialCategory,
   type InsertMaterialCategory,
+  type StarterIngredient,
+  type InsertStarterIngredient,
+  type StarterMaterial,
+  type InsertStarterMaterial,
   users,
   suppliers,
   ingredients,
@@ -28,7 +32,9 @@ import {
   recipeMaterials,
   orders,
   ingredientCategories,
-  materialCategories
+  materialCategories,
+  starterIngredients,
+  starterMaterials
 } from "@shared/schema";
 import { db } from "../db/index";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
@@ -94,6 +100,26 @@ export interface IStorage {
   createMaterialCategory(category: InsertMaterialCategory): Promise<MaterialCategory>;
   updateMaterialCategory(id: string, userId: string, name: string): Promise<MaterialCategory | undefined>;
   deleteMaterialCategory(id: string, userId: string): Promise<boolean>;
+  
+  // Starter Pack (Admin-managed templates)
+  getStarterIngredients(): Promise<StarterIngredient[]>;
+  getStarterIngredient(id: string): Promise<StarterIngredient | undefined>;
+  createStarterIngredient(ingredient: InsertStarterIngredient): Promise<StarterIngredient>;
+  updateStarterIngredient(id: string, ingredient: Partial<InsertStarterIngredient>): Promise<StarterIngredient | undefined>;
+  deleteStarterIngredient(id: string): Promise<boolean>;
+  
+  getStarterMaterials(): Promise<StarterMaterial[]>;
+  getStarterMaterial(id: string): Promise<StarterMaterial | undefined>;
+  createStarterMaterial(material: InsertStarterMaterial): Promise<StarterMaterial>;
+  updateStarterMaterial(id: string, material: Partial<InsertStarterMaterial>): Promise<StarterMaterial | undefined>;
+  deleteStarterMaterial(id: string): Promise<boolean>;
+  
+  // Import starter pack to user's inventory
+  importStarterPack(userId: string, ingredientIds: string[], materialIds: string[]): Promise<{ importedIngredients: number; importedMaterials: number; skippedDuplicates: number }>;
+  
+  // Onboarding
+  completeOnboarding(userId: string): Promise<User | undefined>;
+  markStarterPackImported(userId: string): Promise<User | undefined>;
 }
 
 export class DbStorage implements IStorage {
@@ -649,6 +675,140 @@ export class DbStorage implements IStorage {
       .where(and(eq(materialCategories.id, id), eq(materialCategories.userId, userId)))
       .returning();
     return result.length > 0;
+  }
+
+  // Starter Pack Methods (Admin-managed templates)
+  async getStarterIngredients(): Promise<StarterIngredient[]> {
+    return db.select().from(starterIngredients).orderBy(starterIngredients.name);
+  }
+
+  async getStarterIngredient(id: string): Promise<StarterIngredient | undefined> {
+    const result = await db.select().from(starterIngredients)
+      .where(eq(starterIngredients.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async createStarterIngredient(ingredient: InsertStarterIngredient): Promise<StarterIngredient> {
+    const result = await db.insert(starterIngredients).values(ingredient).returning();
+    return result[0];
+  }
+
+  async updateStarterIngredient(id: string, ingredient: Partial<InsertStarterIngredient>): Promise<StarterIngredient | undefined> {
+    const result = await db.update(starterIngredients)
+      .set(ingredient)
+      .where(eq(starterIngredients.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteStarterIngredient(id: string): Promise<boolean> {
+    const result = await db.delete(starterIngredients)
+      .where(eq(starterIngredients.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getStarterMaterials(): Promise<StarterMaterial[]> {
+    return db.select().from(starterMaterials).orderBy(starterMaterials.name);
+  }
+
+  async getStarterMaterial(id: string): Promise<StarterMaterial | undefined> {
+    const result = await db.select().from(starterMaterials)
+      .where(eq(starterMaterials.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async createStarterMaterial(material: InsertStarterMaterial): Promise<StarterMaterial> {
+    const result = await db.insert(starterMaterials).values(material).returning();
+    return result[0];
+  }
+
+  async updateStarterMaterial(id: string, material: Partial<InsertStarterMaterial>): Promise<StarterMaterial | undefined> {
+    const result = await db.update(starterMaterials)
+      .set(material)
+      .where(eq(starterMaterials.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteStarterMaterial(id: string): Promise<boolean> {
+    const result = await db.delete(starterMaterials)
+      .where(eq(starterMaterials.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async importStarterPack(userId: string, ingredientIds: string[], materialIds: string[]): Promise<{ importedIngredients: number; importedMaterials: number; skippedDuplicates: number }> {
+    let importedIngredients = 0;
+    let importedMaterials = 0;
+    let skippedDuplicates = 0;
+
+    // Import selected starter ingredients
+    for (const starterId of ingredientIds) {
+      const starterIng = await this.getStarterIngredient(starterId);
+      if (!starterIng) continue;
+
+      // Check if user already has an ingredient with the same name
+      const existing = await this.findIngredientByName(userId, starterIng.name);
+      if (existing) {
+        skippedDuplicates++;
+        continue;
+      }
+
+      // Create a copy for the user
+      const { id, createdAt, ...ingredientData } = starterIng;
+      await this.createIngredient({
+        ...ingredientData,
+        userId,
+        supplierId: null,
+      });
+      importedIngredients++;
+    }
+
+    // Import selected starter materials
+    for (const starterId of materialIds) {
+      const starterMat = await this.getStarterMaterial(starterId);
+      if (!starterMat) continue;
+
+      // Check if user already has a material with the same name
+      const existing = await this.findMaterialByName(userId, starterMat.name);
+      if (existing) {
+        skippedDuplicates++;
+        continue;
+      }
+
+      // Create a copy for the user
+      const { id, createdAt, ...materialData } = starterMat;
+      await this.createMaterial({
+        ...materialData,
+        userId,
+        supplierId: null,
+      });
+      importedMaterials++;
+    }
+
+    // Mark that user has imported starter pack
+    await this.markStarterPackImported(userId);
+
+    return { importedIngredients, importedMaterials, skippedDuplicates };
+  }
+
+  async completeOnboarding(userId: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ hasCompletedOnboarding: true })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  async markStarterPackImported(userId: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ starterPackImportedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
   }
 }
 

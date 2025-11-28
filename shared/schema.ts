@@ -17,6 +17,8 @@ export const users = pgTable("users", {
   timezone: text("timezone").default("UTC").notNull(),
   status: text("status").default("active").notNull(),
   lastLogin: timestamp("last_login"),
+  hasCompletedOnboarding: boolean("has_completed_onboarding").default(false).notNull(),
+  starterPackImportedAt: timestamp("starter_pack_imported_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -128,6 +130,34 @@ export const materialCategories = pgTable("material_categories", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Starter Pack Tables (Admin-managed templates)
+export const starterIngredients = pgTable("starter_ingredients", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  category: text("category"),
+  pricePerGram: numeric("price_per_gram", { precision: 10, scale: 4 }).notNull(),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }).default("0").notNull(),
+  unit: text("unit").notNull(),
+  purchaseAmount: numeric("purchase_amount", { precision: 10, scale: 2 }),
+  isCountBased: boolean("is_count_based").default(false),
+  purchaseUnit: text("purchase_unit"),
+  piecesPerPurchaseUnit: numeric("pieces_per_purchase_unit", { precision: 10, scale: 2 }),
+  weightPerPiece: numeric("weight_per_piece", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const starterMaterials = pgTable("starter_materials", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  category: text("category"),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }),
+  unit: text("unit"),
+  pricePerUnit: numeric("price_per_unit", { precision: 10, scale: 2 }),
+  purchaseAmount: numeric("purchase_amount", { precision: 10, scale: 2 }),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const ingredientCategoriesRelations = relations(ingredientCategories, ({ one }) => ({
   user: one(users, {
     fields: [ingredientCategories.userId],
@@ -154,6 +184,8 @@ export const insertRecipeMaterialSchema = createInsertSchema(recipeMaterials).om
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
 export const insertIngredientCategorySchema = createInsertSchema(ingredientCategories).omit({ id: true, createdAt: true });
 export const insertMaterialCategorySchema = createInsertSchema(materialCategories).omit({ id: true, createdAt: true });
+export const insertStarterIngredientSchema = createInsertSchema(starterIngredients).omit({ id: true, createdAt: true });
+export const insertStarterMaterialSchema = createInsertSchema(starterMaterials).omit({ id: true, createdAt: true });
 
 // Type exports
 export type User = typeof users.$inferSelect;
@@ -176,3 +208,7 @@ export type IngredientCategory = typeof ingredientCategories.$inferSelect;
 export type InsertIngredientCategory = z.infer<typeof insertIngredientCategorySchema>;
 export type MaterialCategory = typeof materialCategories.$inferSelect;
 export type InsertMaterialCategory = z.infer<typeof insertMaterialCategorySchema>;
+export type StarterIngredient = typeof starterIngredients.$inferSelect;
+export type InsertStarterIngredient = z.infer<typeof insertStarterIngredientSchema>;
+export type StarterMaterial = typeof starterMaterials.$inferSelect;
+export type InsertStarterMaterial = z.infer<typeof insertStarterMaterialSchema>;
