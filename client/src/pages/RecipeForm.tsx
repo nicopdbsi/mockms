@@ -51,6 +51,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import PanYieldConverter from "@/components/PanYieldConverter";
 import CakePanConverter from "@/components/CakePanConverter";
 import { IngredientCombobox } from "@/components/IngredientCombobox";
@@ -523,6 +524,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
   const [hasScaled, setHasScaled] = useState(false);
   const [showPanConverter, setShowPanConverter] = useState(false);
   const [panSetup, setPanSetup] = useState("2 trays, 12x18 in");
+  const [scalingMode, setScalingMode] = useState<"baker" | "pan">("baker");
 
   const [forecastUnitsPerMonth, setForecastUnitsPerMonth] = useState<string>("100");
   const [forecastSellingPrice, setForecastSellingPrice] = useState<string>("");
@@ -2144,15 +2146,44 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
             </TabsContent>
 
             <TabsContent value="scaling" className="space-y-4">
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Pan Conversion</h3>
-                <CakePanConverter 
-                  selectedIngredients={selectedIngredients.map(ing => ({ ...ing, unit: ing.unit || "g" }))}
-                  ingredients={ingredients}
-                  getQuantityInGrams={getQuantityInGrams}
-                />
+              <div className="flex items-center justify-center">
+                <ToggleGroup
+                  type="single"
+                  value={scalingMode}
+                  onValueChange={(value) => value && setScalingMode(value as "baker" | "pan")}
+                  className="bg-muted p-1 rounded-lg"
+                >
+                  <ToggleGroupItem
+                    value="baker"
+                    className="px-4 py-2 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md"
+                    data-testid="toggle-baker-math"
+                  >
+                    <Scale className="h-4 w-4 mr-2" />
+                    Baker's Math
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="pan"
+                    className="px-4 py-2 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md"
+                    data-testid="toggle-pan-conversion"
+                  >
+                    <Calculator className="h-4 w-4 mr-2" />
+                    Pan Conversion
+                  </ToggleGroupItem>
+                </ToggleGroup>
               </div>
 
+              {scalingMode === "pan" && (
+                <div className="space-y-4">
+                  <CakePanConverter 
+                    selectedIngredients={selectedIngredients.map(ing => ({ ...ing, unit: ing.unit || "g" }))}
+                    ingredients={ingredients}
+                    getQuantityInGrams={getQuantityInGrams}
+                  />
+                </div>
+              )}
+
+              {scalingMode === "baker" && (
+                <>
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
                   <CardHeader>
@@ -2422,6 +2453,8 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                     </p>
                   </CardContent>
                 </Card>
+              )}
+                </>
               )}
             </TabsContent>
 
