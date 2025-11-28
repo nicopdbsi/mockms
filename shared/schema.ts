@@ -158,6 +158,18 @@ export const starterMaterials = pgTable("starter_materials", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const starterIngredientCategories = pgTable("starter_ingredient_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const starterMaterialCategories = pgTable("starter_material_categories", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const ingredientCategoriesRelations = relations(ingredientCategories, ({ one }) => ({
   user: one(users, {
     fields: [ingredientCategories.userId],
@@ -186,6 +198,8 @@ export const insertIngredientCategorySchema = createInsertSchema(ingredientCateg
 export const insertMaterialCategorySchema = createInsertSchema(materialCategories).omit({ id: true, createdAt: true });
 export const insertStarterIngredientSchema = createInsertSchema(starterIngredients).omit({ id: true, createdAt: true });
 export const insertStarterMaterialSchema = createInsertSchema(starterMaterials).omit({ id: true, createdAt: true });
+export const insertStarterIngredientCategorySchema = createInsertSchema(starterIngredientCategories).omit({ id: true, createdAt: true });
+export const insertStarterMaterialCategorySchema = createInsertSchema(starterMaterialCategories).omit({ id: true, createdAt: true });
 
 // Type exports
 export type User = typeof users.$inferSelect;
@@ -212,3 +226,7 @@ export type StarterIngredient = typeof starterIngredients.$inferSelect;
 export type InsertStarterIngredient = z.infer<typeof insertStarterIngredientSchema>;
 export type StarterMaterial = typeof starterMaterials.$inferSelect;
 export type InsertStarterMaterial = z.infer<typeof insertStarterMaterialSchema>;
+export type StarterIngredientCategory = typeof starterIngredientCategories.$inferSelect;
+export type InsertStarterIngredientCategory = z.infer<typeof insertStarterIngredientCategorySchema>;
+export type StarterMaterialCategory = typeof starterMaterialCategories.$inferSelect;
+export type InsertStarterMaterialCategory = z.infer<typeof insertStarterMaterialCategorySchema>;
