@@ -365,11 +365,21 @@ export default function Recipes() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredFreeRecipes.map((recipe) => (
-                  <Card key={recipe.id} data-testid={`card-free-recipe-${recipe.id}`}>
-                    <CardHeader>
+                  <Card key={recipe.id} data-testid={`card-free-recipe-${recipe.id}`} className="hover-elevate cursor-pointer overflow-hidden">
+                    {recipe.coverImage && (
+                      <div className="relative w-full h-40 bg-muted overflow-hidden">
+                        <img
+                          src={recipe.coverImage}
+                          alt={recipe.name}
+                          className="w-full h-full object-cover"
+                          data-testid={`img-free-recipe-cover-${recipe.id}`}
+                        />
+                      </div>
+                    )}
+                    <CardHeader className={recipe.coverImage ? "pb-3" : ""}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
-                          <CardTitle className="text-base">{recipe.name}</CardTitle>
+                          <CardTitle className="text-base line-clamp-2">{recipe.name}</CardTitle>
                           <Badge className="mt-2" variant="outline">
                             FREE TEMPLATE
                           </Badge>
