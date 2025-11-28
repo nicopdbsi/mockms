@@ -71,6 +71,7 @@ export const recipes = pgTable("recipes", {
   name: text("name").notNull(),
   description: text("description"),
   category: text("category"),
+  coverImage: text("cover_image"),
   servings: integer("servings").default(1).notNull(),
   targetMargin: numeric("target_margin", { precision: 5, scale: 2 }).default("50"),
   targetFoodCost: numeric("target_food_cost", { precision: 5, scale: 2 }).default("30"),
