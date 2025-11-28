@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, crypto } from "./auth";
 import passport from "passport";
 import multer from "multer";
-import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema, insertStarterIngredientSchema, insertStarterMaterialSchema } from "@shared/schema";
+import { insertUserSchema, insertSupplierSchema, insertIngredientSchema, insertMaterialSchema, insertRecipeSchema, insertOrderSchema, insertIngredientCategorySchema, insertMaterialCategorySchema, insertStarterIngredientSchema, insertStarterMaterialSchema, insertStarterIngredientCategorySchema, insertStarterMaterialCategorySchema } from "@shared/schema";
 import { z } from "zod";
 import { parseReceiptImage, parseReceiptCSV, parseReceiptPDF } from "./receipt-parser";
 
@@ -948,6 +948,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const deleted = await storage.deleteStarterMaterial(req.params.id);
       if (!deleted) {
         return res.status(404).json({ message: "Starter material not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Starter Pack Categories (Admin CRUD)
+  app.get("/api/starter-pack/categories/ingredients", requireAuth, async (req, res, next) => {
+    try {
+      const categories = await storage.getStarterIngredientCategories();
+      res.json(categories);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/starter-pack/categories/ingredients", requireAdminRole, async (req, res, next) => {
+    try {
+      const data = insertStarterIngredientCategorySchema.parse(req.body);
+      const category = await storage.createStarterIngredientCategory(data);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/starter-pack/categories/ingredients/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const { name } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const updated = await storage.updateStarterIngredientCategory(req.params.id, name);
+      if (!updated) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/starter-pack/categories/ingredients/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteStarterIngredientCategory(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/starter-pack/categories/materials", requireAuth, async (req, res, next) => {
+    try {
+      const categories = await storage.getStarterMaterialCategories();
+      res.json(categories);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/starter-pack/categories/materials", requireAdminRole, async (req, res, next) => {
+    try {
+      const data = insertStarterMaterialCategorySchema.parse(req.body);
+      const category = await storage.createStarterMaterialCategory(data);
+      res.status(201).json(category);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid input", errors: error.errors });
+      }
+      next(error);
+    }
+  });
+
+  app.patch("/api/starter-pack/categories/materials/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const { name } = req.body;
+      if (!name) {
+        return res.status(400).json({ message: "Name is required" });
+      }
+      const updated = await storage.updateStarterMaterialCategory(req.params.id, name);
+      if (!updated) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/starter-pack/categories/materials/:id", requireAdminRole, async (req, res, next) => {
+    try {
+      const deleted = await storage.deleteStarterMaterialCategory(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Category not found" });
       }
       res.status(204).end();
     } catch (error) {

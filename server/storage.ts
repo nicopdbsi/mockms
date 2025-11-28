@@ -23,6 +23,10 @@ import {
   type InsertStarterIngredient,
   type StarterMaterial,
   type InsertStarterMaterial,
+  type StarterIngredientCategory,
+  type InsertStarterIngredientCategory,
+  type StarterMaterialCategory,
+  type InsertStarterMaterialCategory,
   users,
   suppliers,
   ingredients,
@@ -34,7 +38,9 @@ import {
   ingredientCategories,
   materialCategories,
   starterIngredients,
-  starterMaterials
+  starterMaterials,
+  starterIngredientCategories,
+  starterMaterialCategories
 } from "@shared/schema";
 import { db } from "../db/index";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
@@ -116,6 +122,17 @@ export interface IStorage {
   
   // Import starter pack to user's inventory
   importStarterPack(userId: string, ingredientIds: string[], materialIds: string[]): Promise<{ importedIngredients: number; importedMaterials: number; skippedDuplicates: number }>;
+
+  // Starter Pack Categories (Admin-managed)
+  getStarterIngredientCategories(): Promise<StarterIngredientCategory[]>;
+  createStarterIngredientCategory(category: InsertStarterIngredientCategory): Promise<StarterIngredientCategory>;
+  updateStarterIngredientCategory(id: string, name: string): Promise<StarterIngredientCategory | undefined>;
+  deleteStarterIngredientCategory(id: string): Promise<boolean>;
+  
+  getStarterMaterialCategories(): Promise<StarterMaterialCategory[]>;
+  createStarterMaterialCategory(category: InsertStarterMaterialCategory): Promise<StarterMaterialCategory>;
+  updateStarterMaterialCategory(id: string, name: string): Promise<StarterMaterialCategory | undefined>;
+  deleteStarterMaterialCategory(id: string): Promise<boolean>;
   
   // Onboarding
   completeOnboarding(userId: string): Promise<User | undefined>;
@@ -809,6 +826,55 @@ export class DbStorage implements IStorage {
       .where(eq(users.id, userId))
       .returning();
     return result[0];
+  }
+
+  // Starter Pack Category Methods
+  async getStarterIngredientCategories(): Promise<StarterIngredientCategory[]> {
+    return db.select().from(starterIngredientCategories).orderBy(starterIngredientCategories.name);
+  }
+
+  async createStarterIngredientCategory(category: InsertStarterIngredientCategory): Promise<StarterIngredientCategory> {
+    const result = await db.insert(starterIngredientCategories).values(category).returning();
+    return result[0];
+  }
+
+  async updateStarterIngredientCategory(id: string, name: string): Promise<StarterIngredientCategory | undefined> {
+    const result = await db.update(starterIngredientCategories)
+      .set({ name })
+      .where(eq(starterIngredientCategories.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteStarterIngredientCategory(id: string): Promise<boolean> {
+    const result = await db.delete(starterIngredientCategories)
+      .where(eq(starterIngredientCategories.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  async getStarterMaterialCategories(): Promise<StarterMaterialCategory[]> {
+    return db.select().from(starterMaterialCategories).orderBy(starterMaterialCategories.name);
+  }
+
+  async createStarterMaterialCategory(category: InsertStarterMaterialCategory): Promise<StarterMaterialCategory> {
+    const result = await db.insert(starterMaterialCategories).values(category).returning();
+    return result[0];
+  }
+
+  async updateStarterMaterialCategory(id: string, name: string): Promise<StarterMaterialCategory | undefined> {
+    const result = await db.update(starterMaterialCategories)
+      .set({ name })
+      .where(eq(starterMaterialCategories.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteStarterMaterialCategory(id: string): Promise<boolean> {
+    const result = await db.delete(starterMaterialCategories)
+      .where(eq(starterMaterialCategories.id, id))
+      .returning();
+    return result.length > 0;
   }
 }
 
