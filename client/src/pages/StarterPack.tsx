@@ -286,12 +286,18 @@ function StarterPackContent() {
   };
 
   const handleIngredientSubmit = () => {
+    // Calculate price per gram from quantity and purchase amount
+    const pricePerGram = 
+      ingredientForm.quantity && ingredientForm.purchaseAmount
+        ? String(parseFloat(ingredientForm.purchaseAmount) / parseFloat(ingredientForm.quantity))
+        : ingredientForm.pricePerGram;
+
     const data = {
       name: ingredientForm.name,
       category: ingredientForm.category || null,
-      pricePerGram: ingredientForm.pricePerGram,
+      pricePerGram,
       quantity: ingredientForm.quantity || "0",
-      unit: ingredientForm.unit,
+      unit: ingredientForm.unit || null,
       purchaseAmount: ingredientForm.purchaseAmount || null,
       isCountBased: ingredientForm.isCountBased,
       purchaseUnit: ingredientForm.isCountBased ? ingredientForm.purchaseUnit : null,
@@ -456,45 +462,53 @@ function StarterPackContent() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="ing-price">Price per Gram *</Label>
+                        <Label htmlFor="ing-quantity">Quantity (g) *</Label>
                         <Input
-                          id="ing-price"
+                          id="ing-quantity"
                           type="number"
-                          step="0.0001"
-                          value={ingredientForm.pricePerGram}
-                          onChange={(e) => setIngredientForm({ ...ingredientForm, pricePerGram: e.target.value })}
-                          placeholder="0.05"
-                          data-testid="input-ingredient-price"
+                          step="0.01"
+                          value={ingredientForm.quantity}
+                          onChange={(e) => setIngredientForm({ ...ingredientForm, quantity: e.target.value })}
+                          placeholder="1000"
+                          data-testid="input-ingredient-quantity"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="ing-unit">Unit *</Label>
-                        <Select
-                          value={ingredientForm.unit}
-                          onValueChange={(v) => setIngredientForm({ ...ingredientForm, unit: v })}
-                        >
-                          <SelectTrigger data-testid="select-ingredient-unit">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {UNITS.map((u) => (
-                              <SelectItem key={u} value={u}>{u}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="ing-purchase">Purchase Cost *</Label>
+                        <Input
+                          id="ing-purchase"
+                          type="number"
+                          step="0.01"
+                          value={ingredientForm.purchaseAmount}
+                          onChange={(e) => setIngredientForm({ ...ingredientForm, purchaseAmount: e.target.value })}
+                          placeholder="100"
+                          data-testid="input-ingredient-purchase"
+                        />
                       </div>
                     </div>
+                    {ingredientForm.quantity && ingredientForm.purchaseAmount && (
+                      <div className="p-3 bg-muted rounded-lg">
+                        <p className="text-sm text-muted-foreground">Calculated</p>
+                        <p className="text-lg font-semibold">
+                          Price per gram: {formatCurrency(parseFloat(ingredientForm.purchaseAmount) / parseFloat(ingredientForm.quantity), currency)}
+                        </p>
+                      </div>
+                    )}
                     <div>
-                      <Label htmlFor="ing-purchase">Purchase Amount</Label>
-                      <Input
-                        id="ing-purchase"
-                        type="number"
-                        step="0.01"
-                        value={ingredientForm.purchaseAmount}
-                        onChange={(e) => setIngredientForm({ ...ingredientForm, purchaseAmount: e.target.value })}
-                        placeholder="1000"
-                        data-testid="input-ingredient-purchase"
-                      />
+                      <Label htmlFor="ing-unit">Unit</Label>
+                      <Select
+                        value={ingredientForm.unit}
+                        onValueChange={(v) => setIngredientForm({ ...ingredientForm, unit: v })}
+                      >
+                        <SelectTrigger data-testid="select-ingredient-unit">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UNITS.map((u) => (
+                            <SelectItem key={u} value={u}>{u}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -545,7 +559,7 @@ function StarterPackContent() {
                     </DialogClose>
                     <Button
                       onClick={handleIngredientSubmit}
-                      disabled={!ingredientForm.name || !ingredientForm.pricePerGram || createIngredientMutation.isPending || updateIngredientMutation.isPending}
+                      disabled={!ingredientForm.name || !ingredientForm.quantity || !ingredientForm.purchaseAmount || createIngredientMutation.isPending || updateIngredientMutation.isPending}
                       data-testid="button-save-ingredient"
                     >
                       {(createIngredientMutation.isPending || updateIngredientMutation.isPending) ? "Saving..." : "Save"}
