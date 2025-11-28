@@ -521,11 +521,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const filepath = path.join(uploadsDir, filename);
 
       await sharp(req.file.buffer)
-        .resize(90, 90, {
+        .resize(320, 320, {
           fit: 'cover',
           position: 'center'
         })
-        .jpeg({ quality: 85 })
+        .jpeg({ quality: 80 })
         .toFile(filepath);
 
       const imageUrl = `/uploads/recipe-covers/${filename}`;

@@ -686,7 +686,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
       form.setValue("coverImage", url);
       toast({
         title: "Cover image uploaded",
-        description: "Image has been resized to 90x90px.",
+        description: "Image has been optimized for web display.",
       });
     } catch (error) {
       toast({
@@ -1357,7 +1357,7 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                   <div className="pt-4">
                     <FormLabel>Cover Image</FormLabel>
                     <p className="text-sm text-muted-foreground mb-2">
-                      Upload a cover photo for your recipe (JPG or PNG). Images will be resized to 90x90px.
+                      Upload a cover photo for your recipe (JPG or PNG). Images will be optimized for web display.
                     </p>
                     {isViewMode ? (
                       <div className="mt-2">
