@@ -462,53 +462,53 @@ function StarterPackContent() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="ing-quantity">Quantity (g) *</Label>
+                        <Label htmlFor="ing-quantity">Quantity *</Label>
                         <Input
                           id="ing-quantity"
                           type="number"
                           step="0.01"
                           value={ingredientForm.quantity}
                           onChange={(e) => setIngredientForm({ ...ingredientForm, quantity: e.target.value })}
-                          placeholder="1000"
+                          placeholder="0"
                           data-testid="input-ingredient-quantity"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="ing-purchase">Purchase Cost *</Label>
-                        <Input
-                          id="ing-purchase"
-                          type="number"
-                          step="0.01"
-                          value={ingredientForm.purchaseAmount}
-                          onChange={(e) => setIngredientForm({ ...ingredientForm, purchaseAmount: e.target.value })}
-                          placeholder="100"
-                          data-testid="input-ingredient-purchase"
-                        />
+                        <Label htmlFor="ing-unit">Unit of Measure *</Label>
+                        <Select
+                          value={ingredientForm.unit}
+                          onValueChange={(v) => setIngredientForm({ ...ingredientForm, unit: v })}
+                        >
+                          <SelectTrigger data-testid="select-ingredient-unit">
+                            <SelectValue placeholder="e.g., g, kg, ml" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {UNITS.map((u) => (
+                              <SelectItem key={u} value={u}>{u}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
-                    {ingredientForm.quantity && ingredientForm.purchaseAmount && (
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm text-muted-foreground">Calculated</p>
-                        <p className="text-lg font-semibold">
-                          Price per gram: {formatCurrency(parseFloat(ingredientForm.purchaseAmount) / parseFloat(ingredientForm.quantity), currency)}
-                        </p>
-                      </div>
-                    )}
                     <div>
-                      <Label htmlFor="ing-unit">Unit</Label>
-                      <Select
-                        value={ingredientForm.unit}
-                        onValueChange={(v) => setIngredientForm({ ...ingredientForm, unit: v })}
-                      >
-                        <SelectTrigger data-testid="select-ingredient-unit">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {UNITS.map((u) => (
-                            <SelectItem key={u} value={u}>{u}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="ing-purchase">Purchase Amount *</Label>
+                      <Input
+                        id="ing-purchase"
+                        type="number"
+                        step="0.01"
+                        value={ingredientForm.purchaseAmount}
+                        onChange={(e) => setIngredientForm({ ...ingredientForm, purchaseAmount: e.target.value })}
+                        placeholder="How much you paid"
+                        data-testid="input-ingredient-purchase"
+                      />
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Price per Gram (auto-calculated)</p>
+                      <p className="text-lg font-semibold">
+                        {ingredientForm.quantity && ingredientForm.purchaseAmount
+                          ? formatCurrency(parseFloat(ingredientForm.purchaseAmount) / parseFloat(ingredientForm.quantity), currency)
+                          : "−"}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -559,7 +559,7 @@ function StarterPackContent() {
                     </DialogClose>
                     <Button
                       onClick={handleIngredientSubmit}
-                      disabled={!ingredientForm.name || !ingredientForm.quantity || !ingredientForm.purchaseAmount || createIngredientMutation.isPending || updateIngredientMutation.isPending}
+                      disabled={!ingredientForm.name || !ingredientForm.quantity || !ingredientForm.unit || !ingredientForm.purchaseAmount || createIngredientMutation.isPending || updateIngredientMutation.isPending}
                       data-testid="button-save-ingredient"
                     >
                       {(createIngredientMutation.isPending || updateIngredientMutation.isPending) ? "Saving..." : "Save"}
