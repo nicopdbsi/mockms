@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
@@ -628,43 +629,49 @@ function StarterPackContent() {
                           : "−"}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Checkbox
+                    <div className="flex items-center justify-between">
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="ing-count-based" className="cursor-pointer font-medium">Count-Based Ingredient</Label>
+                        <p className="text-xs text-muted-foreground">For items like eggs, bought by tray but used by weight in recipes</p>
+                      </div>
+                      <Switch
                         id="ing-count-based"
                         checked={ingredientForm.isCountBased}
-                        onCheckedChange={(checked) => setIngredientForm({ ...ingredientForm, isCountBased: checked as boolean })}
-                        data-testid="checkbox-count-based"
+                        onCheckedChange={(checked) => setIngredientForm({ ...ingredientForm, isCountBased: checked })}
+                        data-testid="switch-count-based"
                       />
-                      <Label htmlFor="ing-count-based" className="cursor-pointer">Count-based ingredient (e.g., eggs)</Label>
                     </div>
                     {ingredientForm.isCountBased && (
-                      <div className="grid grid-cols-3 gap-2 p-3 bg-muted rounded-lg">
+                      <div className="space-y-4">
                         <div>
-                          <Label className="text-xs">Purchase Unit</Label>
+                          <Label htmlFor="ing-purchase-unit">Purchase Unit *</Label>
                           <Input
+                            id="ing-purchase-unit"
                             value={ingredientForm.purchaseUnit}
                             onChange={(e) => setIngredientForm({ ...ingredientForm, purchaseUnit: e.target.value })}
-                            placeholder="tray"
+                            placeholder="e.g., tray, dozen, box"
                             data-testid="input-purchase-unit"
                           />
                         </div>
                         <div>
-                          <Label className="text-xs">Pcs per Unit</Label>
+                          <Label htmlFor="ing-pieces-per-unit">Pieces per Unit *</Label>
                           <Input
+                            id="ing-pieces-per-unit"
                             type="number"
                             value={ingredientForm.piecesPerPurchaseUnit}
                             onChange={(e) => setIngredientForm({ ...ingredientForm, piecesPerPurchaseUnit: e.target.value })}
-                            placeholder="30"
+                            placeholder="e.g., 30 eggs per tray"
                             data-testid="input-pieces-per-unit"
                           />
                         </div>
                         <div>
-                          <Label className="text-xs">Weight/pc (g)</Label>
+                          <Label htmlFor="ing-weight-per-piece">Average Weight per Piece (g) *</Label>
                           <Input
+                            id="ing-weight-per-piece"
                             type="number"
                             value={ingredientForm.weightPerPiece}
                             onChange={(e) => setIngredientForm({ ...ingredientForm, weightPerPiece: e.target.value })}
-                            placeholder="55"
+                            placeholder="e.g., 55g per egg"
                             data-testid="input-weight-per-piece"
                           />
                         </div>
