@@ -238,6 +238,7 @@ function StarterPackContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/ingredients"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/ingredients"] });
       setIngredientCategoryDialogOpen(false);
       setEditingIngredientCategory(null);
       setIngredientCategoryName("");
@@ -284,6 +285,7 @@ function StarterPackContent() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/categories/materials"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/starter-pack/materials"] });
       setMaterialCategoryDialogOpen(false);
       setEditingMaterialCategory(null);
       setMaterialCategoryName("");
