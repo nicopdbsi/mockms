@@ -231,6 +231,12 @@ Preferred communication style: Simple, everyday language.
 **Bento Starter Pack** (Admin-managed templates):
 - Separate database tables: `starter_ingredients`, `starter_materials` (no userId)
 - Admin-only CRUD management at `/reports/starter-pack`
+- **Inline Add Category**: Admin can create new categories directly from the add/edit dialogs
+  - "Add New Category..." option at top of category dropdown
+  - Inline input with Add/Cancel buttons
+  - Supports Enter key to confirm, Escape key to cancel
+  - New categories are preserved during the session and combined with default categories
+  - Existing categories from saved items are automatically included in dropdown
 - Users can import starter items:
   - Via "Import from Bento" button in Ingredients and Materials pages
   - Via OnboardingWizard modal on first login

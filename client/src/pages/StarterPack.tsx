@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,20 +12,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { Plus, Pencil, Trash2, Package, Wrench, Gift } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Wrench, Gift, FolderPlus } from "lucide-react";
 import { type StarterIngredient, type StarterMaterial } from "@shared/schema";
 import { formatCurrency } from "@/lib/currency";
 import { useAuth } from "@/lib/auth";
 
-const INGREDIENT_CATEGORIES = [
+const DEFAULT_INGREDIENT_CATEGORIES = [
   "Dairy", "Eggs", "Flour & Grains", "Sugar & Sweeteners", "Fats & Oils",
   "Leavening", "Chocolate & Cocoa", "Nuts & Seeds", "Fruits", "Spices & Flavorings",
   "Milk & Cream", "Other"
 ];
 
-const MATERIAL_CATEGORIES = [
+const DEFAULT_MATERIAL_CATEGORIES = [
   "Packaging", "Containers", "Labels", "Equipment", "Utensils", "Other"
 ];
 
@@ -36,6 +37,16 @@ function StarterPackContent() {
   const currency = user?.currency || "PHP";
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("ingredients");
+  
+  // Custom categories (user-added)
+  const [customIngredientCategories, setCustomIngredientCategories] = useState<string[]>([]);
+  const [customMaterialCategories, setCustomMaterialCategories] = useState<string[]>([]);
+  
+  // Add category mode state
+  const [addingIngredientCategory, setAddingIngredientCategory] = useState(false);
+  const [newIngredientCategory, setNewIngredientCategory] = useState("");
+  const [addingMaterialCategory, setAddingMaterialCategory] = useState(false);
+  const [newMaterialCategory, setNewMaterialCategory] = useState("");
   
   // Ingredient form state
   const [ingredientDialogOpen, setIngredientDialogOpen] = useState(false);
@@ -74,6 +85,23 @@ function StarterPackContent() {
   const { data: starterMaterials, isLoading: materialsLoading } = useQuery<StarterMaterial[]>({
     queryKey: ["/api/starter-pack/materials"],
   });
+  
+  // Combine default and custom categories, plus any existing categories from data
+  const allIngredientCategories = useMemo(() => {
+    const existingCategories = starterIngredients
+      ?.map(i => i.category)
+      .filter((c): c is string => !!c && !DEFAULT_INGREDIENT_CATEGORIES.includes(c) && !customIngredientCategories.includes(c)) || [];
+    const combined = [...DEFAULT_INGREDIENT_CATEGORIES, ...customIngredientCategories, ...existingCategories];
+    return Array.from(new Set(combined)).sort();
+  }, [starterIngredients, customIngredientCategories]);
+  
+  const allMaterialCategories = useMemo(() => {
+    const existingCategories = starterMaterials
+      ?.map(m => m.category)
+      .filter((c): c is string => !!c && !DEFAULT_MATERIAL_CATEGORIES.includes(c) && !customMaterialCategories.includes(c)) || [];
+    const combined = [...DEFAULT_MATERIAL_CATEGORIES, ...customMaterialCategories, ...existingCategories];
+    return Array.from(new Set(combined)).sort();
+  }, [starterMaterials, customMaterialCategories]);
 
   // Ingredient mutations
   const createIngredientMutation = useMutation({
@@ -182,6 +210,8 @@ function StarterPackContent() {
       piecesPerPurchaseUnit: "",
       weightPerPiece: "",
     });
+    setAddingIngredientCategory(false);
+    setNewIngredientCategory("");
   };
 
   const resetMaterialForm = () => {
@@ -194,6 +224,34 @@ function StarterPackContent() {
       purchaseAmount: "",
       notes: "",
     });
+    setAddingMaterialCategory(false);
+    setNewMaterialCategory("");
+  };
+  
+  const handleAddIngredientCategory = () => {
+    const trimmed = newIngredientCategory.trim();
+    if (trimmed && !allIngredientCategories.includes(trimmed)) {
+      setCustomIngredientCategories(prev => [...prev, trimmed]);
+      setIngredientForm({ ...ingredientForm, category: trimmed });
+      toast({ title: "Category added", description: `"${trimmed}" added to ingredient categories` });
+    } else if (trimmed) {
+      setIngredientForm({ ...ingredientForm, category: trimmed });
+    }
+    setAddingIngredientCategory(false);
+    setNewIngredientCategory("");
+  };
+  
+  const handleAddMaterialCategory = () => {
+    const trimmed = newMaterialCategory.trim();
+    if (trimmed && !allMaterialCategories.includes(trimmed)) {
+      setCustomMaterialCategories(prev => [...prev, trimmed]);
+      setMaterialForm({ ...materialForm, category: trimmed });
+      toast({ title: "Category added", description: `"${trimmed}" added to material categories` });
+    } else if (trimmed) {
+      setMaterialForm({ ...materialForm, category: trimmed });
+    }
+    setAddingMaterialCategory(false);
+    setNewMaterialCategory("");
   };
 
   const openEditIngredient = (item: StarterIngredient) => {
@@ -327,19 +385,74 @@ function StarterPackContent() {
                     </div>
                     <div>
                       <Label htmlFor="ing-category">Category</Label>
-                      <Select
-                        value={ingredientForm.category}
-                        onValueChange={(v) => setIngredientForm({ ...ingredientForm, category: v })}
-                      >
-                        <SelectTrigger data-testid="select-ingredient-category">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {INGREDIENT_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {addingIngredientCategory ? (
+                        <div className="flex gap-2">
+                          <Input
+                            value={newIngredientCategory}
+                            onChange={(e) => setNewIngredientCategory(e.target.value)}
+                            placeholder="Enter new category name"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddIngredientCategory();
+                              } else if (e.key === "Escape") {
+                                setAddingIngredientCategory(false);
+                                setNewIngredientCategory("");
+                              }
+                            }}
+                            autoFocus
+                            data-testid="input-new-ingredient-category"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleAddIngredientCategory}
+                            disabled={!newIngredientCategory.trim()}
+                            data-testid="button-confirm-ingredient-category"
+                          >
+                            Add
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setAddingIngredientCategory(false);
+                              setNewIngredientCategory("");
+                            }}
+                            data-testid="button-cancel-ingredient-category"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Select
+                          value={ingredientForm.category}
+                          onValueChange={(v) => {
+                            if (v === "__add_new__") {
+                              setAddingIngredientCategory(true);
+                            } else {
+                              setIngredientForm({ ...ingredientForm, category: v });
+                            }
+                          }}
+                        >
+                          <SelectTrigger data-testid="select-ingredient-category">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__add_new__" className="text-primary font-medium">
+                              <span className="flex items-center gap-2">
+                                <FolderPlus className="h-4 w-4" />
+                                Add New Category...
+                              </span>
+                            </SelectItem>
+                            <Separator className="my-1" />
+                            {allIngredientCategories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -563,19 +676,74 @@ function StarterPackContent() {
                     </div>
                     <div>
                       <Label htmlFor="mat-category">Category</Label>
-                      <Select
-                        value={materialForm.category}
-                        onValueChange={(v) => setMaterialForm({ ...materialForm, category: v })}
-                      >
-                        <SelectTrigger data-testid="select-material-category">
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {MATERIAL_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {addingMaterialCategory ? (
+                        <div className="flex gap-2">
+                          <Input
+                            value={newMaterialCategory}
+                            onChange={(e) => setNewMaterialCategory(e.target.value)}
+                            placeholder="Enter new category name"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddMaterialCategory();
+                              } else if (e.key === "Escape") {
+                                setAddingMaterialCategory(false);
+                                setNewMaterialCategory("");
+                              }
+                            }}
+                            autoFocus
+                            data-testid="input-new-material-category"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleAddMaterialCategory}
+                            disabled={!newMaterialCategory.trim()}
+                            data-testid="button-confirm-material-category"
+                          >
+                            Add
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setAddingMaterialCategory(false);
+                              setNewMaterialCategory("");
+                            }}
+                            data-testid="button-cancel-material-category"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Select
+                          value={materialForm.category}
+                          onValueChange={(v) => {
+                            if (v === "__add_new__") {
+                              setAddingMaterialCategory(true);
+                            } else {
+                              setMaterialForm({ ...materialForm, category: v });
+                            }
+                          }}
+                        >
+                          <SelectTrigger data-testid="select-material-category">
+                            <SelectValue placeholder="Select category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__add_new__" className="text-primary font-medium">
+                              <span className="flex items-center gap-2">
+                                <FolderPlus className="h-4 w-4" />
+                                Add New Category...
+                              </span>
+                            </SelectItem>
+                            <Separator className="my-1" />
+                            {allMaterialCategories.map((cat) => (
+                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
