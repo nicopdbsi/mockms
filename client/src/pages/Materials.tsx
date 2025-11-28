@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/currency";
@@ -821,11 +821,11 @@ export default function Materials() {
     queryKey: ["/api/suppliers"],
   });
 
-  const getSupplierName = (supplierId: string | null) => {
+  const getSupplierName = useCallback((supplierId: string | null) => {
     if (!supplierId || !suppliers) return "-";
     const supplier = suppliers.find((s) => s.id === supplierId);
     return supplier?.name || "-";
-  };
+  }, [suppliers]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -848,28 +848,31 @@ export default function Materials() {
     );
   });
 
-  const sortedMaterials = filteredMaterials?.slice().sort((a, b) => {
-    const direction = sortDirection === "asc" ? 1 : -1;
-    
-    switch (sortField) {
-      case "name":
-        return direction * a.name.localeCompare(b.name);
-      case "category":
-        return direction * (a.category || "").localeCompare(b.category || "");
-      case "quantity":
-        return direction * ((parseFloat(a.quantity || "0")) - (parseFloat(b.quantity || "0")));
-      case "unit":
-        return direction * (a.unit || "").localeCompare(b.unit || "");
-      case "pricePerUnit":
-        return direction * (parseFloat(a.pricePerUnit || "0") - parseFloat(b.pricePerUnit || "0"));
-      case "purchaseAmount":
-        return direction * ((parseFloat(a.purchaseAmount || "0")) - (parseFloat(b.purchaseAmount || "0")));
-      case "supplier":
-        return direction * getSupplierName(a.supplierId).localeCompare(getSupplierName(b.supplierId));
-      default:
-        return 0;
-    }
-  });
+  const sortedMaterials = useMemo(() => {
+    if (!filteredMaterials) return undefined;
+    return filteredMaterials.slice().sort((a, b) => {
+      const direction = sortDirection === "asc" ? 1 : -1;
+      
+      switch (sortField) {
+        case "name":
+          return direction * a.name.localeCompare(b.name);
+        case "category":
+          return direction * (a.category || "").localeCompare(b.category || "");
+        case "quantity":
+          return direction * ((parseFloat(a.quantity || "0")) - (parseFloat(b.quantity || "0")));
+        case "unit":
+          return direction * (a.unit || "").localeCompare(b.unit || "");
+        case "pricePerUnit":
+          return direction * (parseFloat(a.pricePerUnit || "0") - parseFloat(b.pricePerUnit || "0"));
+        case "purchaseAmount":
+          return direction * ((parseFloat(a.purchaseAmount || "0")) - (parseFloat(b.purchaseAmount || "0")));
+        case "supplier":
+          return direction * getSupplierName(a.supplierId).localeCompare(getSupplierName(b.supplierId));
+        default:
+          return 0;
+      }
+    });
+  }, [filteredMaterials, sortField, sortDirection, getSupplierName]);
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {

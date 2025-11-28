@@ -619,22 +619,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/analytics/overview", requireAuth, async (req, res, next) => {
     try {
-      const recipes = await storage.getRecipes(req.user!.id);
-      const orders = await storage.getOrders(req.user!.id);
-      const ingredients = await storage.getIngredients(req.user!.id);
+      // Use optimized count queries instead of fetching all data
+      const [recipeCount, orderCount, ingredientCount, orderTotals] = await Promise.all([
+        storage.getRecipeCount(req.user!.id),
+        storage.getOrderCount(req.user!.id),
+        storage.getIngredientCount(req.user!.id),
+        storage.getOrderTotals(req.user!.id),
+      ]);
 
-      const totalRevenue = orders.reduce((sum, order) => sum + Number(order.totalRevenue), 0);
-      const totalCost = orders.reduce((sum, order) => sum + Number(order.totalCost), 0);
+      const { totalRevenue, totalCost } = orderTotals;
       const totalProfit = totalRevenue - totalCost;
 
       res.json({
-        totalRecipes: recipes.length,
-        totalOrders: orders.length,
+        totalRecipes: recipeCount,
+        totalOrders: orderCount,
         totalRevenue,
         totalCost,
         totalProfit,
         profitMargin: totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0,
-        totalIngredients: ingredients.length,
+        totalIngredients: ingredientCount,
       });
     } catch (error) {
       next(error);

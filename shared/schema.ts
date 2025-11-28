@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, numeric, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, numeric, integer, timestamp, boolean, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -49,7 +49,9 @@ export const ingredients = pgTable("ingredients", {
   piecesPerPurchaseUnit: numeric("pieces_per_purchase_unit", { precision: 10, scale: 2 }),
   weightPerPiece: numeric("weight_per_piece", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("ingredients_user_id_idx").on(table.userId),
+}));
 
 export const materials = pgTable("materials", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -63,7 +65,9 @@ export const materials = pgTable("materials", {
   supplierId: varchar("supplier_id").references(() => suppliers.id, { onDelete: "set null" }),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("materials_user_id_idx").on(table.userId),
+}));
 
 export const recipes = pgTable("recipes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -88,7 +92,10 @@ export const recipes = pgTable("recipes", {
   allowedPlans: text("allowed_plans"),
   allowedUserEmails: text("allowed_user_emails"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("recipes_user_id_idx").on(table.userId),
+  isFreeRecipeIdx: index("recipes_is_free_recipe_idx").on(table.isFreeRecipe),
+}));
 
 export const recipeIngredients = pgTable("recipe_ingredients", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -115,7 +122,9 @@ export const orders = pgTable("orders", {
   totalRevenue: numeric("total_revenue", { precision: 10, scale: 2 }).notNull(),
   totalCost: numeric("total_cost", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("orders_user_id_idx").on(table.userId),
+}));
 
 export const ingredientCategories = pgTable("ingredient_categories", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -181,7 +190,12 @@ export const plannerEntries = pgTable("planner_entries", {
   status: text("status").default("planned").notNull(),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("planner_entries_user_id_idx").on(table.userId),
+  recipeIdIdx: index("planner_entries_recipe_id_idx").on(table.recipeId),
+  scheduledStartIdx: index("planner_entries_scheduled_start_idx").on(table.scheduledStart),
+  userScheduledIdx: index("planner_entries_user_scheduled_idx").on(table.userId, table.scheduledStart),
+}));
 
 export const plannerEntriesRelations = relations(plannerEntries, ({ one }) => ({
   user: one(users, {

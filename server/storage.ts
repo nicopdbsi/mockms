@@ -100,6 +100,12 @@ export interface IStorage {
   createOrder(order: InsertOrder): Promise<Order>;
   getOrdersByRecipe(recipeId: string, userId: string): Promise<Order[]>;
   
+  // Optimized count methods for analytics
+  getRecipeCount(userId: string): Promise<number>;
+  getOrderCount(userId: string): Promise<number>;
+  getIngredientCount(userId: string): Promise<number>;
+  getOrderTotals(userId: string): Promise<{ totalRevenue: number; totalCost: number }>;
+  
   getIngredientCategories(userId: string): Promise<IngredientCategory[]>;
   createIngredientCategory(category: InsertIngredientCategory): Promise<IngredientCategory>;
   updateIngredientCategory(id: string, userId: string, name: string): Promise<IngredientCategory | undefined>;
@@ -650,6 +656,40 @@ export class DbStorage implements IStorage {
     return db.select().from(orders)
       .where(and(eq(orders.recipeId, recipeId), eq(orders.userId, userId)))
       .orderBy(desc(orders.createdAt));
+  }
+
+  async getRecipeCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)::int` })
+      .from(recipes)
+      .where(eq(recipes.userId, userId));
+    return result[0]?.count || 0;
+  }
+
+  async getOrderCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)::int` })
+      .from(orders)
+      .where(eq(orders.userId, userId));
+    return result[0]?.count || 0;
+  }
+
+  async getIngredientCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)::int` })
+      .from(ingredients)
+      .where(eq(ingredients.userId, userId));
+    return result[0]?.count || 0;
+  }
+
+  async getOrderTotals(userId: string): Promise<{ totalRevenue: number; totalCost: number }> {
+    const result = await db.select({
+      totalRevenue: sql<number>`COALESCE(SUM(total_revenue::numeric), 0)::float`,
+      totalCost: sql<number>`COALESCE(SUM(total_cost::numeric), 0)::float`,
+    })
+      .from(orders)
+      .where(eq(orders.userId, userId));
+    return {
+      totalRevenue: result[0]?.totalRevenue || 0,
+      totalCost: result[0]?.totalCost || 0,
+    };
   }
 
   async getIngredientCategories(userId: string): Promise<IngredientCategory[]> {
