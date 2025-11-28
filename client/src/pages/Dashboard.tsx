@@ -94,6 +94,7 @@ function AdminDashboard() {
 
 function RegularDashboard() {
   const { user } = useAuth();
+  const currency = user?.currency || "USD";
   const { data: analytics, isLoading } = useQuery<AnalyticsOverview>({
     queryKey: ["/api/analytics/overview"],
   });
@@ -149,7 +150,7 @@ function RegularDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-revenue">
-              {formatCurrency(analytics?.totalRevenue || 0)}
+              {formatCurrency(analytics?.totalRevenue || 0, currency)}
             </div>
             <p className="text-xs text-muted-foreground">
               From {analytics?.totalOrders || 0} orders

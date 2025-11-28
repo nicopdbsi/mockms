@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, DollarSign, Percent } from "lucide-react";
 import { type Recipe, type Order } from "@shared/schema";
 import { useAuth } from "@/lib/auth";
+import { formatCurrency } from "@/lib/currency";
 
 type AnalyticsOverview = {
   totalRecipes: number;
@@ -171,6 +172,9 @@ function AdminAnalytics() {
 }
 
 function RegularAnalytics() {
+  const { user } = useAuth();
+  const currency = user?.currency || "USD";
+  
   const { data: analytics, isLoading: analyticsLoading } = useQuery<AnalyticsOverview>({
     queryKey: ["/api/analytics/overview"],
   });
@@ -234,7 +238,7 @@ function RegularAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-total-revenue">
-              ${analytics?.totalRevenue.toFixed(2) || "0.00"}
+              {formatCurrency(analytics?.totalRevenue || 0, currency)}
             </div>
             <p className="text-xs text-muted-foreground">
               From {analytics?.totalOrders || 0} orders
@@ -249,7 +253,7 @@ function RegularAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-total-profit">
-              ${analytics?.totalProfit.toFixed(2) || "0.00"}
+              {formatCurrency(analytics?.totalProfit || 0, currency)}
             </div>
             <p className="text-xs text-muted-foreground">
               Net profit after costs
@@ -279,7 +283,7 @@ function RegularAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-total-cost">
-              ${analytics?.totalCost.toFixed(2) || "0.00"}
+              {formatCurrency(analytics?.totalCost || 0, currency)}
             </div>
             <p className="text-xs text-muted-foreground">
               Total ingredient costs
@@ -322,13 +326,13 @@ function RegularAnalytics() {
                     <div>
                       <p className="text-sm text-muted-foreground">Revenue</p>
                       <p className="font-medium" data-testid={`recipe-revenue-${item.recipe.id}`}>
-                        ${item.revenue.toFixed(2)}
+                        {formatCurrency(item.revenue, currency)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Profit</p>
                       <p className="font-medium" data-testid={`recipe-profit-${item.recipe.id}`}>
-                        ${item.profit.toFixed(2)}
+                        {formatCurrency(item.profit, currency)}
                       </p>
                     </div>
                     <div>
@@ -390,7 +394,7 @@ function RegularAnalytics() {
                 <div>
                   <p className="text-sm font-medium">Top Performer</p>
                   <p className="text-sm text-muted-foreground">
-                    "{recipePerformance[0].recipe.name}" generated the most revenue (${recipePerformance[0].revenue.toFixed(2)})
+                    "{recipePerformance[0].recipe.name}" generated the most revenue ({formatCurrency(recipePerformance[0].revenue, currency)})
                   </p>
                 </div>
               </div>
