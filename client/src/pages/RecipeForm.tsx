@@ -559,6 +559,18 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
     return [...ingredients].sort((a, b) => a.name.localeCompare(b.name));
   }, [ingredients]);
 
+  // Map recipe ingredients by ID for view mode (includes ingredient details from the recipe itself)
+  const recipeIngredientMap = useMemo(() => {
+    if (!recipe?.ingredients) return new Map<string, Ingredient>();
+    return new Map(recipe.ingredients.map((ri) => [ri.ingredientId, ri.ingredient]));
+  }, [recipe?.ingredients]);
+
+  // Map recipe materials by ID for view mode (includes material details from the recipe itself)
+  const recipeMaterialMap = useMemo(() => {
+    if (!recipe?.materials) return new Map<string, Material>();
+    return new Map(recipe.materials.map((rm) => [rm.materialId, rm.material]));
+  }, [recipe?.materials]);
+
   const sortedMaterials = useMemo(() => {
     if (!materials) return [];
     return [...materials].sort((a, b) => a.name.localeCompare(b.name));
@@ -1658,7 +1670,11 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                   ) : (
                     <div className="space-y-3">
                       {selectedIngredients.map((item, index) => {
-                        const selectedIng = ingredients?.find((i) => i.id === item.ingredientId);
+                        // In view mode, use recipe's ingredient data (for free recipes viewed by other users)
+                        // In edit mode, use user's ingredient list
+                        const selectedIng = isViewMode 
+                          ? recipeIngredientMap.get(item.ingredientId) || ingredients?.find((i) => i.id === item.ingredientId)
+                          : ingredients?.find((i) => i.id === item.ingredientId);
                         const isCountBased = selectedIng?.isCountBased || false;
                         const weightPerPiece = parseFloat(selectedIng?.weightPerPiece || "0");
                         const currentUnit = item.unit || "g";
@@ -1839,7 +1855,11 @@ export default function RecipeForm({ viewOnly = false }: { viewOnly?: boolean })
                   ) : (
                     <div className="space-y-3">
                       {selectedMaterials.map((item, index) => {
-                        const selectedMat = materials?.find((m) => m.id === item.materialId);
+                        // In view mode, use recipe's material data (for free recipes viewed by other users)
+                        // In edit mode, use user's material list
+                        const selectedMat = isViewMode 
+                          ? recipeMaterialMap.get(item.materialId) || materials?.find((m) => m.id === item.materialId)
+                          : materials?.find((m) => m.id === item.materialId);
                         const itemCost = selectedMat
                           ? parseFloat(item.quantity) * parseFloat(selectedMat.pricePerUnit || "0")
                           : 0;
